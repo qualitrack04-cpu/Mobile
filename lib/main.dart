@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:finding/presentation/pages/finding_form_page.dart';
+import 'injector.dart' as di;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await di.init();
   runApp(const MyApp());
 }
 
@@ -11,7 +15,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'QualiTrack',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -28,9 +33,12 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0D2B55),
+        ),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const FindingFormPage(),
     );
   }
 }
