@@ -34,6 +34,15 @@ class FindingCreated extends FindingState {
   List<Object?> get props => [finding];
 }
 
+class FindingDetailLoaded extends FindingState {
+  final Finding finding;
+
+  const FindingDetailLoaded({required this.finding});
+
+  @override
+  List<Object?> get props => [finding];
+}
+
 // State error
 class FindingError extends FindingState {
   final String message;

@@ -8,12 +8,11 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
   final FindingRepository repository;
   final CreateFinding createFinding;
 
-  FindingBloc({
-    required this.repository,
-    required this.createFinding,
-  }) : super(FindingInitial()) {
+  FindingBloc({required this.repository, required this.createFinding})
+    : super(FindingInitial()) {
     on<LoadFindings>(_onLoadFindings);
     on<CreateFindingEvent>(_onCreateFinding);
+    on<LoadFindingDetail>(_onLoadFindingDetail);
   }
 
   Future<void> _onLoadFindings(
@@ -27,6 +26,19 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         category: event.category,
       );
       emit(FindingLoaded(findings: findings));
+    } catch (e) {
+      emit(FindingError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onLoadFindingDetail(
+    LoadFindingDetail event,
+    Emitter<FindingState> emit,
+  ) async {
+    emit(FindingLoading());
+    try {
+      final finding = await repository.getFindingDetail(event.id);
+      emit(FindingDetailLoaded(finding: finding));
     } catch (e) {
       emit(FindingError(message: e.toString()));
     }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:finding/presentation/pages/finding_form_page.dart';
+import 'package:finding/presentation/pages/finding_list_page.dart';
 import 'injector.dart' as di;
 
 void main() async {
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const FindingFormPage(),
+      home: const FindingListPage(),
     );
   }
 }

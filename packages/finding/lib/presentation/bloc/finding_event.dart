@@ -37,3 +37,12 @@ class CreateFindingEvent extends FindingEvent {
   @override
   List<Object?> get props => [category, description, clauseRef];
 }
+
+class LoadFindingDetail extends FindingEvent {
+  final String id;
+
+  const LoadFindingDetail({required this.id});
+
+  @override
+  List<Object?> get props => [id];
+}
