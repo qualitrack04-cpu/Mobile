@@ -28,14 +28,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<FindingBloc>(),
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: const BackButton(color: Color(0xFF0D2B55)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: const Text(
             'QualiTrack',
             style: TextStyle(
@@ -54,7 +55,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   backgroundColor: Colors.green,
                 ),
               );
-              Navigator.pop(context);
+              Navigator.pop(context, true); // kirim signal "true" ke list page
             }
             if (state is FindingError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -118,8 +119,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             );
           },
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildDivider() {
@@ -149,18 +149,19 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 Icons.keyboard_arrow_down,
                 color: Colors.black54,
               ),
-              items: FindingCategory.values.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(
-                    category.toBackendString(),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.black87,
-                    ),
-                  ),
-                );
-              }).toList(),
+              items:
+                  FindingCategory.values.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(
+                        category.toBackendString(),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() => _selectedCategory = value);
@@ -194,11 +195,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
             maxLines: 5,
             style: const TextStyle(fontSize: 15),
             decoration: const InputDecoration(
-              hintText: 'Detail the non-conformance observed during the audit...',
-              hintStyle: TextStyle(
-                color: Colors.black26,
-                fontSize: 14,
-              ),
+              hintText:
+                  'Detail the non-conformance observed during the audit...',
+              hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -229,10 +228,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             style: const TextStyle(fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'e.g., ISO9001 8.1',
-              hintStyle: TextStyle(
-                color: Colors.black26,
-                fontSize: 14,
-              ),
+              hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -263,9 +259,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             runSpacing: 10,
             children: [
               // Existing images
-              ..._evidenceImages.map(
-                (image) => _buildImageThumbnail(image),
-              ),
+              ..._evidenceImages.map((image) => _buildImageThumbnail(image)),
 
               // Add Image Button
               _buildAddImageButton(),
@@ -313,10 +307,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             Icon(Icons.add, color: Colors.grey[600], size: 24),
             Text(
               'Add Image',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 11,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 11),
             ),
           ],
         ),
@@ -337,16 +328,17 @@ class _FindingFormPageState extends State<FindingFormPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: state is FindingLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Icon(Icons.send, color: Colors.white),
+        icon:
+            state is FindingLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Icon(Icons.send, color: Colors.white),
         label: Text(
           state is FindingLoading ? 'Menyimpan...' : 'Submit Finding',
           style: const TextStyle(
@@ -381,11 +373,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
 
     context.read<FindingBloc>().add(
-          CreateFindingEvent(
-            category: _selectedCategory,
-            description: _descriptionController.text,
-            clauseRef: _clauseRefController.text,
-          ),
-        );
+      CreateFindingEvent(
+        category: _selectedCategory,
+        description: _descriptionController.text,
+        clauseRef: _clauseRefController.text,
+      ),
+    );
   }
 }

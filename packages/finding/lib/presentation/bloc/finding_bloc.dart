@@ -56,6 +56,9 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
       );
       emit(FindingCreated(finding: finding));
+
+      final findings = await repository.getFindings();
+      emit(FindingLoaded(findings: findings));
     } catch (e) {
       emit(FindingError(message: e.toString()));
     }

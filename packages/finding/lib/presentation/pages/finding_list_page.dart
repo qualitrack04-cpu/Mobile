@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:finding/domain/entities/finding.dart';
-import 'package:finding/domain/entities/finding_severity.dart';
+import 'package:finding/domain/entities/finding_severity.dart'; // Pastikan FindingCategory ada di sini
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
 import 'package:finding/presentation/pages/finding_detail_page.dart';
-import 'package:mobile/injector.dart';
+import 'package:mobile/injector.dart'; // Tempat 'sl' didefinisikan
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -34,9 +34,7 @@ class FindingListPage extends StatelessWidget {
           builder: (context, state) {
             if (state is FindingLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF0D2B55),
-                ),
+                child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
               );
             }
 
@@ -54,10 +52,7 @@ class FindingListPage extends StatelessWidget {
                 return const Center(
                   child: Text(
                     'Belum ada finding',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.black54, fontSize: 16),
                   ),
                 );
               }
@@ -65,7 +60,6 @@ class FindingListPage extends StatelessWidget {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // Title
                   const Text(
                     'FINDINGS',
                     style: TextStyle(
@@ -75,36 +69,43 @@ class FindingListPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // List Finding
                   ...state.findings.map(
                     (finding) => _FindingCard(finding: finding),
                   ),
                 ],
               );
             }
-
             return const SizedBox();
           },
         ),
+        floatingActionButton: Builder(
+          builder: (context) {
+            return FloatingActionButton(
+              backgroundColor: const Color(0xFF0D2B55),
+              onPressed: () async {
+                final bloc = context.read<FindingBloc>();
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: bloc,
+                      child: const FindingFormPage(),
+                    ),
+                  ),
+                );
 
-        // Tombol tambah finding
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: const Color(0xFF0D2B55),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const FindingFormPage(),
-              ),
+                if (result == true && context.mounted) {
+                  bloc.add(const LoadFindings());
+                }
+              },
+              child: const Icon(Icons.add, color: Colors.white),
             );
           },
-          child: const Icon(Icons.add, color: Colors.white),
         ),
-      ),
-    );
+      ), // Penutup Scaffold
+    ); // Penutup BlocProvider
   }
-}
+} // Penutup Class FindingListPage
 
 class _FindingCard extends StatelessWidget {
   final Finding finding;
@@ -118,19 +119,13 @@ class _FindingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(
-            color: _getBorderColor(),
-            width: 4,
-          ),
-        ),
+        border: Border(left: BorderSide(color: _getBorderColor(), width: 4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title + Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -148,20 +143,13 @@ class _FindingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-
-            // Description
             Text(
               finding.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
             const SizedBox(height: 12),
-
-            // Details button
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -170,9 +158,7 @@ class _FindingCard extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => FindingDetailPage(
-                          findingId: finding.id,
-                        ),
+                        builder: (_) => FindingDetailPage(findingId: finding.id),
                       ),
                     );
                   },
@@ -202,16 +188,13 @@ class _FindingCard extends StatelessWidget {
     );
   }
 
+  // Method-method helper tetap di dalam class _FindingCard
   Color _getBorderColor() {
     switch (finding.category) {
-      case FindingCategory.majorNC:
-        return Colors.red;
-      case FindingCategory.minorNC:
-        return const Color(0xFF3B6FD4);
-      case FindingCategory.observation:
-        return Colors.orange;
-      case FindingCategory.ofi:
-        return Colors.green;
+      case FindingCategory.majorNC: return Colors.red;
+      case FindingCategory.minorNC: return const Color(0xFF3B6FD4);
+      case FindingCategory.observation: return Colors.orange;
+      case FindingCategory.ofi: return Colors.green;
     }
   }
 
@@ -225,11 +208,7 @@ class _FindingCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.circle,
-            size: 8,
-            color: _getBadgeTextColor(),
-          ),
+          Icon(Icons.circle, size: 8, color: _getBadgeTextColor()),
           const SizedBox(width: 4),
           Text(
             finding.category.toBackendString(),
@@ -246,27 +225,19 @@ class _FindingCard extends StatelessWidget {
 
   Color _getBadgeColor() {
     switch (finding.category) {
-      case FindingCategory.majorNC:
-        return const Color(0xFFFFEDED);
-      case FindingCategory.minorNC:
-        return const Color(0xFFEDF2FF);
-      case FindingCategory.observation:
-        return const Color(0xFFFFF3ED);
-      case FindingCategory.ofi:
-        return const Color(0xFFEDFFF3);
+      case FindingCategory.majorNC: return const Color(0xFFFFEDED);
+      case FindingCategory.minorNC: return const Color(0xFFEDF2FF);
+      case FindingCategory.observation: return const Color(0xFFFFF3ED);
+      case FindingCategory.ofi: return const Color(0xFFEDFFF3);
     }
   }
 
   Color _getBadgeTextColor() {
     switch (finding.category) {
-      case FindingCategory.majorNC:
-        return Colors.red;
-      case FindingCategory.minorNC:
-        return const Color(0xFF3B6FD4);
-      case FindingCategory.observation:
-        return Colors.orange;
-      case FindingCategory.ofi:
-        return Colors.green;
+      case FindingCategory.majorNC: return Colors.red;
+      case FindingCategory.minorNC: return const Color(0xFF3B6FD4);
+      case FindingCategory.observation: return Colors.orange;
+      case FindingCategory.ofi: return Colors.green;
     }
   }
 }
