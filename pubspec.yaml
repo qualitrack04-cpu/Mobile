@@ -39,6 +39,8 @@ dependencies:
   # packages
   finding:
     path: packages/finding
+  capa: 
+    path: packages/capa
 
 dev_dependencies:
   flutter_test:
