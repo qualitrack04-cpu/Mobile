@@ -28,9 +28,9 @@ class FindingDetailPage extends StatelessWidget {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
             onPressed: () => Navigator.pop(context),
-            ),
+          ),
           title: const Text(
-            'QualiTrack',
+            'Finding Detail',
             style: TextStyle(
               color: Color(0xFF0D2B55),
               fontWeight: FontWeight.bold,
@@ -69,114 +69,175 @@ class FindingDetailPage extends StatelessWidget {
   }
 
   Widget _buildDetail(BuildContext context, Finding finding) {
+    // Mock evidence photos
+    final List<String> evidencePhotos = [
+      'photo1', 'photo2', 'photo3', 'photo4', 'photo5',
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Findings Detail',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D2B55),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Detail Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Clause Ref sebagai judul
-                Text(
-                  finding.clauseRef,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0D2B55),
-                  ),
-                ),
-                const Divider(height: 24),
-
-                // Description
-                const Text(
-                  'DESCRIPTION',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  finding.description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-                const Divider(height: 24),
-
-                // Info rows
-                _buildInfoRow(
-                  icon: Icons.category_outlined,
-                  label: 'CATEGORY',
-                  value: finding.category.toBackendString(),
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  icon: Icons.info_outline,
-                  label: 'STATUS',
-                  value: finding.status.toBackendString(),
-                ),
-                const SizedBox(height: 12),
-                _buildInfoRow(
-                  icon: Icons.calendar_today_outlined,
-                  label: 'DATE',
-                  value:
-                      '${finding.foundAt.day} ${_getMonth(finding.foundAt.month)} ${finding.foundAt.year}',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Link to CAPA Button
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // Nanti navigate ke CAPA
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D2B55),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(Icons.link, color: Colors.white),
-              label: const Text(
-                'Link to CAPA',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Judul Finding
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                finding.clauseRef,
+                style: const TextStyle(
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF0D2B55),
                 ),
               ),
             ),
+
+            // Description
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DESCRIPTION',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D2B55),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    finding.description,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Evidence Photos
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'EVIDENCE PHOTOS',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D2B55),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // Photo 1
+                      _buildPhotoThumbnail(
+                        index: 0,
+                        totalPhotos: evidencePhotos.length,
+                      ),
+                      const SizedBox(width: 8),
+                      // Photo 2
+                      _buildPhotoThumbnail(
+                        index: 1,
+                        totalPhotos: evidencePhotos.length,
+                      ),
+                      const SizedBox(width: 8),
+                      // Photo 3 + counter
+                      _buildPhotoThumbnail(
+                        index: 2,
+                        totalPhotos: evidencePhotos.length,
+                        showCounter: true,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Auditor, Dept, Date
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildInfoRow(
+                    icon: Icons.person_outline,
+                    label: 'AUDITOR',
+                    value: 'Marcus Sterling',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    icon: Icons.business_outlined,
+                    label: 'DEPT',
+                    value: 'Quality Control',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'DATE',
+                    value:
+                        '${finding.foundAt.day} ${_getMonth(finding.foundAt.month)} ${finding.foundAt.year}',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoThumbnail({
+    required int index,
+    required int totalPhotos,
+    bool showCounter = false,
+  }) {
+    final remainingCount = totalPhotos - 3;
+
+    return Expanded(
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(8),
           ),
-        ],
+          child: showCounter && remainingCount > 0
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+$remainingCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+              : const Icon(
+                  Icons.image_outlined,
+                  color: Colors.white,
+                  size: 32,
+                ),
+        ),
       ),
     );
   }
@@ -194,7 +255,9 @@ class FindingDetailPage extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 12,
+            fontWeight: FontWeight.bold,
             color: Colors.black54,
+            letterSpacing: 0.5,
           ),
         ),
         const Spacer(),

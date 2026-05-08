@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:capa/presentation/pages/capa_list_page.dart';
-import 'injector.dart' as di;
+import 'package:mobile/app.dart';
+import 'package:mobile/injector.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const CapaListPage(),
+      home: App(),
     );
   }
 }
