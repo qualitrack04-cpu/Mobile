@@ -24,7 +24,10 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
@@ -36,9 +39,7 @@ class _AppState extends State<App> {
           fontWeight: FontWeight.bold,
           fontSize: 11,
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-        ),
+        unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

@@ -4,7 +4,7 @@ import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
-import 'package:mobile/injector.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class FindingFormPage extends StatefulWidget {
   const FindingFormPage({super.key});
@@ -14,126 +14,174 @@ class FindingFormPage extends StatefulWidget {
 }
 
 class _FindingFormPageState extends State<FindingFormPage> {
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _clauseRefController = TextEditingController();
-  FindingCategory _selectedCategory = FindingCategory.majorNC;
+  String? _selectedDepartment;
   final List<String> _evidenceImages = [];
+
+  final List<String> _departments = [
+    'Production',
+    'Quality Control',
+    'Maintenance',
+    'Engineering',
+    'Warehouse',
+    'HR',
+  ];
 
   @override
   void dispose() {
+    _titleController.dispose();
     _descriptionController.dispose();
-    _clauseRefController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFFEEF2F7),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'QualiTrack',
-            style: TextStyle(
-              color: Color(0xFF0D2B55),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+      backgroundColor: const Color(0xFFEEF2F7),
+      bottomNavigationBar: const BottomNav(currentIndex: 2),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Finding Form',
+          style: TextStyle(
+            color: Color(0xFF0D2B55),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
-        body: BlocConsumer<FindingBloc, FindingState>(
-          listener: (context, state) {
-            if (state is FindingCreated) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Finding berhasil disimpan!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              Navigator.pop(context, true); // kirim signal "true" ke list page
-            }
-            if (state is FindingError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  const Text(
-                    'Findings Form',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Form Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Category
-                        _buildCategoryField(),
-                        _buildDivider(),
-
-                        // Description
-                        _buildDescriptionField(),
-                        _buildDivider(),
-
-                        // Clause Ref
-                        _buildClauseRefField(),
-                        _buildDivider(),
-
-                        // Evidence
-                        _buildEvidenceSection(),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Submit Button
-                  _buildSubmitButton(context, state),
-                  const SizedBox(height: 20),
-                ],
+      ),
+      body: BlocConsumer<FindingBloc, FindingState>(
+        listener: (context, state) {
+          if (state is FindingCreated) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Finding berhasil disimpan!'),
+                backgroundColor: Colors.green,
               ),
             );
-          },
-        ),
-      );
+            Navigator.pop(context, true);
+          }
+          if (state is FindingError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Form Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      _buildTextField(
+                        label: 'TITLE',
+                        controller: _titleController,
+                        hint: 'My name is Amir',
+                      ),
+                      _buildDivider(),
+
+                      // Department
+                      _buildDepartmentDropdown(),
+                      _buildDivider(),
+
+                      // Description
+                      _buildTextField(
+                        label: 'DESCRIPTION',
+                        controller: _descriptionController,
+                        hint: 'Detail the non-conformance observed during the audit...',
+                        maxLines: 5,
+                      ),
+                      _buildDivider(),
+
+                      // Evidence
+                      _buildEvidenceSection(),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Submit Button
+                _buildSubmitButton(context, state),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, color: Color(0xFFEEEEEE));
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
   }
 
-  Widget _buildCategoryField() {
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    required String hint,
+    int maxLines = 1,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            maxLines: maxLines,
+            style: const TextStyle(fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: Colors.black26,
+                fontSize: 14,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDepartmentDropdown() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'CATEGORY',
+            'DEPARTMENT',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -142,95 +190,35 @@ class _FindingFormPageState extends State<FindingFormPage> {
             ),
           ),
           DropdownButtonHideUnderline(
-            child: DropdownButton<FindingCategory>(
-              value: _selectedCategory,
+            child: DropdownButton<String>(
+              value: _selectedDepartment,
               isExpanded: true,
+              hint: const Text(
+                'Select Department',
+                style: TextStyle(
+                  color: Colors.black26,
+                  fontSize: 14,
+                ),
+              ),
               icon: const Icon(
                 Icons.keyboard_arrow_down,
                 color: Colors.black54,
               ),
-              items:
-                  FindingCategory.values.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(
-                        category.toBackendString(),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              items: _departments.map((dept) {
+                return DropdownMenuItem(
+                  value: dept,
+                  child: Text(
+                    dept,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                );
+              }).toList(),
               onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedCategory = value);
-                }
+                setState(() => _selectedDepartment = value);
               },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'DESCRIPTION',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.black54,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 5,
-            style: const TextStyle(fontSize: 15),
-            decoration: const InputDecoration(
-              hintText:
-                  'Detail the non-conformance observed during the audit...',
-              hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClauseRefField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'CLAUSE REF',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.black54,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _clauseRefController,
-            style: const TextStyle(fontSize: 15),
-            decoration: const InputDecoration(
-              hintText: 'e.g., ISO9001 8.1',
-              hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
             ),
           ),
         ],
@@ -258,10 +246,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              // Existing images
-              ..._evidenceImages.map((image) => _buildImageThumbnail(image)),
-
-              // Add Image Button
+              ..._evidenceImages.map(
+                (image) => _buildImageThumbnail(),
+              ),
               _buildAddImageButton(),
             ],
           ),
@@ -270,10 +257,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  Widget _buildImageThumbnail(String image) {
+  Widget _buildImageThumbnail() {
     return Container(
-      width: 90,
-      height: 90,
+      width: 100,
+      height: 100,
       decoration: BoxDecoration(
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(8),
@@ -285,20 +272,18 @@ class _FindingFormPageState extends State<FindingFormPage> {
   Widget _buildAddImageButton() {
     return GestureDetector(
       onTap: () {
-        // Nanti implement image picker
         setState(() {
-          _evidenceImages.add('dummy_image_${_evidenceImages.length}');
+          _evidenceImages.add('dummy_${_evidenceImages.length}');
         });
       },
       child: Container(
-        width: 90,
-        height: 90,
+        width: 100,
+        height: 100,
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: Colors.grey[400]!,
-            style: BorderStyle.solid,
           ),
         ),
         child: Column(
@@ -306,8 +291,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
           children: [
             Icon(Icons.add, color: Colors.grey[600], size: 24),
             Text(
-              'Add Image',
-              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+              '+Add Image',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 11,
+              ),
             ),
           ],
         ),
@@ -328,17 +316,16 @@ class _FindingFormPageState extends State<FindingFormPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon:
-            state is FindingLoading
-                ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-                : const Icon(Icons.send, color: Colors.white),
+        icon: state is FindingLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Icon(Icons.send, color: Colors.white),
         label: Text(
           state is FindingLoading ? 'Menyimpan...' : 'Submit Finding',
           style: const TextStyle(
@@ -352,6 +339,26 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   void _onSubmit(BuildContext context) {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Title tidak boleh kosong!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedDepartment == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Department harus dipilih!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -362,22 +369,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
       return;
     }
 
-    if (_clauseRefController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Clause Ref tidak boleh kosong!'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     context.read<FindingBloc>().add(
-      CreateFindingEvent(
-        category: _selectedCategory,
-        description: _descriptionController.text,
-        clauseRef: _clauseRefController.text,
-      ),
-    );
+          CreateFindingEvent(
+            category: FindingCategory.majorNC,
+            description: _descriptionController.text,
+            clauseRef: _titleController.text,
+          ),
+        );
   }
 }

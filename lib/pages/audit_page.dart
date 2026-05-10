@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class AuditPage extends StatelessWidget {
   const AuditPage({super.key});

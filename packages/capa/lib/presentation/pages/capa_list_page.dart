@@ -21,11 +21,11 @@ class CapaListPage extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           title: const Text(
-            'QualiTrack',
+            'CAPA',
             style: TextStyle(
               color: Color(0xFF0D2B55),
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 24,
             ),
           ),
         ),
@@ -33,9 +33,7 @@ class CapaListPage extends StatelessWidget {
           builder: (context, state) {
             if (state is CapaLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF0D2B55),
-                ),
+                child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
               );
             }
 
@@ -49,61 +47,64 @@ class CapaListPage extends StatelessWidget {
             }
 
             if (state is CapaLoaded) {
-              if (state.capas.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'Belum ada CAPA',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 16,
-                    ),
-                  ),
-                );
-              }
-
-              return ListView(
-                padding: const EdgeInsets.all(16),
+              return Stack(
                 children: [
-                  const Text(
-                    'CAPA',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
-                    ),
+                  ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                    children: [
+                      const SizedBox(height: 16),
+                      if (state.capas.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 100),
+                            child: Text(
+                              'Belum ada CAPA',
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...state.capas.map((capa) => _CapaCard(capa: capa)),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  ...state.capas.map(
-                    (capa) => _CapaCard(capa: capa),
+
+                  // FAB
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: Builder(
+                      builder: (context) {
+                        return FloatingActionButton(
+                          backgroundColor: const Color(0xFF0D2B55),
+                          onPressed: () async {
+                            final bloc = context.read<CapaBloc>();
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => BlocProvider.value(
+                                      value: bloc,
+                                      child: const CapaFormPage(),
+                                    ),
+                              ),
+                            );
+                            if (result == true && context.mounted) {
+                              bloc.add(const LoadCapas());
+                            }
+                          },
+                          child: const Icon(Icons.add, color: Colors.white),
+                        );
+                      },
+                    ),
                   ),
                 ],
               );
             }
 
             return const SizedBox();
-          },
-        ),
-        floatingActionButton: Builder(
-          builder: (context) {
-            return FloatingActionButton(
-              backgroundColor: const Color(0xFF0D2B55),
-              onPressed: () async {
-                final bloc = context.read<CapaBloc>();
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                      value: bloc,
-                      child: const CapaFormPage(),
-                    ),
-                  ),
-                );
-                if (result == true && context.mounted) {
-                  bloc.add(const LoadCapas());
-                }
-              },
-              child: const Icon(Icons.add, color: Colors.white),
-            );
           },
         ),
       ),
@@ -123,35 +124,45 @@ class _CapaCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getBorderColor(), width: 1.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title + Tanggal
+            // Title + Badge + Tanggal
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    capa.rootCause,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        capa.rootCause,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0D2B55),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_getMonth(capa.createdAt.month)} ${capa.createdAt.day}, ${capa.createdAt.year}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${capa.createdAt.day} ${_getMonth(capa.createdAt.month)} ${capa.createdAt.year}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
+                const SizedBox(width: 8),
+                _buildStatusBadge(),
               ],
             ),
             const SizedBox(height: 8),
@@ -161,12 +172,9 @@ class _CapaCard extends StatelessWidget {
               capa.correctiveAction,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
-            const Divider(height: 24),
+            const Divider(height: 24, thickness: 1, color: Color(0xFFEEEEEE)),
 
             // PIC + Details
             Row(
@@ -215,10 +223,69 @@ class _CapaCard extends StatelessWidget {
     );
   }
 
+  Color _getBorderColor() {
+    if (capa.isClosed) return Colors.green;
+    // Cek deadline untuk In Progress
+    final now = DateTime.now();
+    final diff = capa.deadline.difference(now).inDays;
+    if (diff <= 30) return Colors.orange;
+    return Colors.red;
+  }
+
+  Widget _buildStatusBadge() {
+    String label;
+    Color bgColor;
+    Color textColor;
+
+    if (capa.isClosed) {
+      label = 'Done';
+      bgColor = const Color(0xFFD5F5E3);
+      textColor = Colors.green;
+    } else {
+      final now = DateTime.now();
+      final diff = capa.deadline.difference(now).inDays;
+      if (diff <= 30) {
+        label = 'In Progress';
+        bgColor = const Color(0xFFFFEDD5);
+        textColor = Colors.orange;
+      } else {
+        label = 'Open';
+        bgColor = const Color(0xFFFFDDDD);
+        textColor = Colors.red;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }

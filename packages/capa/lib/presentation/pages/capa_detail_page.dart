@@ -5,6 +5,7 @@ import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
 import 'package:mobile/injector.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class CapaDetailPage extends StatelessWidget {
   final String capaId;
@@ -25,7 +26,7 @@ class CapaDetailPage extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
-            'QualiTrack',
+            'CAPA Detail',
             style: TextStyle(
               color: Color(0xFF0D2B55),
               fontWeight: FontWeight.bold,
@@ -33,6 +34,7 @@ class CapaDetailPage extends StatelessWidget {
             ),
           ),
         ),
+        bottomNavigationBar: BottomNav(currentIndex: 3),
         body: BlocBuilder<CapaBloc, CapaState>(
           builder: (context, state) {
             if (state is CapaLoading) {
@@ -66,160 +68,139 @@ class CapaDetailPage extends StatelessWidget {
   Widget _buildDetail(BuildContext context, Capa capa) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'CAPA Detail',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D2B55),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Judul
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                capa.rootCause,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0D2B55),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-          // Detail Card
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Root Cause sebagai judul
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    capa.rootCause,
+            // PIC
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.person_outline,
+                    size: 18,
+                    color: Colors.black54,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    capa.picId.toUpperCase(),
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
+                      color: Colors.black54,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                ),
-                const Divider(height: 1),
-
-                // PIC
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.person_outline,
-                        size: 18,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        capa.picId.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black54,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-
-                // Problem Title / Root Cause
-                _buildSection(
-                  label: 'PROBLEM TITLE',
-                  value: capa.rootCause,
-                ),
-                const Divider(height: 1),
-
-                // Action
-                _buildSection(
-                  label: 'ACTION',
-                  value: capa.correctiveAction,
-                ),
-                const Divider(height: 1),
-
-                // Preventive Action
-                _buildSection(
-                  label: 'PREVENTIVE ACTION',
-                  value: capa.preventiveAction,
-                ),
-                const Divider(height: 1),
-
-                // Due Date
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 18,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'DUE DATE:',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black54,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${capa.deadline.day} ${_getMonth(capa.deadline.month)} ${capa.deadline.year}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Status badge
-                if (capa.isClosed)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 16,
-                          color: Colors.green.shade700,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Closed',
-                          style: TextStyle(
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+
+            // Problem Title
+            _buildSection(
+              label: 'PROBLEM TITLE',
+              value: capa.rootCause,
+            ),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+
+            // Action
+            _buildSection(
+              label: 'ACTION',
+              value: capa.correctiveAction,
+            ),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+
+            // Due Date
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: Colors.black54,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'DUE DATE:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${capa.deadline.day} ${_getMonth(capa.deadline.month)} ${capa.deadline.year}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Status badge jika closed
+            if (capa.isClosed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Closed',
+                        style: TextStyle(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -247,7 +228,7 @@ class CapaDetailPage extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.black87,
+              color: Colors.black54,
               height: 1.5,
             ),
           ),

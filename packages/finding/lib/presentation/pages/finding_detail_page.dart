@@ -6,6 +6,7 @@ import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:mobile/injector.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class FindingDetailPage extends StatelessWidget {
   final String findingId;
@@ -22,6 +23,7 @@ class FindingDetailPage extends StatelessWidget {
         ..add(LoadFindingDetail(id: findingId)),
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
+        bottomNavigationBar: const BottomNav(currentIndex: 2),
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});

@@ -8,6 +8,7 @@ import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
 import 'package:finding/presentation/pages/finding_detail_page.dart';
 import 'package:mobile/injector.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});

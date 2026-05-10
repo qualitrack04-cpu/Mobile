@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
+import 'package:mobile/widgets/bottom_nav.dart';
 
 class CapaFormPage extends StatefulWidget {
   final String? findingId;
@@ -14,17 +15,34 @@ class CapaFormPage extends StatefulWidget {
 }
 
 class _CapaFormPageState extends State<CapaFormPage> {
-  final _rootCauseController = TextEditingController();
-  final _correctiveActionController = TextEditingController();
-  final _preventiveActionController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _actionController = TextEditingController();
   final _picController = TextEditingController();
   DateTime? _selectedDeadline;
+  String? _selectedFindingId;
+
+  // Mock finding list untuk dropdown
+  final List<Map<String, String>> _findings = [
+    {'id': '1', 'title': 'ISO9001 8.1 - Prosedur tidak terdokumentasi'},
+    {'id': '2', 'title': 'ISO9001 7.1.5 - Kalibrasi alat ukur'},
+    {'id': '3', 'title': 'ISO9001 7.1.3 - Catatan pemeliharaan'},
+    {'id': '4', 'title': 'ISO9001 8.4 - Pengecekan kualitas'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.findingId != null) {
+      _selectedFindingId = widget.findingId;
+    }
+  }
 
   @override
   void dispose() {
-    _rootCauseController.dispose();
-    _correctiveActionController.dispose();
-    _preventiveActionController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _actionController.dispose();
     _picController.dispose();
     super.dispose();
   }
@@ -41,7 +59,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'QualiTrack',
+          'CAPA Form',
           style: TextStyle(
             color: Color(0xFF0D2B55),
             fontWeight: FontWeight.bold,
@@ -49,6 +67,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNav(currentIndex: 3),
       body: BlocConsumer<CapaBloc, CapaState>(
         listener: (context, state) {
           if (state is CapaCreated) {
@@ -73,20 +92,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
-                const Text(
-                  'CAPA Form',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0D2B55),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Form Card
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -94,44 +100,47 @@ class _CapaFormPageState extends State<CapaFormPage> {
                   ),
                   child: Column(
                     children: [
-                      // Root Cause
+                      // Title
                       _buildTextField(
-                        label: 'PROBLEM TITLE',
-                        controller: _rootCauseController,
-                        hint: 'Describe the root cause...',
-                        maxLines: 3,
+                        label: 'TITLE',
+                        controller: _titleController,
+                        hint: 'My name is Amir',
                       ),
                       _buildDivider(),
 
-                      // Finding ID
-                      _buildTextField(
-                        label: 'FINDING',
-                        controller: TextEditingController(
-                          text: widget.findingId ?? '',
-                        ),
-                        hint: 'Finding ID...',
-                        enabled: widget.findingId == null,
-                      ),
+                      // Finding Dropdown
+                      _buildFindingDropdown(),
                       _buildDivider(),
 
-                      // Corrective Action
+                      // Description
                       _buildTextField(
-                        label: 'ACTION',
-                        controller: _correctiveActionController,
-                        hint: 'Detail the non-conformance observed during the audit...',
+                        label: 'DESCRIPTION',
+                        controller: _descriptionController,
+                        hint:
+                            'Detail the non-conformance observed during the audit...',
                         maxLines: 4,
                       ),
                       _buildDivider(),
 
-                      // Person in Charge
+                      // Action
                       _buildTextField(
-                        label: 'PERSON IN CHARGE',
-                        controller: _picController,
-                        hint: 'e.g., Amir Oakwood',
+                        label: 'ACTION',
+                        controller: _actionController,
+                        hint:
+                            'Detail the non-conformance observed during the audit...',
+                        maxLines: 4,
                       ),
                       _buildDivider(),
 
-                      // Date picker
+                      // Person In Charge
+                      _buildTextField(
+                        label: 'PERSON IN CHARGE',
+                        controller: _picController,
+                        hint: 'Amir Oakwood',
+                      ),
+                      _buildDivider(),
+
+                      // Date
                       _buildDateField(context),
                     ],
                   ),
@@ -150,7 +159,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, color: Color(0xFFEEEEEE));
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
   }
 
   Widget _buildTextField({
@@ -158,10 +167,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
-    bool enabled = true,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -178,14 +186,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
           TextField(
             controller: controller,
             maxLines: maxLines,
-            enabled: enabled,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black26,
-                fontSize: 14,
-              ),
+              hintStyle: const TextStyle(color: Colors.black26, fontSize: 14),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -195,9 +199,60 @@ class _CapaFormPageState extends State<CapaFormPage> {
     );
   }
 
+  Widget _buildFindingDropdown() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'FINDING',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedFindingId,
+              isExpanded: true,
+              hint: const Text(
+                'Select Finding',
+                style: TextStyle(color: Colors.black26, fontSize: 14),
+              ),
+              icon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.black54,
+              ),
+              items:
+                  _findings.map((finding) {
+                    return DropdownMenuItem(
+                      value: finding['id'],
+                      child: Text(
+                        finding['title']!,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedFindingId = value);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDateField(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -232,9 +287,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
                       : 'Pilih tanggal deadline...',
                   style: TextStyle(
                     fontSize: 15,
-                    color: _selectedDeadline != null
-                        ? Colors.black87
-                        : Colors.black26,
+                    color:
+                        _selectedDeadline != null
+                            ? Colors.black87
+                            : Colors.black26,
                   ),
                 ),
                 const Icon(
@@ -254,7 +310,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton.icon(
+      child: ElevatedButton(
         onPressed: state is CapaLoading ? null : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
@@ -263,40 +319,57 @@ class _CapaFormPageState extends State<CapaFormPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: state is CapaLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+        child:
+            state is CapaLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Submit CAPA',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.send, color: Colors.white), // ← icon di kanan
+                  ],
                 ),
-              )
-            : const Icon(Icons.send, color: Colors.white),
-        label: Text(
-          state is CapaLoading ? 'Menyimpan...' : 'Submit CAPA',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }
 
   void _onSubmit(BuildContext context) {
-    if (_rootCauseController.text.isEmpty) {
+    if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Problem Title tidak boleh kosong!'),
+          content: Text('Title tidak boleh kosong!'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    if (_correctiveActionController.text.isEmpty) {
+    if (_selectedFindingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Finding harus dipilih!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_actionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Action tidak boleh kosong!'),
@@ -327,21 +400,31 @@ class _CapaFormPageState extends State<CapaFormPage> {
     }
 
     context.read<CapaBloc>().add(
-          CreateCapaEvent(
-            findingId: widget.findingId ?? '',
-            rootCause: _rootCauseController.text,
-            correctiveAction: _correctiveActionController.text,
-            preventiveAction: _preventiveActionController.text,
-            picId: _picController.text,
-            deadline: _selectedDeadline!,
-          ),
-        );
+      CreateCapaEvent(
+        findingId: _selectedFindingId!,
+        rootCause: _titleController.text,
+        correctiveAction: _actionController.text,
+        preventiveAction: _descriptionController.text,
+        picId: _picController.text,
+        deadline: _selectedDeadline!,
+      ),
+    );
   }
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }
