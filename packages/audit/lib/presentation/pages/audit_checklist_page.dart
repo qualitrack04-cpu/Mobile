@@ -66,7 +66,6 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
       ),
     );
 
-    // ✅ jika finding berhasil disimpan, update state checklist
     if (result == true) {
       setState(() => checklist.hasFinding = true);
     }
@@ -74,6 +73,11 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // ✅ AppBar font size dinamis
+    final appBarFontSize = (screenWidth * 0.07).clamp(22.0, 32.0);
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
@@ -92,7 +96,7 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
         title: Text(
           'Audit Checklist',
           style: GoogleFonts.inter(
-            fontSize: 30,
+            fontSize: appBarFontSize,
             fontWeight: FontWeight.w700,
             color: AppColors.primary,
           ),
@@ -108,7 +112,7 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _buildSubmitButton(),
+      floatingActionButton: _buildSubmitButton(screenWidth),
     );
   }
 
@@ -137,7 +141,7 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
           Text(
             widget.audit.department,
             style: GoogleFonts.inter(
-              fontSize: 25,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
             ),
@@ -284,32 +288,38 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: 280,
-      height: 56,
+  // ✅ Terima screenWidth sebagai parameter
+  Widget _buildSubmitButton(double screenWidth) {
+    return Container(
+      // ✅ Hapus fixed width: 280, pakai margin dinamis
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
 
-      child: ElevatedButton(
-        onPressed: () async {
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (!context.mounted) return;
-          Navigator.pop(context, true);
-        },
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
 
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryLight,
+        child: ElevatedButton(
+          onPressed: () async {
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (!context.mounted) return;
+            Navigator.pop(context, true);
+          },
 
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryLight,
+
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-        ),
 
-        child: Text(
-          'Submit Checklist',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+          child: Text(
+            'Submit Checklist',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

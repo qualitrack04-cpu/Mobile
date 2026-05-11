@@ -8,21 +8,16 @@ abstract class FindingEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Load semua finding
 class LoadFindings extends FindingEvent {
   final FindingStatus? status;
   final FindingCategory? category;
 
-  const LoadFindings({
-    this.status,
-    this.category,
-  });
+  const LoadFindings({this.status, this.category});
 
   @override
   List<Object?> get props => [status, category];
 }
 
-// Buat finding baru (dari form)
 class CreateFindingEvent extends FindingEvent {
   final FindingCategory category;
   final String description;
@@ -36,6 +31,24 @@ class CreateFindingEvent extends FindingEvent {
 
   @override
   List<Object?> get props => [category, description, clauseRef];
+}
+
+// ✅ BARU: event untuk edit finding
+class UpdateFindingEvent extends FindingEvent {
+  final String id;
+  final FindingCategory category;
+  final String description;
+  final String clauseRef;
+
+  const UpdateFindingEvent({
+    required this.id,
+    required this.category,
+    required this.description,
+    required this.clauseRef,
+  });
+
+  @override
+  List<Object?> get props => [id, category, description, clauseRef];
 }
 
 class LoadFindingDetail extends FindingEvent {

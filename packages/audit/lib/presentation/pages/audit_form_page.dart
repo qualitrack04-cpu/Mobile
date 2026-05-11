@@ -93,6 +93,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // ✅ AppBar font size dinamis
+    final appBarFontSize = (screenWidth * 0.07).clamp(22.0, 32.0);
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
@@ -108,21 +113,21 @@ class _AuditFormPageState extends State<AuditFormPage> {
         title: Text(
           _isEdit ? 'Edit Plan' : 'Create Plan',
           style: GoogleFonts.inter(
-            fontSize: 30,
+            fontSize: appBarFontSize,
             fontWeight: FontWeight.w800,
             color: AppColors.primary,
           ),
         ),
       ),
 
-      // ✅ tombol full width nempel di bawah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
       floatingActionButton: ValueListenableBuilder(
         valueListenable: _titleController,
         builder: (context, _, __) {
           return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 18),
+            // ✅ margin horizontal dinamis, tombol mengikuti lebar layar
+            margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
 
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
@@ -137,7 +142,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
             ),
 
             child: SizedBox(
-              width: 300,
+              // ✅ Hapus width: 300 yang fixed, ganti full width dengan margin
+              width: double.infinity,
               height: 58,
 
               child: ElevatedButton.icon(
@@ -158,7 +164,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 label: Text(
                   _isEdit ? 'Edit Plan' : 'Create Plan',
                   style: GoogleFonts.inter(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -277,7 +283,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
             ),
           ),
 
-          // ✅ pakai RadioListTile supaya hanya bisa pilih 1
           RadioListTile<String>(
             value: _iso9001,
             groupValue: _selectedIso,

@@ -2,25 +2,28 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 
-class FindingFormPage extends StatefulWidget {
-  const FindingFormPage({super.key});
+class FindingEditPage extends StatefulWidget {
+  final Finding finding;
+
+  const FindingEditPage({super.key, required this.finding});
 
   @override
-  State<FindingFormPage> createState() => _FindingFormPageState();
+  State<FindingEditPage> createState() => _FindingEditPageState();
 }
 
-class _FindingFormPageState extends State<FindingFormPage> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+class _FindingEditPageState extends State<FindingEditPage> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
   String? _selectedDepartment;
-  FindingCategory _selectedCategory = FindingCategory.majorNC;
+  late FindingCategory _selectedCategory;
 
-  // ✅ Simpan path gambar asli dari device
+  // ✅ Simpan gambar dari device
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -34,13 +37,21 @@ class _FindingFormPageState extends State<FindingFormPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.finding.clauseRef);
+    _descriptionController =
+        TextEditingController(text: widget.finding.description);
+    _selectedCategory = widget.finding.category;
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
-  // ✅ Tampilkan pilihan: Kamera atau Galeri
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
       context: context,
@@ -100,18 +111,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Ambil gambar dari sumber yang dipilih
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        imageQuality: 80, // kompres sedikit agar tidak terlalu besar
+        imageQuality: 80,
         maxWidth: 1080,
       );
       if (image != null) {
-        setState(() {
-          _evidenceImages.add(image);
-        });
+        setState(() => _evidenceImages.add(image));
       }
     } catch (e) {
       if (mounted) {
@@ -125,11 +133,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
   }
 
-  // ✅ Hapus gambar dari list
   void _removeImage(int index) {
-    setState(() {
-      _evidenceImages.removeAt(index);
-    });
+    setState(() => _evidenceImages.removeAt(index));
   }
 
   @override
@@ -144,7 +149,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Finding Form',
+          'Edit Finding',
           style: TextStyle(
             color: Color(0xFF0D2B55),
             fontWeight: FontWeight.bold,
@@ -154,10 +159,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
       ),
       body: BlocConsumer<FindingBloc, FindingState>(
         listener: (context, state) {
-          if (state is FindingCreated) {
+          if (state is FindingUpdated) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Finding berhasil disimpan!'),
+                content: Text('Finding berhasil diupdate!'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -208,7 +213,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                _buildSubmitButton(context, state),
+                _buildEditButton(context, state),
                 const SizedBox(height: 20),
               ],
             ),
@@ -353,11 +358,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              // ✅ Tampilkan gambar asli dari device
               ..._evidenceImages.asMap().entries.map((entry) {
                 return _buildImageThumbnail(entry.value, entry.key);
               }),
-              // Tombol tambah gambar
               _buildAddImageButton(),
             ],
           ),
@@ -366,7 +369,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Thumbnail gambar nyata dengan tombol hapus
   Widget _buildImageThumbnail(XFile image, int index) {
     return Stack(
       children: [
@@ -381,7 +383,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
             ),
           ),
         ),
-        // Tombol hapus (X) di pojok kanan atas
         Positioned(
           top: 4,
           right: 4,
@@ -403,7 +404,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Tombol tambah gambar → buka dialog pilih sumber
   Widget _buildAddImageButton() {
     return GestureDetector(
       onTap: _showImageSourceDialog,
@@ -429,7 +429,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  Widget _buildSubmitButton(BuildContext context, FindingState state) {
+  Widget _buildEditButton(BuildContext context, FindingState state) {
     return SizedBox(
       width: double.infinity,
       height: 56,
@@ -445,18 +445,17 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              )
+                    color: Colors.white, strokeWidth: 2))
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Submit Finding',
+                  Text('Edit Finding',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
-                  Icon(Icons.send, color: Colors.white, size: 18),
+                  Icon(Icons.edit, color: Colors.white, size: 18),
                 ],
               ),
       ),
@@ -470,12 +469,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
           backgroundColor: Colors.orange));
       return;
     }
-    if (_selectedDepartment == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Department harus dipilih!'),
-          backgroundColor: Colors.orange));
-      return;
-    }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Description tidak boleh kosong!'),
@@ -484,7 +477,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
 
     context.read<FindingBloc>().add(
-          CreateFindingEvent(
+          UpdateFindingEvent(
+            id: widget.finding.id,
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,

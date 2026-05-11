@@ -8,13 +8,10 @@ abstract class FindingState extends Equatable {
   List<Object?> get props => [];
 }
 
-// State awal
 class FindingInitial extends FindingState {}
 
-// State loading
 class FindingLoading extends FindingState {}
 
-// State berhasil load list finding
 class FindingLoaded extends FindingState {
   final List<Finding> findings;
 
@@ -24,11 +21,20 @@ class FindingLoaded extends FindingState {
   List<Object?> get props => [findings];
 }
 
-// State berhasil create finding
 class FindingCreated extends FindingState {
   final Finding finding;
 
   const FindingCreated({required this.finding});
+
+  @override
+  List<Object?> get props => [finding];
+}
+
+// ✅ BARU: state setelah berhasil update finding
+class FindingUpdated extends FindingState {
+  final Finding finding;
+
+  const FindingUpdated({required this.finding});
 
   @override
   List<Object?> get props => [finding];
@@ -43,7 +49,6 @@ class FindingDetailLoaded extends FindingState {
   List<Object?> get props => [finding];
 }
 
-// State error
 class FindingError extends FindingState {
   final String message;
 

@@ -83,6 +83,30 @@ class FindingMockDatasource {
     return newFinding;
   }
 
+  // ✅ BARU: update keseluruhan data finding
+  Future<FindingModel> updateFinding({
+    required String id,
+    required FindingCategory category,
+    required String description,
+    required String clauseRef,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final index = _mockFindings.indexWhere((f) => f.id == id);
+    if (index == -1) throw Exception('Finding not found');
+
+    final updated = FindingModel(
+      id: id,
+      sessionId: _mockFindings[index].sessionId,
+      category: category,
+      description: description,
+      clauseRef: clauseRef,
+      foundAt: _mockFindings[index].foundAt,
+      status: _mockFindings[index].status,
+    );
+    _mockFindings[index] = updated;
+    return updated;
+  }
+
   Future<void> updateFindingStatus({
     required String id,
     required FindingStatus status,

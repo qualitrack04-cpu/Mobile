@@ -67,12 +67,6 @@ class _CapaFormPageState extends State<CapaFormPage> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomBottomNavbar(
-          currentIndex: 3,
-          onTap: (index) {
-            Navigator.pop(context);
-          },
-      ),
       body: BlocConsumer<CapaBloc, CapaState>(
         listener: (context, state) {
           if (state is CapaCreated) {

@@ -7,6 +7,7 @@ import 'package:capa/presentation/bloc/capa_state.dart';
 import 'package:capa/presentation/pages/capa_form_page.dart';
 import 'package:capa/presentation/pages/capa_detail_page.dart';
 import 'package:get_it/get_it.dart';
+import 'package:core/app_colors.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -76,25 +77,49 @@ class CapaListPage extends StatelessWidget {
                     right: 16,
                     child: Builder(
                       builder: (context) {
-                        return FloatingActionButton(
-                          backgroundColor: const Color(0xFF0D2B55),
-                          onPressed: () async {
-                            final bloc = context.read<CapaBloc>();
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => BlocProvider.value(
-                                      value: bloc,
-                                      child: const CapaFormPage(),
-                                    ),
-                              ),
-                            );
-                            if (result == true && context.mounted) {
-                              bloc.add(const LoadCapas());
-                            }
-                          },
-                          child: const Icon(Icons.add, color: Colors.white),
+                        return SizedBox(
+                          width: 70, // Mengatur lebar tombol menjadi 70
+                          height: 70, // Mengatur tinggi tombol menjadi 70
+                          child: FloatingActionButton(
+                            backgroundColor:
+                                AppColors
+                                    .primaryLight, // Menggunakan warna dari core
+                            elevation: 4, // Efek bayangan disamakan
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                20,
+                              ), // Sudut melengkung disamakan
+                            ),
+                            onPressed: () async {
+                              final bloc =
+                                  context
+                                      .read<
+                                        CapaBloc
+                                      >(); // Tetap menggunakan CapaBloc
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => BlocProvider.value(
+                                        value: bloc,
+                                        child:
+                                            const CapaFormPage(), // Tetap mengarah ke CapaFormPage
+                                      ),
+                                ),
+                              );
+                              if (result == true && context.mounted) {
+                                bloc.add(
+                                  const LoadCapas(),
+                                ); // Tetap memicu LoadCapas
+                              }
+                            },
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size:
+                                  36, // Ukuran icon disamakan agar pas di tombol 70x70
+                            ),
+                          ),
                         );
                       },
                     ),

@@ -14,10 +14,7 @@ class FindingRepositoryImpl implements FindingRepository {
     FindingCategory? category,
   }) async {
     try {
-      return await datasource.getFindings(
-        status: status,
-        category: category,
-      );
+      return await datasource.getFindings(status: status, category: category);
     } catch (e) {
       throw Exception('Gagal mengambil data finding: $e');
     }
@@ -49,16 +46,33 @@ class FindingRepositoryImpl implements FindingRepository {
     }
   }
 
+  // ✅ BARU
+  @override
+  Future<Finding> updateFinding({
+    required String id,
+    required FindingCategory category,
+    required String description,
+    required String clauseRef,
+  }) async {
+    try {
+      return await datasource.updateFinding(
+        id: id,
+        category: category,
+        description: description,
+        clauseRef: clauseRef,
+      );
+    } catch (e) {
+      throw Exception('Gagal mengupdate finding: $e');
+    }
+  }
+
   @override
   Future<void> updateFindingStatus({
     required String id,
     required FindingStatus status,
   }) async {
     try {
-      await datasource.updateFindingStatus(
-        id: id,
-        status: status,
-      );
+      await datasource.updateFindingStatus(id: id, status: status);
     } catch (e) {
       throw Exception('Gagal update status finding: $e');
     }

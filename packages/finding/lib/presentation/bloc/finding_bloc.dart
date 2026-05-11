@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:finding/domain/usecases/create_finding.dart';
+import 'package:finding/domain/usecases/update_finding.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 import 'finding_event.dart';
 import 'finding_state.dart';
@@ -7,11 +8,16 @@ import 'finding_state.dart';
 class FindingBloc extends Bloc<FindingEvent, FindingState> {
   final FindingRepository repository;
   final CreateFinding createFinding;
+  final UpdateFinding updateFinding; // ✅ BARU
 
-  FindingBloc({required this.repository, required this.createFinding})
-    : super(FindingInitial()) {
+  FindingBloc({
+    required this.repository,
+    required this.createFinding,
+    required this.updateFinding, // ✅ BARU
+  }) : super(FindingInitial()) {
     on<LoadFindings>(_onLoadFindings);
     on<CreateFindingEvent>(_onCreateFinding);
+    on<UpdateFindingEvent>(_onUpdateFinding); // ✅ BARU
     on<LoadFindingDetail>(_onLoadFindingDetail);
   }
 
@@ -56,6 +62,28 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
       );
       emit(FindingCreated(finding: finding));
+
+      final findings = await repository.getFindings();
+      emit(FindingLoaded(findings: findings));
+    } catch (e) {
+      emit(FindingError(message: e.toString()));
+    }
+  }
+
+  // ✅ BARU: handler untuk update finding
+  Future<void> _onUpdateFinding(
+    UpdateFindingEvent event,
+    Emitter<FindingState> emit,
+  ) async {
+    emit(FindingLoading());
+    try {
+      final finding = await updateFinding(
+        id: event.id,
+        category: event.category,
+        description: event.description,
+        clauseRef: event.clauseRef,
+      );
+      emit(FindingUpdated(finding: finding));
 
       final findings = await repository.getFindings();
       emit(FindingLoaded(findings: findings));

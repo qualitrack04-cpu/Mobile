@@ -39,28 +39,32 @@ class AuditCard extends StatelessWidget {
         ],
       ),
 
-      child: Row(
-        children: [
-          _buildDateSection(isFinished, isPriority),
+      // ✅ IntrinsicHeight: tinggi card mengikuti konten, tidak hardcoded
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildDateSection(isFinished, isPriority),
 
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
 
-                children: [
-                  _buildTitleRow(isFinished),
-                  const SizedBox(height: 14),
-                  _buildMetaRow(isFinished),
-                  const SizedBox(height: 18),
-                  _buildActionRow(isFinished),
-                ],
+                  children: [
+                    _buildTitleRow(isFinished),
+                    const SizedBox(height: 14),
+                    _buildMetaRow(isFinished),
+                    const SizedBox(height: 18),
+                    _buildActionRow(isFinished),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -77,8 +81,8 @@ class AuditCard extends StatelessWidget {
     }
 
     return Container(
-      width: 82,
-      height: 175,
+      // ✅ Hapus width & height hardcoded, pakai constraints minimum saja
+      constraints: const BoxConstraints(minWidth: 72),
 
       decoration: BoxDecoration(
         color: sectionColor,
@@ -89,6 +93,8 @@ class AuditCard extends StatelessWidget {
         ),
       ),
 
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
 
@@ -97,7 +103,7 @@ class AuditCard extends StatelessWidget {
             _monthAbbr(audit.date.month),
             style: GoogleFonts.inter(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -108,7 +114,7 @@ class AuditCard extends StatelessWidget {
             audit.date.day.toString(),
             style: GoogleFonts.inter(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               height: 1,
             ),
@@ -120,7 +126,7 @@ class AuditCard extends StatelessWidget {
             audit.date.year.toString(),
             style: GoogleFonts.inter(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -138,7 +144,7 @@ class AuditCard extends StatelessWidget {
           child: Text(
             audit.title,
             style: GoogleFonts.inter(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: isFinished
                   ? const Color(0xFF7A93AA)
@@ -163,7 +169,7 @@ class AuditCard extends StatelessWidget {
               child: const Icon(
                 Icons.delete_outline,
                 color: AppColors.danger,
-                size: 22,
+                size: 20,
               ),
             ),
           ),
@@ -216,7 +222,7 @@ class AuditCard extends StatelessWidget {
         alignment: Alignment.centerRight,
 
         child: SizedBox(
-          width: 170,
+          // ✅ Hapus fixed width 170, biarkan tombol expand natural
           height: 46,
 
           child: ElevatedButton(
@@ -235,7 +241,7 @@ class AuditCard extends StatelessWidget {
             child: Text(
               'Finished',
               style: GoogleFonts.inter(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -247,8 +253,9 @@ class AuditCard extends StatelessWidget {
 
     return Row(
       children: [
+        // ✅ flex 2→3 supaya "Edit" tidak kepotong di layar sempit
         Expanded(
-          flex: 2,
+          flex: 3,
 
           child: SizedBox(
             height: 46,
@@ -260,6 +267,8 @@ class AuditCard extends StatelessWidget {
                 elevation: 2,
                 backgroundColor: const Color(0xFFE9EEF3),
                 foregroundColor: Colors.black87,
+                // ✅ padding horizontal dikurangi supaya teks tidak terpotong
+                padding: const EdgeInsets.symmetric(horizontal: 8),
 
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -268,8 +277,11 @@ class AuditCard extends StatelessWidget {
 
               child: Text(
                 'Edit',
+                // ✅ font size dikecilkan sedikit & maxLines: 1 + ellipsis
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 15,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -277,10 +289,10 @@ class AuditCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
 
         Expanded(
-          flex: 4,
+          flex: 5,
 
           child: SizedBox(
             height: 46,
@@ -292,6 +304,8 @@ class AuditCard extends StatelessWidget {
                 elevation: 3,
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                // ✅ padding dikurangi supaya teks tidak terpotong di layar sempit
+                padding: const EdgeInsets.symmetric(horizontal: 8),
 
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -300,8 +314,10 @@ class AuditCard extends StatelessWidget {
 
               child: Text(
                 'Audit Checklist',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 15,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -312,7 +328,6 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  // ✅ pindah ke static method yang lebih bersih
   static String _monthAbbr(int month) {
     const months = [
       'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',

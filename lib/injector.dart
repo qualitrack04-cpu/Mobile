@@ -5,6 +5,7 @@ import 'package:finding/data/datasources/finding_mock_datasource.dart';
 import 'package:finding/data/repositories/finding_repository_impl.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 import 'package:finding/domain/usecases/create_finding.dart';
+import 'package:finding/domain/usecases/update_finding.dart'; // ✅ BARU
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 
 // CAPA
@@ -28,11 +29,13 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton(() => CreateFinding(repository: sl()));
+  sl.registerLazySingleton(() => UpdateFinding(repository: sl())); // ✅ BARU
 
   sl.registerFactory(
     () => FindingBloc(
       repository: sl(),
       createFinding: sl(),
+      updateFinding: sl(), // ✅ BARU
     ),
   );
 

@@ -24,7 +24,7 @@ class _AuditListPageState extends State<AuditListPage> {
   final AuditDatasource _datasource = AuditDatasource();
 
   List<AuditEntity> _audits = [];
-  bool _isLoading = true; // ✅ tambah loading state
+  bool _isLoading = true;
 
   bool _isPrioritySelected = false;
 
@@ -35,7 +35,6 @@ class _AuditListPageState extends State<AuditListPage> {
   }
 
   Future<void> _loadAudits() async {
-    // ✅ pastikan loading state aktif sebelum fetch
     setState(() => _isLoading = true);
 
     final result = await _datasource.getAudits();
@@ -51,7 +50,6 @@ class _AuditListPageState extends State<AuditListPage> {
         ? _audits.where((e) => e.isPriority).toList()
         : List<AuditEntity>.from(_audits);
 
-    // ✅ sort: yang belum selesai di atas
     filtered.sort((a, b) {
       if (a.isFinished == b.isFinished) return 0;
       return a.isFinished ? 1 : -1;
@@ -62,6 +60,12 @@ class _AuditListPageState extends State<AuditListPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Ambil lebar layar untuk ukuran dinamis
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // ✅ FAB size: 18% dari lebar layar, min 64, max 88
+    final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
@@ -72,7 +76,8 @@ class _AuditListPageState extends State<AuditListPage> {
         title: Text(
           'AUDIT PLAN',
           style: GoogleFonts.inter(
-            fontSize: 32,
+            // ✅ Font size dinamis: 7% lebar layar, min 24, max 34
+            fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
             fontWeight: FontWeight.w800,
             color: AppColors.primary,
           ),
@@ -95,14 +100,14 @@ class _AuditListPageState extends State<AuditListPage> {
       ),
 
       floatingActionButton: SizedBox(
-        width: 80, // ← ubah sesuai selera
-        height: 80, // ← ubah sesuai selera
+        width: fabSize,
+        height: fabSize,
 
         child: FloatingActionButton(
           backgroundColor: AppColors.primaryLight,
           elevation: 4,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20), // ← ubah sesuai selera
+            borderRadius: BorderRadius.circular(fabSize * 0.25),
           ),
 
           onPressed: () async {
@@ -118,18 +123,18 @@ class _AuditListPageState extends State<AuditListPage> {
             }
           },
 
-          child: const Icon(
+          child: Icon(
             Icons.add,
-            size: 36,
+            // ✅ Icon size dinamis sesuai FAB
+            size: fabSize * 0.45,
             color: Colors.white,
-          ), // ← ubah sesuai selera
+          ),
         ),
       ),
     );
   }
 
   Widget _buildBody() {
-    // ✅ skeleton pakai data dummy saat loading
     final displayList = _isLoading
         ? List.generate(
             4,
@@ -159,7 +164,6 @@ class _AuditListPageState extends State<AuditListPage> {
       );
     }
 
-    // ✅ bungkus ListView dengan Skeletonizer
     return Skeletonizer(
       enabled: _isLoading,
 

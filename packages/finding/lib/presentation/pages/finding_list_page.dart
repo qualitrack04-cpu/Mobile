@@ -7,7 +7,9 @@ import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
 import 'package:finding/presentation/pages/finding_detail_page.dart';
+import 'package:finding/presentation/pages/finding_edit_page.dart';
 import 'package:get_it/get_it.dart';
+import 'package:core/app_colors.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -73,30 +75,48 @@ class FindingListPage extends StatelessWidget {
                     ],
                   ),
 
+                  // FAB tambah finding baru
                   Positioned(
                     bottom: 16,
                     right: 16,
                     child: Builder(
                       builder: (context) {
-                        return FloatingActionButton(
-                          backgroundColor: const Color(0xFF0D2B55),
-                          onPressed: () async {
-                            final bloc = context.read<FindingBloc>();
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => BlocProvider.value(
-                                      value: bloc,
-                                      child: const FindingFormPage(),
-                                    ),
-                              ),
-                            );
-                            if (result == true && context.mounted) {
-                              bloc.add(const LoadFindings());
-                            }
-                          },
-                          child: const Icon(Icons.add, color: Colors.white),
+                        return SizedBox(
+                          width: 70, // Mengatur lebar tombol menjadi 70
+                          height: 70, // Mengatur tinggi tombol menjadi 70
+                          child: FloatingActionButton(
+                            backgroundColor:
+                                AppColors
+                                    .primaryLight, // Menggunakan warna dari core
+                            elevation: 4, // Efek bayangan disamakan
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                20,
+                              ), // Sudut agak kotak melengkung (disamakan dengan AuditListPage)
+                            ),
+                            onPressed: () async {
+                              final bloc = context.read<FindingBloc>();
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => BlocProvider.value(
+                                        value: bloc,
+                                        child: const FindingFormPage(),
+                                      ),
+                                ),
+                              );
+                              if (result == true && context.mounted) {
+                                bloc.add(const LoadFindings());
+                              }
+                            },
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size:
+                                  36, // Ukuran icon disamakan (36) agar pas di dalam tombol 70x70
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -141,6 +161,7 @@ class _FindingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Baris atas: deskripsi + badge category
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,6 +184,7 @@ class _FindingCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
+              // clauseRef
               Text(
                 finding.clauseRef,
                 maxLines: 2,
@@ -171,16 +193,55 @@ class _FindingCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
+              // Baris bawah: tombol Edit (kiri) + Details (kanan)
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // ✅ Tombol Edit
+                  GestureDetector(
+                    onTap: () async {
+                      final bloc = context.read<FindingBloc>();
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: bloc,
+                            child: FindingEditPage(finding: finding),
+                          ),
+                        ),
+                      );
+                      if (result == true && context.mounted) {
+                        bloc.add(const LoadFindings());
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: Colors.grey[500],
+                          size: 15,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Edit',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Tombol Details
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (_) => FindingDetailPage(findingId: finding.id),
+                          builder: (_) =>
+                              FindingDetailPage(findingId: finding.id),
                         ),
                       );
                     },
@@ -214,7 +275,7 @@ class _FindingCard extends StatelessWidget {
   Color _getCardBackgroundColor() {
     switch (finding.category) {
       case FindingCategory.majorNC:
-        return Color(0xFFFFF0F0);
+        return const Color(0xFFFFF0F0);
       case FindingCategory.minorNC:
         return Colors.white;
       case FindingCategory.observation:
