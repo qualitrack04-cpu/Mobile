@@ -1,5 +1,6 @@
 name: finding
 description: Finding feature package for QualiTrack
+publish_to: "none"
 version: 0.0.1
 
 environment:
