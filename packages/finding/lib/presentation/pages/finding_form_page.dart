@@ -107,7 +107,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
-                        hint: 'Detail the non-conformance observed during the audit...',
+                        hint:
+                            'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
                       ),
                       _buildDivider(),
@@ -161,10 +162,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black26,
-                fontSize: 14,
-              ),
+              hintStyle: const TextStyle(color: Colors.black26, fontSize: 14),
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -195,27 +193,25 @@ class _FindingFormPageState extends State<FindingFormPage> {
               isExpanded: true,
               hint: const Text(
                 'Select Department',
-                style: TextStyle(
-                  color: Colors.black26,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.black26, fontSize: 14),
               ),
               icon: const Icon(
                 Icons.keyboard_arrow_down,
                 color: Colors.black54,
               ),
-              items: _departments.map((dept) {
-                return DropdownMenuItem(
-                  value: dept,
-                  child: Text(
-                    dept,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Colors.black87,
-                    ),
-                  ),
-                );
-              }).toList(),
+              items:
+                  _departments.map((dept) {
+                    return DropdownMenuItem(
+                      value: dept,
+                      child: Text(
+                        dept,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) {
                 setState(() => _selectedDepartment = value);
               },
@@ -246,9 +242,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              ..._evidenceImages.map(
-                (image) => _buildImageThumbnail(),
-              ),
+              ..._evidenceImages.map((image) => _buildImageThumbnail()),
               _buildAddImageButton(),
             ],
           ),
@@ -282,20 +276,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.grey[400]!,
-          ),
+          border: Border.all(color: Colors.grey[400]!),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.add, color: Colors.grey[600], size: 24),
             Text(
-              '+Add Image',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 11,
-              ),
+              'Add Image',
+              style: TextStyle(color: Colors.grey[600], fontSize: 11),
             ),
           ],
         ),
@@ -307,7 +296,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton.icon(
+      child: ElevatedButton(
         onPressed: state is FindingLoading ? null : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
@@ -316,24 +305,31 @@ class _FindingFormPageState extends State<FindingFormPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: state is FindingLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+        child:
+            state is FindingLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Submit Finding',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.send, color: Colors.white, size: 18),
+                  ],
                 ),
-              )
-            : const Icon(Icons.send, color: Colors.white),
-        label: Text(
-          state is FindingLoading ? 'Menyimpan...' : 'Submit Finding',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }
@@ -370,11 +366,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
 
     context.read<FindingBloc>().add(
-          CreateFindingEvent(
-            category: FindingCategory.majorNC,
-            description: _descriptionController.text,
-            clauseRef: _titleController.text,
-          ),
-        );
+      CreateFindingEvent(
+        category: FindingCategory.majorNC,
+        description: _descriptionController.text,
+        clauseRef: _titleController.text,
+      ),
+    );
   }
 }

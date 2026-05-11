@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/app.dart';
 
 class BottomNav extends StatelessWidget {
   final int currentIndex;
@@ -15,8 +16,11 @@ class BottomNav extends StatelessWidget {
       onTap: (index) {
         if (index == currentIndex) return;
 
-        // Pop semua route sampai ke root (halaman list)
+        // Pop semua route sampai root
         Navigator.of(context).popUntil((route) => route.isFirst);
+
+        // Ganti tab di App
+        appKey.currentState?.changeTab(index);
       },
       type: BottomNavigationBarType.fixed,
       backgroundColor: Colors.white,

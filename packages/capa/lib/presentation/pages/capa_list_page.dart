@@ -52,7 +52,6 @@ class CapaListPage extends StatelessWidget {
                   ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                     children: [
-                      const SizedBox(height: 16),
                       if (state.capas.isEmpty)
                         const Center(
                           child: Padding(

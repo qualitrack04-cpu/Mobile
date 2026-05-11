@@ -4,8 +4,11 @@ import 'package:capa/presentation/pages/capa_list_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/audit_page.dart';
 
+// GlobalKey untuk akses App state dari mana saja
+final GlobalKey<_AppState> appKey = GlobalKey<_AppState>();
+
 class App extends StatefulWidget {
-  const App({super.key});
+  App() : super(key: appKey);
 
   @override
   State<App> createState() => _AppState();
@@ -13,6 +16,10 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   int _currentIndex = 0;
+
+  void changeTab(int index) {
+    setState(() => _currentIndex = index);
+  }
 
   final List<Widget> _pages = [
     const DashboardPage(),

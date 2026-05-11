@@ -19,13 +19,23 @@ class FindingListPage extends StatelessWidget {
       create: (_) => sl<FindingBloc>()..add(const LoadFindings()),
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text(
+            'FINDINGS',
+            style: TextStyle(
+              color: Color(0xFF0D2B55),
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+            ),
+          ),
+        ),
         body: BlocBuilder<FindingBloc, FindingState>(
           builder: (context, state) {
             if (state is FindingLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF0D2B55),
-                ),
+                child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
               );
             }
 
@@ -44,15 +54,6 @@ class FindingListPage extends StatelessWidget {
                   ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                     children: [
-                      const Text(
-                        'FINDINGS',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0D2B55),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                       if (state.findings.isEmpty)
                         const Center(
                           child: Padding(
@@ -85,10 +86,11 @@ class FindingListPage extends StatelessWidget {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => BlocProvider.value(
-                                  value: bloc,
-                                  child: const FindingFormPage(),
-                                ),
+                                builder:
+                                    (_) => BlocProvider.value(
+                                      value: bloc,
+                                      child: const FindingFormPage(),
+                                    ),
                               ),
                             );
                             if (result == true && context.mounted) {
@@ -133,19 +135,13 @@ class _FindingCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getCardBackgroundColor(),
           borderRadius: BorderRadius.circular(12),
-          border: Border(
-            left: BorderSide(
-              color: _getBorderColor(),
-              width: 4,
-            ),
-          ),
+          border: Border(left: BorderSide(color: _getBorderColor(), width: 4)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,10 +168,7 @@ class _FindingCard extends StatelessWidget {
                 finding.clauseRef,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
               ),
               const SizedBox(height: 12),
 
@@ -187,9 +180,8 @@ class _FindingCard extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => FindingDetailPage(
-                            findingId: finding.id,
-                          ),
+                          builder:
+                              (_) => FindingDetailPage(findingId: finding.id),
                         ),
                       );
                     },
