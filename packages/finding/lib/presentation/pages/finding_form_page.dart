@@ -4,7 +4,7 @@ import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
-import 'package:mobile/widgets/bottom_nav.dart';
+import 'package:core/core.dart';
 
 class FindingFormPage extends StatefulWidget {
   const FindingFormPage({super.key});
@@ -39,7 +39,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F7),
-      bottomNavigationBar: const BottomNav(currentIndex: 2),
+      bottomNavigationBar: const CustomBottomNavbar(currentIndex: 3),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,

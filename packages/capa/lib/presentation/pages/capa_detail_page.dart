@@ -4,8 +4,8 @@ import 'package:capa/domain/entities/capa.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
-import 'package:mobile/injector.dart';
-import 'package:mobile/widgets/bottom_nav.dart';
+import 'package:core/core.dart';
+import 'package:get_it/get_it.dart';
 
 class CapaDetailPage extends StatelessWidget {
   final String capaId;
@@ -15,7 +15,7 @@ class CapaDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<CapaBloc>()..add(LoadCapaDetail(id: capaId)),
+      create: (_) => GetIt.instance<CapaBloc>()..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
@@ -34,7 +34,13 @@ class CapaDetailPage extends StatelessWidget {
             ),
           ),
         ),
-        bottomNavigationBar: BottomNav(currentIndex: 3),
+        // ✅ pakai CustomBottomNavbar dari audit package
+        bottomNavigationBar: CustomBottomNavbar(
+          currentIndex: 3,
+          onTap: (index) {
+            Navigator.pop(context);
+          },
+        ),
         body: BlocBuilder<CapaBloc, CapaState>(
           builder: (context, state) {
             if (state is CapaLoading) {
@@ -77,7 +83,6 @@ class CapaDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Judul
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -91,7 +96,6 @@ class CapaDetailPage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            // PIC
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -119,21 +123,18 @@ class CapaDetailPage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            // Problem Title
             _buildSection(
               label: 'PROBLEM TITLE',
               value: capa.rootCause,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            // Action
             _buildSection(
               label: 'ACTION',
               value: capa.correctiveAction,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            // Due Date
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -165,7 +166,6 @@ class CapaDetailPage extends StatelessWidget {
               ),
             ),
 
-            // Status badge jika closed
             if (capa.isClosed)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -240,7 +240,7 @@ class CapaDetailPage extends StatelessWidget {
   String _getMonth(int month) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return months[month - 1];
   }

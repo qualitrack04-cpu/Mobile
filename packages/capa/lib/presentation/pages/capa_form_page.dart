@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
-import 'package:mobile/widgets/bottom_nav.dart';
+import 'package:core/core.dart'; // ✅ dari core
 
 class CapaFormPage extends StatefulWidget {
   final String? findingId;
@@ -67,7 +67,12 @@ class _CapaFormPageState extends State<CapaFormPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNav(currentIndex: 3),
+      bottomNavigationBar: CustomBottomNavbar(
+          currentIndex: 3,
+          onTap: (index) {
+            Navigator.pop(context);
+          },
+      ),
       body: BlocConsumer<CapaBloc, CapaState>(
         listener: (context, state) {
           if (state is CapaCreated) {

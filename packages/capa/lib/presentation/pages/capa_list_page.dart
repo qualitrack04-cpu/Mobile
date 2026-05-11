@@ -6,7 +6,7 @@ import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
 import 'package:capa/presentation/pages/capa_form_page.dart';
 import 'package:capa/presentation/pages/capa_detail_page.dart';
-import 'package:mobile/injector.dart';
+import 'package:get_it/get_it.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -14,7 +14,7 @@ class CapaListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<CapaBloc>()..add(const LoadCapas()),
+      create: (_) => GetIt.instance<CapaBloc>()..add(const LoadCapas()),
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(

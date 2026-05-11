@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
-import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:finding/presentation/bloc/finding_bloc.dart';
+import 'package:finding/presentation/pages/finding_form_page.dart';
 
 import '../../data/datasources/checklist_datasource.dart';
 import '../../domain/entities/audit_entity.dart';
@@ -22,34 +25,17 @@ class AuditChecklistPage extends StatefulWidget {
 
 class _AuditChecklistPageState extends State<AuditChecklistPage> {
   final ChecklistDatasource _datasource = ChecklistDatasource();
-
   List<ChecklistEntity> _checklists = [];
-  bool _isLoading = true;
-
-  final List<String> _categories = [
-    'Safety',
-    'Process',
-    'Documentation',
-    'Maintenance',
-  ];
-
-  String _selectedCategory = 'Safety';
 
   @override
   void initState() {
     super.initState();
-    _loadChecklist();
-  }
-
-  Future<void> _loadChecklist() async {
-    setState(() => _isLoading = true);
-
-    final result = await _datasource.getChecklist();
-
-    setState(() {
-      _checklists = result;
-      _isLoading = false;
-    });
+    _checklists = _datasource.getChecklistFor(
+      isoTemplate: widget.audit.isoTemplates.isNotEmpty
+          ? widget.audit.isoTemplates.first
+          : '',
+      department: widget.audit.department,
+    );
   }
 
   String get _formattedDate {
@@ -61,14 +47,30 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  List<ChecklistEntity> get _filteredChecklists =>
-      _checklists.where((e) => e.category == _selectedCategory).toList();
+  List<ChecklistEntity> get _filteredChecklists => _checklists;
 
   int get _completedCount =>
       _checklists.where((e) => e.isPassed != null).length;
 
   double get _progress =>
       _checklists.isEmpty ? 0 : _completedCount / _checklists.length;
+
+  Future<void> _openFindingForm(ChecklistEntity checklist) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => GetIt.instance<FindingBloc>(),
+          child: const FindingFormPage(),
+        ),
+      ),
+    );
+
+    // ✅ jika finding berhasil disimpan, update state checklist
+    if (result == true) {
+      setState(() => checklist.hasFinding = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,26 +99,16 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
         ),
       ),
 
-      // ✅ Skeletonizer membungkus seluruh body
-      body: Skeletonizer(
-        enabled: _isLoading,
-        child: Column(
-          children: [
-            _buildInfoCard(),
-            _buildCategoryTabs(),
-            const Divider(height: 1),
-            _buildChecklistContent(),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildInfoCard(),
+          const Divider(height: 1),
+          _buildChecklistContent(),
+        ],
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
-      // ✅ FAB selalu tampil, ikut skeleton — tidak ada animasi putar lagi
-      floatingActionButton: Skeletonizer(
-        enabled: _isLoading,
-        child: _buildSubmitButton(),
-      ),
+      floatingActionButton: _buildSubmitButton(),
     );
   }
 
@@ -247,78 +239,14 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
     );
   }
 
-  Widget _buildCategoryTabs() {
-    return SizedBox(
-      height: 50,
-
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final isSelected = _selectedCategory == category;
-
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategory = category;
-              });
-            },
-
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isSelected
-                        ? AppColors.primaryLight
-                        : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-              ),
-
-              alignment: Alignment.center,
-
-              child: Text(
-                category,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight:
-                      isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.primaryLight
-                      : AppColors.textMuted,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildChecklistContent() {
-    // ✅ dummy data untuk skeleton saat loading
-    final displayList = _isLoading
-        ? List.generate(3, (_) => ChecklistEntity(
-            title: 'Loading Checklist Item Title',
-            description:
-                'Loading description text that is quite long enough to show',
-            category: _selectedCategory,
-            isPassed: null,
-            hasFinding: false,
-          ))
-        : _filteredChecklists;
+    final checklists = _filteredChecklists;
 
-    if (!_isLoading && displayList.isEmpty) {
+    if (checklists.isEmpty) {
       return Expanded(
         child: Center(
           child: Text(
-            'No checklist for this category',
+            'No checklist available',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AppColors.textMuted,
@@ -329,40 +257,27 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
     }
 
     return Expanded(
-      // ✅ tidak perlu Skeletonizer di sini, sudah ditangani parent
       child: ListView.builder(
         padding: const EdgeInsets.only(top: 12, bottom: 120),
-        itemCount: displayList.length,
+        itemCount: checklists.length,
 
         itemBuilder: (context, index) {
-          final checklist = displayList[index];
+          final checklist = checklists[index];
 
           return ChecklistCard(
             checklist: checklist,
 
-            onPass: _isLoading
-                ? null
-                : () {
-                    setState(() => checklist.isPassed = true);
-                  },
+            onPass: () {
+              setState(() => checklist.isPassed = true);
+            },
 
-            onFail: _isLoading
-                ? null
-                : () {
-                    setState(() => checklist.isPassed = false);
-                  },
+            onFail: () {
+              setState(() => checklist.isPassed = false);
+            },
 
-            onAddFinding: _isLoading
-                ? null
-                : () {
-                    setState(() => checklist.hasFinding = true);
-                  },
+            onAddFinding: () => _openFindingForm(checklist),
 
-            onEditFinding: _isLoading
-                ? null
-                : () {
-                    debugPrint('Edit Finding');
-                  },
+            onEditFinding: () => _openFindingForm(checklist),
           );
         },
       ),

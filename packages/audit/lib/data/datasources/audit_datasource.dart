@@ -8,13 +8,10 @@ class AuditDatasource {
       AuditEntity(
         title: 'Inventory Logic Audit',
         auditorName: 'S. Mitchell',
-        isoTemplates: [
-          'ISO 90001 Compliance',
-        ],
-        department: 'Production',
+        isoTemplates: ['ISO 9001:2015'], // ✅ fix nama ISO
+        department: 'Warehouse',         // ✅ fix department
         date: DateTime(2026, 4, 26),
-        description:
-            'Detail the non-conformance observed during the audit.',
+        description: 'Detail the non-conformance observed during the audit.',
         isPriority: true,
         isFinished: false,
       ),
@@ -22,13 +19,10 @@ class AuditDatasource {
       AuditEntity(
         title: 'Warehouse Audit',
         auditorName: 'John Doe',
-        isoTemplates: [
-          'ISO 90002 Compliance',
-        ],
-        department: 'Warehouse',
+        isoTemplates: ['ISO 14001:2015'], // ✅ fix nama ISO
+        department: 'Warehouse',           // ✅ fix department
         date: DateTime(2026, 5, 12),
-        description:
-            'Warehouse operational audit and stock validation.',
+        description: 'Warehouse operational audit and stock validation.',
         isPriority: false,
         isFinished: false,
       ),
@@ -36,14 +30,10 @@ class AuditDatasource {
       AuditEntity(
         title: 'Safety Procedure Audit',
         auditorName: 'Amir Oakwood',
-        isoTemplates: [
-          'ISO 90001 Compliance',
-          'ISO 90002 Compliance',
-        ],
-        department: 'Production',
+        isoTemplates: ['ISO 9001:2015'], // ✅ fix nama ISO
+        department: 'Production',         // ✅ fix department
         date: DateTime(2026, 6, 8),
-        description:
-            'Safety protocol inspection for production division.',
+        description: 'Safety protocol inspection for production division.',
         isPriority: true,
         isFinished: true,
       ),

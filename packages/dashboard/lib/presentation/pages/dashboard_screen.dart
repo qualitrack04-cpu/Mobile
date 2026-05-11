@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:audit/presentation/pages/audit_list_page.dart';
-import 'package:audit/presentation/widgets/custom_bottom_navbar.dart';
-
+import 'package:core/core.dart';
+import 'package:capa/presentation/pages/capa_list_page.dart';
+import 'package:finding/presentation/pages/finding_list_page.dart';
 import 'dashboard_page.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -19,8 +20,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final List<Widget> _pages = [
     const DashboardPage(),
     const AuditListPage(),
-    const Center(child: Text('Finding Page')),
-    const Center(child: Text('CAPA Page')),
+    const FindingListPage(),
+    const CapaListPage(),
   ];
 
   @override

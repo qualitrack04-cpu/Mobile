@@ -21,18 +21,14 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   // ===== FINDING =====
-  // Datasource
   sl.registerLazySingleton(() => FindingMockDatasource());
 
-  // Repository
   sl.registerLazySingleton<FindingRepository>(
     () => FindingRepositoryImpl(datasource: sl()),
   );
 
-  // Usecases
   sl.registerLazySingleton(() => CreateFinding(repository: sl()));
 
-  // Bloc
   sl.registerFactory(
     () => FindingBloc(
       repository: sl(),
@@ -41,21 +37,17 @@ Future<void> init() async {
   );
 
   // ===== CAPA =====
-  // Datasource
   sl.registerLazySingleton(() => CapaMockDatasource());
 
-  // Repository
   sl.registerLazySingleton<CapaRepository>(
     () => CapaRepositoryImpl(datasource: sl()),
   );
 
-  // Usecases
   sl.registerLazySingleton(() => GetCapas(repository: sl()));
   sl.registerLazySingleton(() => GetCapaDetail(repository: sl()));
   sl.registerLazySingleton(() => CreateCapa(repository: sl()));
   sl.registerLazySingleton(() => CloseoutCapa(repository: sl()));
 
-  // Bloc
   sl.registerFactory(
     () => CapaBloc(
       getCapas: sl(),

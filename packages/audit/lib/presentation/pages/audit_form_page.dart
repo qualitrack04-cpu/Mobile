@@ -26,8 +26,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
   String? _selectedDepartment;
   DateTime? _selectedDate;
   bool _isPriority = false;
-  bool _isIso9001 = false;
-  bool _isIso14001 = false;
+  String? _selectedIso;
 
   bool get _isEdit => widget.audit != null;
 
@@ -46,8 +45,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
 
-      _isIso9001 = audit.isoTemplates.contains(_iso9001);
-      _isIso14001 = audit.isoTemplates.contains(_iso14001);
+      _selectedIso = audit.isoTemplates.firstWhere(
+        (template) => template == _iso9001 || template == _iso14001,
+        orElse: () => '',
+      );
     }
   }
 
@@ -79,7 +80,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     final audit = AuditEntity(
       title: _titleController.text.trim(),
       auditorName: _auditorController.text.trim(),
-      isoTemplates: [if (_isIso9001) _iso9001, if (_isIso14001) _iso14001],
+      isoTemplates: [_selectedIso].whereType<String>().toList(),
       department: _selectedDepartment!,
       date: _selectedDate!,
       description: _descriptionController.text.trim(),
@@ -276,11 +277,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
             ),
           ),
 
-          CheckboxListTile(
-            value: _isIso9001,
+          // ✅ pakai RadioListTile supaya hanya bisa pilih 1
+          RadioListTile<String>(
+            value: _iso9001,
+            groupValue: _selectedIso,
             onChanged: (value) {
               setState(() {
-                _isIso9001 = value ?? false;
+                _selectedIso = value;
               });
             },
             title: Text(_iso9001, style: GoogleFonts.inter(fontSize: 12)),
@@ -289,11 +292,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
             activeColor: AppColors.primaryLight,
           ),
 
-          CheckboxListTile(
-            value: _isIso14001,
+          RadioListTile<String>(
+            value: _iso14001,
+            groupValue: _selectedIso,
             onChanged: (value) {
               setState(() {
-                _isIso14001 = value ?? false;
+                _selectedIso = value;
               });
             },
             title: Text(_iso14001, style: GoogleFonts.inter(fontSize: 12)),
@@ -372,8 +376,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
         final picked = await showDatePicker(
           context: context,
           initialDate: _selectedDate ?? DateTime.now(),
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2035),
+          firstDate: DateTime.now(),
+          lastDate: DateTime(2030),
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(

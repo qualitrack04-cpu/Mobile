@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-<<<<<<< feat/finding
-import 'package:mobile/app.dart';
-import 'package:mobile/injector.dart' as di;
-=======
+import 'package:core/app_colors.dart';
 import 'package:auth/presentation/pages/login_page.dart';
-import 'package:core/core.dart';
->>>>>>> develop
+import 'injector.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await di.init();
+  await di.init(); // ✅ initialize injector
   runApp(const MyApp());
 }
 
@@ -22,20 +18,11 @@ class MyApp extends StatelessWidget {
       title: 'QualiTrack',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-<<<<<<< feat/finding
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D2B55),
-        ),
-        useMaterial3: true,
-      ),
-      home: App(),
-=======
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         scaffoldBackgroundColor: AppColors.background,
         fontFamily: 'Inter',
       ),
       home: const LoginPage(),
->>>>>>> develop
     );
   }
 }
