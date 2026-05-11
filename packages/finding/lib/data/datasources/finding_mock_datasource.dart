@@ -7,6 +7,7 @@ class FindingMockDatasource {
       id: '1',
       sessionId: null,
       category: FindingCategory.majorNC,
+      department: 'Production',
       description: 'Prosedur tidak terdokumentasi dengan baik di departemen produksi',
       clauseRef: 'ISO9001 8.1',
       foundAt: DateTime(2024, 10, 14),
@@ -16,6 +17,7 @@ class FindingMockDatasource {
       id: '2',
       sessionId: null,
       category: FindingCategory.minorNC,
+      department: 'Maintenance',
       description: 'Kalibrasi alat ukur tekanan belum dilakukan sesuai jadwal',
       clauseRef: 'ISO9001 7.1.5',
       foundAt: DateTime(2024, 10, 15),
@@ -25,6 +27,7 @@ class FindingMockDatasource {
       id: '3',
       sessionId: null,
       category: FindingCategory.observation,
+      department: 'Maintenance',
       description: 'Catatan pemeliharaan mesin tidak lengkap',
       clauseRef: 'ISO9001 7.1.3',
       foundAt: DateTime(2024, 10, 16),
@@ -34,6 +37,7 @@ class FindingMockDatasource {
       id: '4',
       sessionId: null,
       category: FindingCategory.ofi,
+      department: 'Quality Control',
       description: 'Peluang peningkatan pada proses pengecekan kualitas bahan baku',
       clauseRef: 'ISO9001 8.4',
       foundAt: DateTime(2024, 10, 17),
@@ -68,6 +72,7 @@ class FindingMockDatasource {
     required FindingCategory category,
     required String description,
     required String clauseRef,
+    required String department,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final newFinding = FindingModel(
@@ -78,6 +83,7 @@ class FindingMockDatasource {
       clauseRef: clauseRef,
       foundAt: DateTime.now(),
       status: FindingStatus.open,
+      department: department,
     );
     _mockFindings.add(newFinding);
     return newFinding;
@@ -89,6 +95,7 @@ class FindingMockDatasource {
     required FindingCategory category,
     required String description,
     required String clauseRef,
+    required String department,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final index = _mockFindings.indexWhere((f) => f.id == id);
@@ -102,6 +109,7 @@ class FindingMockDatasource {
       clauseRef: clauseRef,
       foundAt: _mockFindings[index].foundAt,
       status: _mockFindings[index].status,
+      department: _mockFindings[index].department,
     );
     _mockFindings[index] = updated;
     return updated;
@@ -122,6 +130,7 @@ class FindingMockDatasource {
       clauseRef: _mockFindings[index].clauseRef,
       foundAt: _mockFindings[index].foundAt,
       status: status,
+      department: _mockFindings[index].department,
     );
   }
 

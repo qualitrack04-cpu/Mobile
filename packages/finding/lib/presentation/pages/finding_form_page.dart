@@ -161,7 +161,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context, true);
+            // Pop dengan Finding object agar pemanggil (checklist / finding list)
+            // bisa menyimpan / me-refresh data yang baru dibuat.
+            Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -488,6 +490,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
+            department: _selectedDepartment!,
           ),
         );
   }

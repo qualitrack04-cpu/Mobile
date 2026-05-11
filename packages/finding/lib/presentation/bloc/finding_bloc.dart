@@ -60,6 +60,7 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         category: event.category,
         description: event.description,
         clauseRef: event.clauseRef,
+        department: event.department,
       );
       emit(FindingCreated(finding: finding));
 
@@ -82,6 +83,7 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         category: event.category,
         description: event.description,
         clauseRef: event.clauseRef,
+        department: event.department,
       );
       emit(FindingUpdated(finding: finding));
 

@@ -34,12 +34,14 @@ class FindingRepositoryImpl implements FindingRepository {
     required FindingCategory category,
     required String description,
     required String clauseRef,
+    required String department,
   }) async {
     try {
       return await datasource.createFinding(
         category: category,
         description: description,
         clauseRef: clauseRef,
+        department: department,
       );
     } catch (e) {
       throw Exception('Gagal membuat finding: $e');
@@ -53,6 +55,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required FindingCategory category,
     required String description,
     required String clauseRef,
+    required String department,
   }) async {
     try {
       return await datasource.updateFinding(
@@ -60,6 +63,7 @@ class FindingRepositoryImpl implements FindingRepository {
         category: category,
         description: description,
         clauseRef: clauseRef,
+        department: department,
       );
     } catch (e) {
       throw Exception('Gagal mengupdate finding: $e');

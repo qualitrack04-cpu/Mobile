@@ -3,8 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
+import 'package:finding/presentation/pages/finding_edit_page.dart';
 
 import '../../data/datasources/checklist_datasource.dart';
 import '../../domain/entities/audit_entity.dart';
@@ -55,8 +57,10 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
   double get _progress =>
       _checklists.isEmpty ? 0 : _completedCount / _checklists.length;
 
-  Future<void> _openFindingForm(ChecklistEntity checklist) async {
-    final result = await Navigator.push(
+  /// Buka form tambah finding baru, dipanggil dari Audit Checklist.
+  /// Setelah submit berhasil, kembali ke halaman Audit Checklist (bukan Finding page).
+  Future<void> _openAddFindingForm(ChecklistEntity checklist) async {
+    final result = await Navigator.push<Finding>(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -66,8 +70,35 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
       ),
     );
 
-    if (result == true) {
-      setState(() => checklist.hasFinding = true);
+    // FindingFormPage mengembalikan Finding object saat berhasil.
+    if (result != null) {
+      setState(() {
+        checklist.hasFinding = true;
+        checklist.finding = result; // simpan finding agar bisa di-edit nanti
+      });
+    }
+  }
+
+  /// Buka form edit finding yang sudah ada, dipanggil dari Audit Checklist.
+  /// Setelah submit berhasil, kembali ke halaman Audit Checklist (bukan Finding page).
+  Future<void> _openEditFindingForm(ChecklistEntity checklist) async {
+    if (checklist.finding == null) return;
+
+    final result = await Navigator.push<Finding>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => GetIt.instance<FindingBloc>(),
+          child: FindingEditPage(finding: checklist.finding!),
+        ),
+      ),
+    );
+
+    // FindingEditPage mengembalikan Finding object (data terbaru) saat berhasil.
+    if (result != null) {
+      setState(() {
+        checklist.finding = result; // update finding dengan data terbaru
+      });
     }
   }
 
@@ -279,9 +310,9 @@ class _AuditChecklistPageState extends State<AuditChecklistPage> {
               setState(() => checklist.isPassed = false);
             },
 
-            onAddFinding: () => _openFindingForm(checklist),
+            onAddFinding: () => _openAddFindingForm(checklist),
 
-            onEditFinding: () => _openFindingForm(checklist),
+            onEditFinding: () => _openEditFindingForm(checklist),
           );
         },
       ),

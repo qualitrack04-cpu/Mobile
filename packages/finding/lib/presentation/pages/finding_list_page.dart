@@ -76,26 +76,31 @@ class FindingListPage extends StatelessWidget {
                   ),
 
                   // FAB tambah finding baru
+                  // FAB tambah finding baru
                   Positioned(
                     bottom: 16,
                     right: 16,
                     child: Builder(
                       builder: (context) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+
+                        // ukuran FAB dinamis seperti AuditListPage
+                        final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+
                         return SizedBox(
-                          width: 70, // Mengatur lebar tombol menjadi 70
-                          height: 70, // Mengatur tinggi tombol menjadi 70
+                          width: fabSize,
+                          height: fabSize,
                           child: FloatingActionButton(
-                            backgroundColor:
-                                AppColors
-                                    .primaryLight, // Menggunakan warna dari core
-                            elevation: 4, // Efek bayangan disamakan
+                            backgroundColor: AppColors.primaryLight,
+                            elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                20,
-                              ), // Sudut agak kotak melengkung (disamakan dengan AuditListPage)
+                                fabSize * 0.25,
+                              ),
                             ),
                             onPressed: () async {
                               final bloc = context.read<FindingBloc>();
+
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -106,15 +111,16 @@ class FindingListPage extends StatelessWidget {
                                       ),
                                 ),
                               );
-                              if (result == true && context.mounted) {
+
+                              // FindingFormPage mengembalikan Finding object saat berhasil
+                              if (result != null && context.mounted) {
                                 bloc.add(const LoadFindings());
                               }
                             },
-                            child: const Icon(
+                            child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size:
-                                  36, // Ukuran icon disamakan (36) agar pas di dalam tombol 70x70
+                              size: fabSize * 0.45,
                             ),
                           ),
                         );
@@ -204,13 +210,15 @@ class _FindingCard extends StatelessWidget {
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => BlocProvider.value(
-                            value: bloc,
-                            child: FindingEditPage(finding: finding),
-                          ),
+                          builder:
+                              (_) => BlocProvider.value(
+                                value: bloc,
+                                child: FindingEditPage(finding: finding),
+                              ),
                         ),
                       );
-                      if (result == true && context.mounted) {
+                      // FindingEditPage mengembalikan Finding object saat berhasil
+                      if (result != null && context.mounted) {
                         bloc.add(const LoadFindings());
                       }
                     },
@@ -240,8 +248,8 @@ class _FindingCard extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              FindingDetailPage(findingId: finding.id),
+                          builder:
+                              (_) => FindingDetailPage(findingId: finding.id),
                         ),
                       );
                     },

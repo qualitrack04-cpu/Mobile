@@ -72,52 +72,50 @@ class CapaListPage extends StatelessWidget {
                   ),
 
                   // FAB
+                  // FAB
                   Positioned(
                     bottom: 16,
                     right: 16,
                     child: Builder(
                       builder: (context) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+
+                        // ukuran FAB dinamis seperti AuditListPage
+                        final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+
                         return SizedBox(
-                          width: 70, // Mengatur lebar tombol menjadi 70
-                          height: 70, // Mengatur tinggi tombol menjadi 70
+                          width: fabSize,
+                          height: fabSize,
                           child: FloatingActionButton(
-                            backgroundColor:
-                                AppColors
-                                    .primaryLight, // Menggunakan warna dari core
-                            elevation: 4, // Efek bayangan disamakan
+                            backgroundColor: AppColors.primaryLight,
+                            elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                20,
-                              ), // Sudut melengkung disamakan
+                                fabSize * 0.25,
+                              ),
                             ),
                             onPressed: () async {
-                              final bloc =
-                                  context
-                                      .read<
-                                        CapaBloc
-                                      >(); // Tetap menggunakan CapaBloc
+                              final bloc = context.read<CapaBloc>();
+
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder:
                                       (_) => BlocProvider.value(
                                         value: bloc,
-                                        child:
-                                            const CapaFormPage(), // Tetap mengarah ke CapaFormPage
+                                        child: const CapaFormPage(),
                                       ),
                                 ),
                               );
+
                               if (result == true && context.mounted) {
-                                bloc.add(
-                                  const LoadCapas(),
-                                ); // Tetap memicu LoadCapas
+                                bloc.add(const LoadCapas());
                               }
                             },
-                            child: const Icon(
+                            child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size:
-                                  36, // Ukuran icon disamakan agar pas di tombol 70x70
+                              size: fabSize * 0.45,
                             ),
                           ),
                         );

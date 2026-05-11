@@ -12,7 +12,7 @@ abstract class FindingRepository {
   Future<Finding> createFinding({
     required FindingCategory category,
     required String description,
-    required String clauseRef,
+    required String clauseRef, required String department,
   });
 
   // ✅ BARU: update keseluruhan data finding
@@ -20,7 +20,7 @@ abstract class FindingRepository {
     required String id,
     required FindingCategory category,
     required String description,
-    required String clauseRef,
+    required String clauseRef, required String department,
   });
 
   Future<void> updateFindingStatus({

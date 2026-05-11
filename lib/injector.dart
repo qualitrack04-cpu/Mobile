@@ -18,6 +18,14 @@ import 'package:capa/domain/usecases/create_capa.dart';
 import 'package:capa/domain/usecases/closeout_capa.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 
+// Audit
+import 'package:audit/data/datasources/audit_datasource.dart';
+import 'package:audit/data/datasources/checklist_datasource.dart';
+import 'package:audit/data/repositories/audit_repository_impl.dart';
+import 'package:audit/data/repositories/checklist_repository_impl.dart';
+import 'package:audit/domain/repositories/audit_repository.dart';
+import 'package:audit/domain/repositories/checklist_repository.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -58,5 +66,16 @@ Future<void> init() async {
       createCapa: sl(),
       closeoutCapa: sl(),
     ),
+  );
+
+  // ===== AUDIT =====
+  sl.registerLazySingleton(() => AuditDatasource());
+  sl.registerLazySingleton(() => ChecklistDatasource());
+
+  sl.registerLazySingleton<AuditRepository>(
+    () => AuditRepositoryImpl(datasource: sl()),
+  );
+  sl.registerLazySingleton<ChecklistRepository>(
+    () => ChecklistRepositoryImpl(datasource: sl()),
   );
 }

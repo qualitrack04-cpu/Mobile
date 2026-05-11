@@ -10,6 +10,7 @@ class FindingModel extends Finding {
     required super.clauseRef,
     required super.foundAt,
     required super.status,
+    required super.department,
   });
 
   // JSON dari backend → FindingModel
@@ -22,6 +23,7 @@ class FindingModel extends Finding {
       clauseRef: json['clauseRef'] as String,
       foundAt: DateTime.parse(json['foundAt'] as String),
       status: FindingStatus.fromString(json['status'] as String),
+      department: json['department'] as String,
     );
   }
 
@@ -31,6 +33,7 @@ class FindingModel extends Finding {
       'category': category.toBackendString(),
       'description': description,
       'clauseRef': clauseRef,
+      'department': department,
     };
   }
 }

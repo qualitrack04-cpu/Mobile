@@ -43,6 +43,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _descriptionController =
         TextEditingController(text: widget.finding.description);
     _selectedCategory = widget.finding.category;
+    _selectedDepartment = widget.finding.department;
   }
 
   @override
@@ -166,7 +167,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context, true);
+            // Pop dengan Finding object agar pemanggil bisa menyimpan data terbaru.
+            Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -482,6 +484,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
+            department: _selectedDepartment!,
           ),
         );
   }

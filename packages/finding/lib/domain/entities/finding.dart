@@ -9,6 +9,7 @@ class Finding extends Equatable {
   final String clauseRef;
   final DateTime foundAt;
   final FindingStatus status;
+  final String department;
 
   const Finding({
     required this.id,
@@ -18,6 +19,7 @@ class Finding extends Equatable {
     required this.clauseRef,
     required this.foundAt,
     required this.status,
+    required this.department,
   });
 
   @override

@@ -11,11 +11,13 @@ class CreateFinding {
     required FindingCategory category,
     required String description,
     required String clauseRef,
+    required String department,
   }) async {
     return await repository.createFinding(
       category: category,
       description: description,
       clauseRef: clauseRef,
+      department: department,
     );
   }
 }
