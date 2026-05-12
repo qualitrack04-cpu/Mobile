@@ -6,11 +6,11 @@ class GetChecklist {
 
   GetChecklist({required this.repository});
 
-  List<ChecklistEntity> call({
+  Future<List<ChecklistEntity>> call({
     required String isoTemplate,
     required String department,
-  }) {
-    return repository.getChecklistFor(
+  }) async {
+    return await repository.getChecklistFor(
       isoTemplate: isoTemplate,
       department: department,
     );

@@ -5,7 +5,7 @@ import 'package:finding/data/datasources/finding_mock_datasource.dart';
 import 'package:finding/data/repositories/finding_repository_impl.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 import 'package:finding/domain/usecases/create_finding.dart';
-import 'package:finding/domain/usecases/update_finding.dart'; // ✅ BARU
+import 'package:finding/domain/usecases/update_finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 
 // CAPA
@@ -25,6 +25,12 @@ import 'package:audit/data/repositories/audit_repository_impl.dart';
 import 'package:audit/data/repositories/checklist_repository_impl.dart';
 import 'package:audit/domain/repositories/audit_repository.dart';
 import 'package:audit/domain/repositories/checklist_repository.dart';
+import 'package:audit/domain/usecases/get_audits.dart';
+import 'package:audit/domain/usecases/create_audit.dart';
+import 'package:audit/domain/usecases/update_audit.dart';
+import 'package:audit/domain/usecases/mark_audit_finished.dart';
+import 'package:audit/domain/usecases/get_checklist.dart';
+import 'package:audit/presentation/bloc/audit_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -77,5 +83,24 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<ChecklistRepository>(
     () => ChecklistRepositoryImpl(datasource: sl()),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetAudits(repository: sl()));
+  sl.registerLazySingleton(() => CreateAudit(repository: sl()));
+  sl.registerLazySingleton(() => UpdateAudit(repository: sl()));
+  sl.registerLazySingleton(() => MarkAuditFinished(repository: sl()));
+  sl.registerLazySingleton(() => GetChecklist(repository: sl()));
+
+  // BLoC
+  sl.registerFactory(
+    () => AuditBloc(
+      repository: sl(),
+      getAudits: sl(),
+      createAudit: sl(),
+      updateAudit: sl(),
+      markAuditFinished: sl(),
+      getChecklist: sl(),
+    ),
   );
 }

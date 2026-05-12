@@ -8,12 +8,12 @@ class ChecklistRepositoryImpl implements ChecklistRepository {
   ChecklistRepositoryImpl({required this.datasource});
 
   @override
-  List<ChecklistEntity> getChecklistFor({
+  Future<List<ChecklistEntity>> getChecklistFor({
     required String isoTemplate,
     required String department,
-  }) {
+  }) async {
     try {
-      return datasource.getChecklistFor(
+      return await datasource.getChecklistFor(
         isoTemplate: isoTemplate,
         department: department,
       );

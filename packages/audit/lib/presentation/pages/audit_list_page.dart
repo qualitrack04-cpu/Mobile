@@ -1,54 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
-import '../../data/datasources/audit_datasource.dart';
 import '../../domain/entities/audit_entity.dart';
-
+import '../bloc/audit_bloc.dart';
+import '../bloc/audit_event.dart';
+import '../bloc/audit_state.dart';
 import '../widgets/audit_card.dart';
 import '../widgets/audit_filter.dart';
-
 import 'audit_form_page.dart';
 import 'audit_checklist_page.dart';
 
-import 'package:skeletonizer/skeletonizer.dart';
-
-class AuditListPage extends StatefulWidget {
+class AuditListPage extends StatelessWidget {
   const AuditListPage({super.key});
 
   @override
-  State<AuditListPage> createState() => _AuditListPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => GetIt.instance<AuditBloc>()..add(const LoadAudits()),
+      child: const _AuditListView(),
+    );
+  }
 }
 
-class _AuditListPageState extends State<AuditListPage> {
-  final AuditDatasource _datasource = AuditDatasource();
-
-  List<AuditEntity> _audits = [];
-  bool _isLoading = true;
-
-  bool _isPrioritySelected = false;
+class _AuditListView extends StatefulWidget {
+  const _AuditListView();
 
   @override
-  void initState() {
-    super.initState();
-    _loadAudits();
-  }
+  State<_AuditListView> createState() => _AuditListViewState();
+}
 
-  Future<void> _loadAudits() async {
-    setState(() => _isLoading = true);
+class _AuditListViewState extends State<_AuditListView> {
+  bool _isPrioritySelected = false;
 
-    final result = await _datasource.getAudits();
-
-    setState(() {
-      _audits = result;
-      _isLoading = false;
-    });
-  }
-
-  List<AuditEntity> get _filteredAudits {
+  List<AuditEntity> _applyFilter(List<AuditEntity> audits) {
     final filtered = _isPrioritySelected
-        ? _audits.where((e) => e.isPriority).toList()
-        : List<AuditEntity>.from(_audits);
+        ? audits.where((e) => e.isPriority).toList()
+        : List<AuditEntity>.from(audits);
 
     filtered.sort((a, b) {
       if (a.isFinished == b.isFinished) return 0;
@@ -60,10 +51,7 @@ class _AuditListPageState extends State<AuditListPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Ambil lebar layar untuk ukuran dinamis
     final screenWidth = MediaQuery.of(context).size.width;
-
-    // ✅ FAB size: 18% dari lebar layar, min 64, max 88
     final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
 
     return Scaffold(
@@ -72,11 +60,9 @@ class _AuditListPageState extends State<AuditListPage> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-
         title: Text(
           'AUDIT PLAN',
           style: GoogleFonts.inter(
-            // ✅ Font size dinamis: 7% lebar layar, min 24, max 34
             fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
             fontWeight: FontWeight.w800,
             color: AppColors.primary,
@@ -88,13 +74,8 @@ class _AuditListPageState extends State<AuditListPage> {
         children: [
           AuditFilter(
             isPrioritySelected: _isPrioritySelected,
-            onChanged: (value) {
-              setState(() {
-                _isPrioritySelected = value;
-              });
-            },
+            onChanged: (value) => setState(() => _isPrioritySelected = value),
           ),
-
           Expanded(child: _buildBody()),
         ],
       ),
@@ -102,30 +83,26 @@ class _AuditListPageState extends State<AuditListPage> {
       floatingActionButton: SizedBox(
         width: fabSize,
         height: fabSize,
-
         child: FloatingActionButton(
           backgroundColor: AppColors.primaryLight,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(fabSize * 0.25),
           ),
-
           onPressed: () async {
-            final newAudit = await Navigator.push<AuditEntity>(
+            await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const AuditFormPage()),
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<AuditBloc>(),
+                  child: const AuditFormPage(),
+                ),
+              ),
             );
-
-            if (newAudit != null) {
-              setState(() {
-                _audits.add(newAudit);
-              });
-            }
+            // BLoC sudah reload otomatis setelah create — tidak perlu setState
           },
-
           child: Icon(
             Icons.add,
-            // ✅ Icon size dinamis sesuai FAB
             size: fabSize * 0.45,
             color: Colors.white,
           ),
@@ -135,81 +112,100 @@ class _AuditListPageState extends State<AuditListPage> {
   }
 
   Widget _buildBody() {
-    final displayList = _isLoading
-        ? List.generate(
-            4,
-            (_) => AuditEntity(
-              title: 'Loading Audit Title',
-              auditorName: 'Loading Name',
-              isoTemplates: const ['ISO 9001:2015'],
-              department: 'Department',
-              date: DateTime.now(),
-              description: '',
-              isPriority: false,
-              isFinished: false,
+    return BlocConsumer<AuditBloc, AuditState>(
+      listener: (context, state) {
+        if (state is AuditError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.danger,
             ),
-          )
-        : _filteredAudits;
-
-    if (!_isLoading && displayList.isEmpty) {
-      return Center(
-        child: Text(
-          'No Audit Data',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
-          ),
-        ),
-      );
-    }
-
-    return Skeletonizer(
-      enabled: _isLoading,
-
-      child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 100),
-        itemCount: displayList.length,
-
-        itemBuilder: (context, index) {
-          final audit = displayList[index];
-
-          return AuditCard(
-            audit: audit,
-            onEdit: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AuditFormPage(audit: audit)),
-              );
-              _loadAudits();
-            },
-
-            onChecklist: audit.isFinished
-                ? null
-                : () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AuditChecklistPage(audit: audit),
-                      ),
-                    );
-
-                    if (result == true) {
-                      setState(() {
-                        final index = _audits.indexOf(audit);
-                        _audits[index] = audit.copyWith(isFinished: true);
-                      });
-                    }
-                  },
-
-            onDelete: () {
-              setState(() {
-                _audits.remove(audit);
-              });
-            },
           );
-        },
-      ),
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is AuditLoading || state is AuditInitial;
+        final audits = state is AuditLoaded ? state.audits : <AuditEntity>[];
+
+        final displayList = isLoading
+            ? List.generate(
+                4,
+                (_) => AuditEntity(
+                  title: 'Loading Audit Title',
+                  auditorName: 'Loading Name',
+                  isoTemplates: const ['ISO 9001:2015'],
+                  department: 'Department',
+                  date: DateTime.now(),
+                  description: '',
+                  isPriority: false,
+                  isFinished: false,
+                ),
+              )
+            : _applyFilter(audits);
+
+        if (!isLoading && displayList.isEmpty) {
+          return Center(
+            child: Text(
+              'No Audit Data',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          );
+        }
+
+        return Skeletonizer(
+          enabled: isLoading,
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 100),
+            itemCount: displayList.length,
+            itemBuilder: (context, index) {
+              final audit = displayList[index];
+              return AuditCard(
+                audit: audit,
+
+                onEdit: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<AuditBloc>(),
+                        child: AuditFormPage(audit: audit),
+                      ),
+                    ),
+                  );
+                  // BLoC reload otomatis setelah update
+                },
+
+                onChecklist: audit.isFinished
+                    ? null
+                    : () async {
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<AuditBloc>(),
+                              child: AuditChecklistPage(audit: audit),
+                            ),
+                          ),
+                        );
+
+                        if (result == true) {
+                          // MarkAuditFinished sudah di-dispatch dari AuditChecklistPage
+                          // BLoC akan reload list otomatis
+                        }
+                      },
+
+                onDelete: () {
+                  context.read<AuditBloc>().add(DeleteAuditEvent(audit: audit));
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
