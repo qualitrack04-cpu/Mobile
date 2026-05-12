@@ -3,6 +3,7 @@ import 'package:capa/domain/usecases/get_capas.dart';
 import 'package:capa/domain/usecases/get_capa_detail.dart';
 import 'package:capa/domain/usecases/create_capa.dart';
 import 'package:capa/domain/usecases/closeout_capa.dart';
+import 'package:capa/domain/repositories/capa_repository.dart';
 import 'capa_event.dart';
 import 'capa_state.dart';
 
@@ -11,23 +12,23 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
   final GetCapaDetail getCapaDetail;
   final CreateCapa createCapa;
   final CloseoutCapa closeoutCapa;
+  final CapaRepository repository; // ✅ untuk updateCapaStatus
 
   CapaBloc({
     required this.getCapas,
     required this.getCapaDetail,
     required this.createCapa,
     required this.closeoutCapa,
+    required this.repository,
   }) : super(CapaInitial()) {
     on<LoadCapas>(_onLoadCapas);
     on<LoadCapaDetail>(_onLoadCapaDetail);
     on<CreateCapaEvent>(_onCreateCapa);
+    on<UpdateCapaStatusEvent>(_onUpdateCapaStatus); // ✅
     on<CloseoutCapaEvent>(_onCloseoutCapa);
   }
 
-  Future<void> _onLoadCapas(
-    LoadCapas event,
-    Emitter<CapaState> emit,
-  ) async {
+  Future<void> _onLoadCapas(LoadCapas event, Emitter<CapaState> emit) async {
     emit(CapaLoading());
     try {
       final capas = await getCapas();
@@ -37,10 +38,7 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onLoadCapaDetail(
-    LoadCapaDetail event,
-    Emitter<CapaState> emit,
-  ) async {
+  Future<void> _onLoadCapaDetail(LoadCapaDetail event, Emitter<CapaState> emit) async {
     emit(CapaLoading());
     try {
       final capa = await getCapaDetail(event.id);
@@ -50,10 +48,7 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onCreateCapa(
-    CreateCapaEvent event,
-    Emitter<CapaState> emit,
-  ) async {
+  Future<void> _onCreateCapa(CreateCapaEvent event, Emitter<CapaState> emit) async {
     emit(CapaLoading());
     try {
       final capa = await createCapa(
@@ -65,8 +60,6 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
         deadline: event.deadline,
       );
       emit(CapaCreated(capa: capa));
-
-      // Reload list setelah create
       final capas = await getCapas();
       emit(CapaLoaded(capas: capas));
     } catch (e) {
@@ -74,10 +67,18 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onCloseoutCapa(
-    CloseoutCapaEvent event,
-    Emitter<CapaState> emit,
-  ) async {
+  // ✅ handler baru untuk update status dari card
+  Future<void> _onUpdateCapaStatus(UpdateCapaStatusEvent event, Emitter<CapaState> emit) async {
+    try {
+      await repository.updateCapaStatus(id: event.id, status: event.status);
+      final capas = await getCapas();
+      emit(CapaLoaded(capas: capas));
+    } catch (e) {
+      emit(CapaError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onCloseoutCapa(CloseoutCapaEvent event, Emitter<CapaState> emit) async {
     emit(CapaLoading());
     try {
       await closeoutCapa(
@@ -87,8 +88,6 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
         verifiedById: event.verifiedById,
       );
       emit(CapaClosed());
-
-      // Reload list setelah closeout
       final capas = await getCapas();
       emit(CapaLoaded(capas: capas));
     } catch (e) {

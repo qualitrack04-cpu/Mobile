@@ -13,6 +13,7 @@ class CreateCapa {
     required String preventiveAction,
     required String picId,
     required DateTime deadline,
+    String status = '',
   }) async {
     return await repository.createCapa(
       findingId: findingId,
@@ -21,6 +22,7 @@ class CreateCapa {
       preventiveAction: preventiveAction,
       picId: picId,
       deadline: deadline,
+      status: status,
     );
   }
 }

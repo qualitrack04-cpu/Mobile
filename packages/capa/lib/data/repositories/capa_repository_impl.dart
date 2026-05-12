@@ -33,6 +33,7 @@ class CapaRepositoryImpl implements CapaRepository {
     required String preventiveAction,
     required String picId,
     required DateTime deadline,
+    required String status,
   }) async {
     try {
       return await datasource.createCapa(
@@ -42,6 +43,7 @@ class CapaRepositoryImpl implements CapaRepository {
         preventiveAction: preventiveAction,
         picId: picId,
         deadline: deadline,
+        status: status,
       );
     } catch (e) {
       throw Exception('Gagal membuat CAPA: $e');
@@ -56,6 +58,7 @@ class CapaRepositoryImpl implements CapaRepository {
     required String preventiveAction,
     required String picId,
     required DateTime deadline,
+    required String status, // ✅ fix: tidak error lagi
   }) async {
     try {
       return await datasource.updateCapa(
@@ -65,9 +68,23 @@ class CapaRepositoryImpl implements CapaRepository {
         preventiveAction: preventiveAction,
         picId: picId,
         deadline: deadline,
+        status: status,
       );
     } catch (e) {
       throw Exception('Gagal update CAPA: $e');
+    }
+  }
+
+  // ✅ implementasi update status
+  @override
+  Future<void> updateCapaStatus({
+    required String id,
+    required String status,
+  }) async {
+    try {
+      await datasource.updateCapaStatus(id: id, status: status);
+    } catch (e) {
+      throw Exception('Gagal update status CAPA: $e');
     }
   }
 

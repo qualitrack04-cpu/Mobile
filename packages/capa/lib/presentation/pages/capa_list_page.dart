@@ -146,10 +146,25 @@ class CapaListPage extends StatelessWidget {
   }
 }
 
-class _CapaCard extends StatelessWidget {
+class _CapaCard extends StatefulWidget {
   final Capa capa;
-
   const _CapaCard({required this.capa});
+
+  @override
+  State<_CapaCard> createState() => _CapaCardState();
+}
+
+class _CapaCardState extends State<_CapaCard> {
+  late String _currentStatus;
+
+  // ✅ opsi dropdown status
+  static const List<String> _statusOptions = ['Open', 'In Progress', 'Done'];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStatus = widget.capa.status;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +180,6 @@ class _CapaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title + Badge + Tanggal
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +189,7 @@ class _CapaCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        capa.rootCause,
+                        widget.capa.rootCause,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -186,36 +200,33 @@ class _CapaCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${_getMonth(capa.createdAt.month)} ${capa.createdAt.day}, ${capa.createdAt.year}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
+                        '${_getMonth(widget.capa.createdAt.month)} ${widget.capa.createdAt.day}, ${widget.capa.createdAt.year}',
+                        style: const TextStyle(fontSize: 12, color: Colors.black54),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildStatusBadge(),
+
+                // ✅ dropdown status menggantikan static badge
+                _buildStatusDropdown(context),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Corrective Action
             Text(
-              capa.correctiveAction,
+              widget.capa.correctiveAction,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
             const Divider(height: 24, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            // PIC + Details
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  capa.picId,
+                  widget.capa.picId,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -227,7 +238,7 @@ class _CapaCard extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CapaDetailPage(capaId: capa.id),
+                        builder: (_) => CapaDetailPage(capaId: widget.capa.id),
                       ),
                     );
                   },
@@ -241,11 +252,7 @@ class _CapaCard extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: Color(0xFF0D2B55),
-                        size: 18,
-                      ),
+                      Icon(Icons.chevron_right, color: Color(0xFF0D2B55), size: 18),
                     ],
                   ),
                 ),
@@ -257,69 +264,96 @@ class _CapaCard extends StatelessWidget {
     );
   }
 
-  Color _getBorderColor() {
-    if (capa.isClosed) return Colors.green;
-    // Cek deadline untuk In Progress
-    final now = DateTime.now();
-    final diff = capa.deadline.difference(now).inDays;
-    if (diff <= 30) return Colors.orange;
-    return Colors.red;
-  }
-
-  Widget _buildStatusBadge() {
-    String label;
+  Widget _buildStatusDropdown(BuildContext context) {
+    // ✅ warna sesuai status
     Color bgColor;
     Color textColor;
 
-    if (capa.isClosed) {
-      label = 'Done';
-      bgColor = const Color(0xFFD5F5E3);
-      textColor = Colors.green;
-    } else {
-      final now = DateTime.now();
-      final diff = capa.deadline.difference(now).inDays;
-      if (diff <= 30) {
-        label = 'In Progress';
+    switch (_currentStatus) {
+      case 'Closed':
+        bgColor = const Color(0xFFD5F5E3);
+        textColor = Colors.green;
+        break;
+      case 'In Progress':
         bgColor = const Color(0xFFFFEDD5);
         textColor = Colors.orange;
-      } else {
-        label = 'Open';
+        break;
+      case 'Open':
         bgColor = const Color(0xFFFFDDDD);
         textColor = Colors.red;
-      }
+        break;
+      default:
+        // ✅ status kosong: tampil placeholder "Status"
+        bgColor = const Color(0xFFF0F0F0);
+        textColor = Colors.black38;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _currentStatus.isEmpty ? null : _currentStatus,
+          isDense: true,
+          icon: Icon(Icons.keyboard_arrow_down, size: 16, color: textColor),
+          hint: Text(
+            'Status',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: _statusOptions.map((status) {
+            return DropdownMenuItem<String>(
+              value: status,
+              child: Text(
+                status,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (newStatus) {
+            if (newStatus == null) return;
+            setState(() => _currentStatus = newStatus);
+
+            // ✅ kirim event ke bloc
+            context.read<CapaBloc>().add(
+              UpdateCapaStatusEvent(
+                id: widget.capa.id,
+                status: newStatus,
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
+  Color _getBorderColor() {
+    if (_currentStatus == 'Closed') return Colors.green;
+    if (_currentStatus == 'In Progress') return Colors.orange;
+    if (_currentStatus == 'Open') return Colors.red;
+    return Colors.grey.shade300;
+  }
+
   String _getMonth(int month) {
     const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return months[month - 1];
   }

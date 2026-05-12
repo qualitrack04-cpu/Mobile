@@ -71,6 +71,7 @@ Future<void> init() async {
       getCapaDetail: sl(),
       createCapa: sl(),
       closeoutCapa: sl(),
+      repository: sl(),
     ),
   );
 

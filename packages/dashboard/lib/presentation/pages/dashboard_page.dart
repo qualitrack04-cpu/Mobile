@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:auth/presentation/pages/profile_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -23,6 +24,47 @@ class DashboardPage extends StatelessWidget {
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,
+
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+              },
+
+              child: Container(
+                width: 38,
+                height: 38,
+
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+
+                  // ✅ lingkaran biru
+                  border: Border.all(color: AppColors.primaryLight, width: 2.5),
+                ),
+
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+
+                  child: CircleAvatar(
+                    backgroundColor: AppColors.primaryLight,
+
+                    child: Icon(
+                      Icons.person,
+                      size: 20,
+                      color: AppColors.surface,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
 
       body: Padding(
@@ -44,10 +86,22 @@ class DashboardPage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            _SummaryCard(count: '24', title: 'Audit', icon: Icons.assignment_outlined),
+            _SummaryCard(
+              count: '24',
+              title: 'Audit',
+              icon: Icons.assignment_outlined,
+            ),
             _SummaryCard(count: '12', title: 'Finding', icon: Icons.search),
-            _SummaryCard(count: '4', title: 'Capa\nDone', icon: Icons.checklist_rtl),
-            _SummaryCard(count: '0', title: 'Capa\nOverdue', icon: Icons.warning_amber_rounded),
+            _SummaryCard(
+              count: '4',
+              title: 'Capa\nDone',
+              icon: Icons.checklist_rtl,
+            ),
+            _SummaryCard(
+              count: '0',
+              title: 'Capa\nOverdue',
+              icon: Icons.warning_amber_rounded,
+            ),
           ],
         ),
       ),

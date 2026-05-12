@@ -19,6 +19,8 @@ dependencies:
     path: ../finding
   capa:
     path: ../capa
+  auth:
+    path: ../auth
   google_fonts: ^8.1.0
 
 dev_dependencies:

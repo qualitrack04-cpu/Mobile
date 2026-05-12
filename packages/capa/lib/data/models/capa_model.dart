@@ -11,6 +11,7 @@ class CapaModel extends Capa {
     required super.deadline,
     required super.isClosed,
     required super.createdAt,
+    required super.status,
   });
 
   factory CapaModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +25,7 @@ class CapaModel extends Capa {
       deadline: DateTime.parse(json['deadline'] as String),
       isClosed: json['isClosed'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      status: json['status'] as String,
     );
   }
 

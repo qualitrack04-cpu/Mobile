@@ -13,6 +13,7 @@ class UpdateCapa {
     required String preventiveAction,
     required String picId,
     required DateTime deadline,
+    required String status,
   }) async {
     return await repository.updateCapa(
       id: id,
@@ -21,6 +22,7 @@ class UpdateCapa {
       preventiveAction: preventiveAction,
       picId: picId,
       deadline: deadline,
+      status: status,
     );
   }
 }

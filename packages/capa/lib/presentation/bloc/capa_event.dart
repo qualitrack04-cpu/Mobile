@@ -7,22 +7,18 @@ abstract class CapaEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Load semua CAPA
 class LoadCapas extends CapaEvent {
   const LoadCapas();
 }
 
-// Load detail CAPA
 class LoadCapaDetail extends CapaEvent {
   final String id;
-
   const LoadCapaDetail({required this.id});
 
   @override
   List<Object?> get props => [id];
 }
 
-// Buat CAPA baru
 class CreateCapaEvent extends CapaEvent {
   final String findingId;
   final String rootCause;
@@ -41,17 +37,23 @@ class CreateCapaEvent extends CapaEvent {
   });
 
   @override
-  List<Object?> get props => [
-        findingId,
-        rootCause,
-        correctiveAction,
-        preventiveAction,
-        picId,
-        deadline,
-      ];
+  List<Object?> get props => [findingId, rootCause, correctiveAction, preventiveAction, picId, deadline];
 }
 
-// Closeout CAPA
+// ✅ event baru untuk update status dari card
+class UpdateCapaStatusEvent extends CapaEvent {
+  final String id;
+  final String status;
+
+  const UpdateCapaStatusEvent({
+    required this.id,
+    required this.status,
+  });
+
+  @override
+  List<Object?> get props => [id, status];
+}
+
 class CloseoutCapaEvent extends CapaEvent {
   final String id;
   final bool isEffective;
