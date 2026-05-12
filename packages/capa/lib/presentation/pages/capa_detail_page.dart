@@ -34,13 +34,6 @@ class CapaDetailPage extends StatelessWidget {
             ),
           ),
         ),
-        // ✅ pakai CustomBottomNavbar dari audit package
-        bottomNavigationBar: CustomBottomNavbar(
-          currentIndex: 3,
-          onTap: (index) {
-            Navigator.pop(context);
-          },
-        ),
         body: BlocBuilder<CapaBloc, CapaState>(
           builder: (context, state) {
             if (state is CapaLoading) {
