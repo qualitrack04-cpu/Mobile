@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:finding/domain/entities/finding.dart';
-import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';

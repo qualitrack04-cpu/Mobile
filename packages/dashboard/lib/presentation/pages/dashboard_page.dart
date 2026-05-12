@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -6,15 +7,19 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
       appBar: AppBar(
-        title: const Text(
-          'QualiTrack',
-          style: TextStyle(
+        title: Text(
+          'QUALITRACK',
+          style: GoogleFonts.inter(
             color: AppColors.primary,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
+            // ✅ Font size dinamis, sama seperti halaman lain
+            fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
           ),
         ),
         backgroundColor: AppColors.surface,
@@ -28,40 +33,22 @@ class DashboardPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
 
           children: [
-            const Text(
+            Text(
               'Summary',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.inter(
+                // ✅ Font size dinamis
+                fontSize: (screenWidth * 0.07).clamp(22.0, 30.0),
+                fontWeight: FontWeight.w700,
                 color: AppColors.primary,
               ),
             ),
 
             const SizedBox(height: 20),
 
-            _SummaryCard(
-              count: '24',
-              title: 'Audit',
-              icon: Icons.assignment_outlined,
-            ),
-
-            _SummaryCard(
-              count: '12',
-              title: 'Finding',
-              icon: Icons.search,
-            ),
-
-            _SummaryCard(
-              count: '4',
-              title: 'Capa\nDone',
-              icon: Icons.checklist_rtl,
-            ),
-
-            _SummaryCard(
-              count: '0',
-              title: 'Capa\nOverdue',
-              icon: Icons.warning_amber_rounded,
-            ),
+            _SummaryCard(count: '24', title: 'Audit', icon: Icons.assignment_outlined),
+            _SummaryCard(count: '12', title: 'Finding', icon: Icons.search),
+            _SummaryCard(count: '4', title: 'Capa\nDone', icon: Icons.checklist_rtl),
+            _SummaryCard(count: '0', title: 'Capa\nOverdue', icon: Icons.warning_amber_rounded),
           ],
         ),
       ),
@@ -69,7 +56,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-// ✅ Ekstrak jadi widget tersendiri, bukan private method
 class _SummaryCard extends StatelessWidget {
   final String count;
   final String title;
@@ -83,9 +69,15 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // ✅ Lebar kolom kiri & tinggi card dinamis
+    final leftColumnWidth = (screenWidth * 0.2).clamp(64.0, 90.0);
+    final cardHeight = (screenWidth * 0.22).clamp(80.0, 100.0);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      height: 90,
+      height: cardHeight,
 
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -101,8 +93,9 @@ class _SummaryCard extends StatelessWidget {
 
       child: Row(
         children: [
+          // Kolom kiri: angka count
           Container(
-            width: 80,
+            width: leftColumnWidth,
 
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
@@ -117,10 +110,11 @@ class _SummaryCard extends StatelessWidget {
 
             child: Text(
               count,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+                // ✅ Font size count dinamis
+                fontSize: (screenWidth * 0.065).clamp(22.0, 30.0),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -135,16 +129,18 @@ class _SummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       color: AppColors.primary,
-                      fontSize: 20,
+                      // ✅ Font size title dinamis
+                      fontSize: (screenWidth * 0.05).clamp(16.0, 22.0),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
 
                   Icon(
                     icon,
-                    size: 35,
+                    // ✅ Icon size dinamis
+                    size: (screenWidth * 0.09).clamp(28.0, 40.0),
                     color: Colors.black54,
                   ),
                 ],

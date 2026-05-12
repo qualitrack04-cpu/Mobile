@@ -36,6 +36,11 @@ class _AuditListView extends StatefulWidget {
 class _AuditListViewState extends State<_AuditListView> {
   bool _isPrioritySelected = false;
 
+  // ✅ FIX: Simpan list audit terakhir supaya tidak hilang saat state transisi
+  // (AuditLoading, AuditDeleted, AuditCreated, dll tidak menghapus list)
+  List<AuditEntity> _lastAudits = [];
+  bool _isFirstLoad = true;
+
   List<AuditEntity> _applyFilter(List<AuditEntity> audits) {
     final filtered = _isPrioritySelected
         ? audits.where((e) => e.isPriority).toList()
@@ -99,7 +104,6 @@ class _AuditListViewState extends State<_AuditListView> {
                 ),
               ),
             );
-            // BLoC sudah reload otomatis setelah create — tidak perlu setState
           },
           child: Icon(
             Icons.add,
@@ -122,28 +126,43 @@ class _AuditListViewState extends State<_AuditListView> {
             ),
           );
         }
+
+        // ✅ FIX: Update _lastAudits setiap kali dapat data baru
+        if (state is AuditLoaded) {
+          _lastAudits = state.audits;
+          _isFirstLoad = false;
+        }
       },
       builder: (context, state) {
-        final isLoading = state is AuditLoading || state is AuditInitial;
-        final audits = state is AuditLoaded ? state.audits : <AuditEntity>[];
+        // ✅ FIX: isLoading hanya true saat PERTAMA kali load (belum punya data)
+        // Saat delete/create/update, tetap tampilkan data lama — tidak blank
+        final isLoading = _isFirstLoad &&
+            (state is AuditLoading || state is AuditInitial);
 
-        final displayList = isLoading
-            ? List.generate(
-                4,
-                (_) => AuditEntity(
-                  title: 'Loading Audit Title',
-                  auditorName: 'Loading Name',
-                  isoTemplates: const ['ISO 9001:2015'],
-                  department: 'Department',
-                  date: DateTime.now(),
-                  description: '',
-                  isPriority: false,
-                  isFinished: false,
-                ),
-              )
-            : _applyFilter(audits);
+        // ✅ FIX: Selalu pakai _lastAudits saat transisi state
+        // Ini mencegah list kosong saat state AuditDeleted/AuditCreated/dll
+        final audits = state is AuditLoaded ? state.audits : _lastAudits;
 
-        if (!isLoading && displayList.isEmpty) {
+        // Skeleton placeholder saat first load
+        final skeletonList = List.generate(
+          4,
+          (_) => AuditEntity(
+            title: 'Loading Audit Title Here',
+            auditorName: 'Loading Auditor Name',
+            isoTemplates: const ['ISO 9001:2015'],
+            department: 'Department Name',
+            date: DateTime.now(),
+            description: '',
+            isPriority: false,
+            isFinished: false,
+          ),
+        );
+
+        final displayList = isLoading ? skeletonList : _applyFilter(audits);
+
+        // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai first load
+        // dan benar-benar kosong — bukan saat transisi state
+        if (!isLoading && !_isFirstLoad && displayList.isEmpty) {
           return Center(
             child: Text(
               'No Audit Data',
@@ -157,6 +176,7 @@ class _AuditListViewState extends State<_AuditListView> {
         }
 
         return Skeletonizer(
+          // ✅ Skeletonizer hanya aktif saat first load
           enabled: isLoading,
           child: ListView.builder(
             padding: const EdgeInsets.only(bottom: 100),
@@ -176,13 +196,12 @@ class _AuditListViewState extends State<_AuditListView> {
                       ),
                     ),
                   );
-                  // BLoC reload otomatis setelah update
                 },
 
                 onChecklist: audit.isFinished
                     ? null
                     : () async {
-                        final result = await Navigator.push<bool>(
+                        await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
                             builder: (_) => BlocProvider.value(
@@ -191,11 +210,6 @@ class _AuditListViewState extends State<_AuditListView> {
                             ),
                           ),
                         );
-
-                        if (result == true) {
-                          // MarkAuditFinished sudah di-dispatch dari AuditChecklistPage
-                          // BLoC akan reload list otomatis
-                        }
                       },
 
                 onDelete: () {

@@ -10,6 +10,7 @@ import 'package:finding/presentation/pages/finding_detail_page.dart';
 import 'package:finding/presentation/pages/finding_edit_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -18,122 +19,134 @@ class FindingListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => GetIt.instance<FindingBloc>()..add(const LoadFindings()),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFEEF2F7),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            'FINDINGS',
-            style: TextStyle(
-              color: Color(0xFF0D2B55),
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-          ),
-        ),
-        body: BlocBuilder<FindingBloc, FindingState>(
-          builder: (context, state) {
-            if (state is FindingLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
-              );
-            }
+      child: Builder(
+        builder: (context) {
+          // ✅ Tambahkan ini
+          final screenWidth = MediaQuery.of(context).size.width;
 
-            if (state is FindingError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: const TextStyle(color: Colors.red),
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: AppBar(
+              backgroundColor: AppColors.surface,
+              elevation: 0,
+              title: Text(
+                'FINDINGS',
+                style: GoogleFonts.inter(
+                  fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
                 ),
-              );
-            }
+              ),
+            ),
 
-            if (state is FindingLoaded) {
-              return Stack(
-                children: [
-                  ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                    children: [
-                      if (state.findings.isEmpty)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 100),
-                            child: Text(
-                              'Belum ada finding',
-                              style: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        ...state.findings.map(
-                          (finding) => _FindingCard(finding: finding),
-                        ),
-                    ],
-                  ),
+            body: BlocBuilder<FindingBloc, FindingState>(
+              builder: (context, state) {
+                if (state is FindingLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
+                  );
+                }
 
-                  // FAB tambah finding baru
-                  // FAB tambah finding baru
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: Builder(
-                      builder: (context) {
-                        final screenWidth = MediaQuery.of(context).size.width;
-
-                        // ukuran FAB dinamis seperti AuditListPage
-                        final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
-
-                        return SizedBox(
-                          width: fabSize,
-                          height: fabSize,
-                          child: FloatingActionButton(
-                            backgroundColor: AppColors.primaryLight,
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                fabSize * 0.25,
-                              ),
-                            ),
-                            onPressed: () async {
-                              final bloc = context.read<FindingBloc>();
-
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => BlocProvider.value(
-                                        value: bloc,
-                                        child: const FindingFormPage(),
-                                      ),
-                                ),
-                              );
-
-                              // FindingFormPage mengembalikan Finding object saat berhasil
-                              if (result != null && context.mounted) {
-                                bloc.add(const LoadFindings());
-                              }
-                            },
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: fabSize * 0.45,
-                            ),
-                          ),
-                        );
-                      },
+                if (state is FindingError) {
+                  return Center(
+                    child: Text(
+                      state.message,
+                      style: const TextStyle(color: Colors.red),
                     ),
-                  ),
-                ],
-              );
-            }
+                  );
+                }
 
-            return const SizedBox();
-          },
-        ),
+                if (state is FindingLoaded) {
+                  return Stack(
+                    children: [
+                      ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                        children: [
+                          if (state.findings.isEmpty)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: Text(
+                                  'Belum ada finding',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            ...state.findings.map(
+                              (finding) => _FindingCard(finding: finding),
+                            ),
+                        ],
+                      ),
+
+                      // FAB tambah finding baru
+                      // FAB tambah finding baru
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: Builder(
+                          builder: (context) {
+                            final screenWidth =
+                                MediaQuery.of(context).size.width;
+
+                            // ukuran FAB dinamis seperti AuditListPage
+                            final fabSize = (screenWidth * 0.18).clamp(
+                              64.0,
+                              88.0,
+                            );
+
+                            return SizedBox(
+                              width: fabSize,
+                              height: fabSize,
+                              child: FloatingActionButton(
+                                backgroundColor: AppColors.primaryLight,
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    fabSize * 0.25,
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  final bloc = context.read<FindingBloc>();
+
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => BlocProvider.value(
+                                            value: bloc,
+                                            child: const FindingFormPage(),
+                                          ),
+                                    ),
+                                  );
+
+                                  // FindingFormPage mengembalikan Finding object saat berhasil
+                                  if (result != null && context.mounted) {
+                                    bloc.add(const LoadFindings());
+                                  }
+                                },
+                                child: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: fabSize * 0.45,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return const SizedBox();
+              },
+            ),
+          );
+        },
       ),
     );
   }

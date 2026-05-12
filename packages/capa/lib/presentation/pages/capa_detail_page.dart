@@ -4,7 +4,6 @@ import 'package:capa/domain/entities/capa.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
-import 'package:core/core.dart';
 import 'package:get_it/get_it.dart';
 
 class CapaDetailPage extends StatelessWidget {
