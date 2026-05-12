@@ -158,7 +158,7 @@ class ChecklistCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
 
             children: [
-              _buildPassButton(isPass),
+              _buildPassButton(isPass, isFail),
               const SizedBox(width: 10),
               _buildFailButton(isFail),
             ],
@@ -168,18 +168,26 @@ class ChecklistCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPassButton(bool isPass) {
+  Widget _buildPassButton(bool isPass, bool isFail) {
+    // ✅ Kalau sudah fail, tombol PASS di-disable — tidak bisa diubah ke pass
+    // Kalau sudah pass, tetap bisa diklik (untuk ganti ke fail)
     return SizedBox(
       height: 45,
 
       child: ElevatedButton.icon(
-        onPressed: onPass,
+        onPressed: isFail ? null : onPass,
 
         style: ElevatedButton.styleFrom(
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          backgroundColor: isPass ? AppColors.successLight : const Color(0xFFF3F4F6),
+          backgroundColor: isPass
+              ? AppColors.successLight
+              : isFail
+                  ? const Color(0xFFF3F4F6) // disabled saat fail
+                  : const Color(0xFFF3F4F6),
           foregroundColor: isPass ? AppColors.success : AppColors.textDisabled,
+          disabledBackgroundColor: const Color(0xFFF3F4F6),
+          disabledForegroundColor: AppColors.textDisabled,
 
           side: BorderSide(
             color: isPass ? AppColors.success : const Color(0xFFD1D5DB),
@@ -193,7 +201,9 @@ class ChecklistCard extends StatelessWidget {
         icon: Icon(
           Icons.check_circle,
           size: 18,
-          color: isPass ? AppColors.success : AppColors.textDisabled,
+          color: isPass
+              ? AppColors.success
+              : AppColors.textDisabled,
         ),
 
         label: Text(

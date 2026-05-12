@@ -147,9 +147,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
-        floatingActionButton: ValueListenableBuilder(
-          valueListenable: _titleController,
-          builder: (context, _, __) {
+        floatingActionButton: ListenableBuilder(
+          listenable: Listenable.merge([_titleController, _auditorController]),
+          builder: (context, _) {
             return BlocBuilder<AuditBloc, AuditState>(
               builder: (context, state) {
                 final isLoading = state is AuditLoading;

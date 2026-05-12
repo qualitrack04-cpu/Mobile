@@ -24,6 +24,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
+  bool get _isFormValid =>
+      _titleController.text.trim().isNotEmpty &&
+      _descriptionController.text.trim().isNotEmpty &&
+      _selectedDepartment != null;
+
   final List<String> _departments = [
     'Production',
     'Quality Control',
@@ -32,6 +37,13 @@ class _FindingFormPageState extends State<FindingFormPage> {
     'Warehouse',
     'HR',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(() => setState(() {}));
+    _descriptionController.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -436,10 +448,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: state is FindingLoading ? null : () => _onSubmit(context),
+        onPressed: (state is FindingLoading || !_isFormValid)
+            ? null
+            : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
+          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.4),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: state is FindingLoading

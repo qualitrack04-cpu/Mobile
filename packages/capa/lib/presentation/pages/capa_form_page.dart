@@ -21,6 +21,13 @@ class _CapaFormPageState extends State<CapaFormPage> {
   DateTime? _selectedDeadline;
   String? _selectedFindingId;
 
+  bool get _isFormValid =>
+      _titleController.text.trim().isNotEmpty &&
+      _selectedFindingId != null &&
+      _actionController.text.trim().isNotEmpty &&
+      _picController.text.trim().isNotEmpty &&
+      _selectedDeadline != null;
+
   // Mock finding list untuk dropdown
   final List<Map<String, String>> _findings = [
     {'id': '1', 'title': 'ISO9001 8.1 - Prosedur tidak terdokumentasi'},
@@ -35,6 +42,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
     if (widget.findingId != null) {
       _selectedFindingId = widget.findingId;
     }
+    _titleController.addListener(() => setState(() {}));
+    _actionController.addListener(() => setState(() {}));
+    _picController.addListener(() => setState(() {}));
   }
 
   @override
@@ -309,10 +319,12 @@ class _CapaFormPageState extends State<CapaFormPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: state is CapaLoading ? null : () => _onSubmit(context),
+        onPressed: (state is CapaLoading || !_isFormValid)
+            ? null
+            : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
+          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

@@ -30,10 +30,10 @@ class FindingListPage extends StatelessWidget {
               backgroundColor: AppColors.surface,
               elevation: 0,
               title: Text(
-                'FINDINGS',
+                'Findings',
                 style: GoogleFonts.inter(
-                  fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
-                  fontWeight: FontWeight.w800,
+                  fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primary,
                 ),
               ),
@@ -216,7 +216,7 @@ class _FindingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ✅ Tombol Edit
+                  // ✅ Tombol Edit — dengan frame yang jelas
                   GestureDetector(
                     onTap: () async {
                       final bloc = context.read<FindingBloc>();
@@ -235,27 +235,42 @@ class _FindingCard extends StatelessWidget {
                         bloc.add(const LoadFindings());
                       }
                     },
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: Colors.grey[500],
-                          size: 15,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE9EEF3),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFCDD5DE),
+                          width: 1,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Edit',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            color: Colors.grey[700],
+                            size: 15,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  // Tombol Details
+                  // Tombol Details (tetap seperti semula)
                   GestureDetector(
                     onTap: () {
                       Navigator.push(

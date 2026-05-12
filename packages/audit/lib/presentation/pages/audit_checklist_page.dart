@@ -312,38 +312,64 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       builder: (context, state) {
         final isLoading = state is AuditLoading;
 
-        return Container(
-          margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-          child: SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: isLoading ? null : _onSubmitChecklist,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryLight,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+        // ✅ FIX: tombol hanya aktif kalau progress 100% dan tidak sedang loading
+        final isComplete = _progress >= 1.0 && _checklists.isNotEmpty;
+        final canSubmit = isComplete && !isLoading;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ✅ Tampilkan hint kalau belum 100%
+            if (!isComplete && _checklists.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.only(bottom: 8, left: screenWidth * 0.06, right: screenWidth * 0.06),
+                child: Text(
+                  'Selesaikan semua checklist terlebih dahulu (${_completedCount}/${_checklists.length})',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(
-                      'Submit Checklist',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  // ✅ null = disabled kalau belum 100% atau sedang loading
+                  onPressed: canSubmit ? _onSubmitChecklist : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryLight,
+                    // ✅ Warna tombol saat disabled berbeda supaya user tahu
+                    disabledBackgroundColor: AppColors.primaryMuted,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          'Submit Checklist',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
             ),
-          ),
+          ],
         );
       },
     );

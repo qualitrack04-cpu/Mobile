@@ -30,8 +30,8 @@ class CapaListPage extends StatelessWidget {
               title: Text(
                 'CAPA',
                 style: GoogleFonts.inter(
-                  fontSize: (screenWidth * 0.07).clamp(24.0, 34.0),
-                  fontWeight: FontWeight.w800,
+                  fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primary,
                 ),
               ),
