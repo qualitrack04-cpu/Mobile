@@ -1,7 +1,7 @@
 import 'package:finding/domain/entities/finding.dart';
 
 class ChecklistEntity {
-  final int? id;
+  final String id;
   final String title;
   final String description;
   final String category;
@@ -11,7 +11,7 @@ class ChecklistEntity {
   Finding? finding;
 
   ChecklistEntity({
-    this.id,
+    required this.id,
     required this.title,
     required this.description,
     required this.category,

@@ -147,6 +147,7 @@ class _AuditListViewState extends State<_AuditListView> {
         final skeletonList = List.generate(
           4,
           (_) => AuditEntity(
+            id: '',
             title: 'Loading Audit Title Here',
             auditorName: 'Loading Auditor Name',
             isoTemplates: const ['ISO 9001:2015'],

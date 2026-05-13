@@ -2,7 +2,7 @@ import 'package:audit/domain/entities/checklist_entity.dart';
 
 class ChecklistModel extends ChecklistEntity {
   ChecklistModel({
-    super.id,
+    required super.id,
     required super.title,
     required super.description,
     required super.category,
@@ -13,7 +13,7 @@ class ChecklistModel extends ChecklistEntity {
 
   factory ChecklistModel.fromJson(Map<String, dynamic> json) {
     return ChecklistModel(
-      id: json['id'] as int?,
+      id: json['id'] as String,
       title: json['title'] as String? ?? json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       category: json['category'] as String? ?? json['department'] as String? ?? '',

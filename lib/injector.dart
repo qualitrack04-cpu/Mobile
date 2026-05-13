@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:core/services/api_service.dart';
 
 // Finding
 import 'package:finding/data/datasources/finding_mock_datasource.dart';
@@ -19,8 +20,8 @@ import 'package:capa/domain/usecases/closeout_capa.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 
 // Audit
-import 'package:audit/data/datasources/audit_datasource.dart';
-import 'package:audit/data/datasources/checklist_datasource.dart';
+import 'package:audit/data/datasources/audit_remote_datasource.dart';
+import 'package:audit/data/datasources/checklist_remote_datasource.dart';
 import 'package:audit/data/repositories/audit_repository_impl.dart';
 import 'package:audit/data/repositories/checklist_repository_impl.dart';
 import 'package:audit/domain/repositories/audit_repository.dart';
@@ -76,8 +77,9 @@ Future<void> init() async {
   );
 
   // ===== AUDIT =====
-  sl.registerLazySingleton(() => AuditDatasource());
-  sl.registerLazySingleton(() => ChecklistDatasource());
+  sl.registerLazySingleton(() => ApiService());
+  sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
+  sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<AuditRepository>(
     () => AuditRepositoryImpl(datasource: sl()),

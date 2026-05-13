@@ -1,5 +1,5 @@
 class AuditEntity {
-  final int? id; // ID dari backend (null untuk data lokal)
+  final String id;
   final String title;
   final String auditorName;
   final List<String> isoTemplates;
@@ -10,7 +10,7 @@ class AuditEntity {
   final bool isFinished;
 
   const AuditEntity({
-    this.id,
+    required this.id,
     required this.title,
     required this.auditorName,
     required this.isoTemplates,
@@ -22,7 +22,7 @@ class AuditEntity {
   });
 
   AuditEntity copyWith({
-    int? id,
+    String? id,
     String? title,
     String? auditorName,
     List<String>? isoTemplates,

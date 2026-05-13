@@ -17,6 +17,8 @@ dependencies:
   skeletonizer: ^2.1.3
   finding:
     path: ../finding
+  dio: ^5.4.0
+  shared_preferences: ^2.3.0
     
 
 dev_dependencies:

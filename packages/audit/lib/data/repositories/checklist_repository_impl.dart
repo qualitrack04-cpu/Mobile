@@ -1,9 +1,9 @@
-import 'package:audit/data/datasources/checklist_datasource.dart';
+import 'package:audit/data/datasources/checklist_remote_datasource.dart'; // ✅ Ganti
 import 'package:audit/domain/entities/checklist_entity.dart';
 import 'package:audit/domain/repositories/checklist_repository.dart';
 
 class ChecklistRepositoryImpl implements ChecklistRepository {
-  final ChecklistDatasource datasource;
+  final ChecklistRemoteDatasource datasource; // ✅ Ganti
 
   ChecklistRepositoryImpl({required this.datasource});
 
