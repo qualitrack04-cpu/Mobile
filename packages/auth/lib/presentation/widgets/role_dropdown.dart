@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:core/app_colors.dart';
 import 'custom_input_decoration.dart';
 
 class RoleDropdown extends StatelessWidget {
