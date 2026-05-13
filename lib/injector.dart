@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
-import 'package:core/services/api_service.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:core_services/services/auth_service.dart';
 
 // Finding
 import 'package:finding/data/datasources/finding_mock_datasource.dart';
@@ -78,6 +79,7 @@ Future<void> init() async {
 
   // ===== AUDIT =====
   sl.registerLazySingleton(() => ApiService());
+  sl.registerLazySingleton(() => AuthService(apiService: sl()));
   sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
 

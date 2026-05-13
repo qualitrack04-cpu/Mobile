@@ -1,4 +1,4 @@
-import 'package:core/services/api_service.dart';
+import 'package:core_services/services/api_service.dart';
 import 'package:audit/data/models/audit_model.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
 
