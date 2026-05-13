@@ -22,6 +22,8 @@ dependencies:
   auth:
     path: ../auth
   google_fonts: ^8.1.0
+  core_services:
+    path: ../core_services
 
 dev_dependencies:
   flutter_test:

@@ -2,9 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
+import 'package:core_services/core_services.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  late final DashboardService _dashboardService;
+  late Future<DashboardSummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboardService = DashboardService(apiService: ApiService());
+    _summaryFuture = _dashboardService.getSummary();
+  }
+
+  void _refresh() {
+    setState(() {
+      _summaryFuture = _dashboardService.getSummary();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +46,9 @@ class DashboardPage extends StatelessWidget {
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,
-
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-
             child: GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -36,29 +56,18 @@ class DashboardPage extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const ProfilePage()),
                 );
               },
-
               child: Container(
                 width: 38,
                 height: 38,
-
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-
-                  // ✅ lingkaran biru
                   border: Border.all(color: AppColors.primaryLight, width: 2.5),
                 ),
-
                 child: Padding(
                   padding: const EdgeInsets.all(2),
-
                   child: CircleAvatar(
                     backgroundColor: AppColors.primaryLight,
-
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: AppColors.surface,
-                    ),
+                    child: Icon(Icons.person, size: 20, color: AppColors.surface),
                   ),
                 ),
               ),
@@ -67,42 +76,76 @@ class DashboardPage extends StatelessWidget {
         ],
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: RefreshIndicator(
+        onRefresh: () async => _refresh(),
+        child: FutureBuilder<DashboardSummary>(
+          future: _summaryFuture,
+          builder: (context, snapshot) {
+            // Loading
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+            // Error
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Gagal memuat data',
+                      style: GoogleFonts.inter(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _refresh,
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          children: [
-            Text(
-              'Summary',
-              style: GoogleFonts.inter(
-                // ✅ Font size dinamis
-                fontSize: (screenWidth * 0.055).clamp(18.0, 22.0),
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
+            // Data berhasil dimuat
+            final summary = snapshot.data!;
 
-            const SizedBox(height: 20),
-
-            _SummaryCard(
-              count: '24',
-              title: 'Audit',
-              icon: Icons.assignment_outlined,
-            ),
-            _SummaryCard(count: '12', title: 'Finding', icon: Icons.search),
-            _SummaryCard(
-              count: '4',
-              title: 'Capa\nDone',
-              icon: Icons.checklist_rtl,
-            ),
-            _SummaryCard(
-              count: '0',
-              title: 'Capa\nOverdue',
-              icon: Icons.warning_amber_rounded,
-            ),
-          ],
+            return ListView(
+              padding: const EdgeInsets.all(20.0),
+              children: [
+                Text(
+                  'Summary',
+                  style: GoogleFonts.inter(
+                    fontSize: (screenWidth * 0.055).clamp(18.0, 22.0),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _SummaryCard(
+                  count: summary.totalAudit.toString(),
+                  title: 'Audit',
+                  icon: Icons.assignment_outlined,
+                ),
+                _SummaryCard(
+                  count: summary.totalFinding.toString(),
+                  title: 'Finding',
+                  icon: Icons.search,
+                ),
+                _SummaryCard(
+                  count: summary.capaDone.toString(),
+                  title: 'Capa\nDone',
+                  icon: Icons.checklist_rtl,
+                ),
+                _SummaryCard(
+                  count: summary.capaOverdue.toString(),
+                  title: 'Capa\nOverdue',
+                  icon: Icons.warning_amber_rounded,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -123,19 +166,15 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-
-    // ✅ Lebar kolom kiri & tinggi card dinamis
     final leftColumnWidth = (screenWidth * 0.2).clamp(64.0, 90.0);
     final cardHeight = (screenWidth * 0.22).clamp(80.0, 100.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       height: cardHeight,
-
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(15),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -143,56 +182,43 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Row(
         children: [
-          // Kolom kiri: angka count
           Container(
             width: leftColumnWidth,
-
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
-
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(15),
                 bottomLeft: Radius.circular(15),
               ),
             ),
-
             alignment: Alignment.center,
-
             child: Text(
               count,
               style: GoogleFonts.inter(
                 color: Colors.white,
-                // ✅ Font size count dinamis
                 fontSize: (screenWidth * 0.065).clamp(22.0, 30.0),
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                 children: [
                   Text(
                     title,
                     style: GoogleFonts.inter(
                       color: AppColors.primary,
-                      // ✅ Font size title dinamis
                       fontSize: (screenWidth * 0.05).clamp(16.0, 22.0),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   Icon(
                     icon,
-                    // ✅ Icon size dinamis
                     size: (screenWidth * 0.09).clamp(28.0, 40.0),
                     color: Colors.black54,
                   ),
