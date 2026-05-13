@@ -34,16 +34,22 @@ class AuditRepositoryImpl implements AuditRepository {
         year: date.year,
         description: description,
         isPriority: isPriority,
-        schedules: schedules ?? [
-          // Minimal 1 schedule — ambil dari form
-          // Ini adalah contoh default, idealnya dari input user
-          {
-            'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
-            'auditorName': auditorName,
-            'scheduledDate': '${date.year}-${date.month.toString().padLeft(2,'0')}-01',
-            'department': department,
-          }
-        ],
+        schedules:
+            schedules ??
+            [
+              // Minimal 1 schedule — ambil dari form
+              // Ini adalah contoh default, idealnya dari input user
+              {
+                'clauseRef': isoTemplates.isNotEmpty
+                    ? isoTemplates.first
+                    : 'N/A',
+                'auditorId': null, // belum ada fitur auditor
+                'auditorName': auditorName, // ← ini yang kurang
+                'scheduledDate':
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-01',
+                'department': department,
+              },
+            ],
       );
     } catch (e) {
       throw Exception('Gagal membuat audit: $e');
@@ -72,10 +78,12 @@ class AuditRepositoryImpl implements AuditRepository {
         schedules: [
           {
             'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
-            'auditorName': auditorName,
-            'scheduledDate': '${date.year}-${date.month.toString().padLeft(2,'0')}-01',
+            'auditorId': null, // belum ada fitur auditor
+            'auditorName': auditorName, // ← ini yang kurang
+            'scheduledDate':
+                '${date.year}-${date.month.toString().padLeft(2, '0')}-01',
             'department': department,
-          }
+          },
         ],
       );
     } catch (e) {
