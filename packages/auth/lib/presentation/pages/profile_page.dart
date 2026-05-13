@@ -1,15 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/core_services.dart';
+import 'package:get_it/get_it.dart';
 
 import 'login_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
-  // ✅ nanti diganti dengan data dari backend
-  static const String _name = 'Jane Auditor';
-  static const String _role = 'Quality Auditor';
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String _name = '';
+  String _role = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final authService = GetIt.instance<AuthService>();
+    final user = await authService.getCurrentUser();
+    setState(() {
+      _name = user['name'] ?? '';
+      _role = user['role'] ?? '';
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,19 +69,20 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 24),
-            _buildInfoCard(),
-            const SizedBox(height: 24),
-            _buildLogoutButton(context),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _buildProfileHeader(),
+                  const SizedBox(height: 24),
+                  _buildInfoCard(),
+                  const SizedBox(height: 24),
+                  _buildLogoutButton(context),
+                ],
+              ),
+            ),
     );
   }
 
@@ -74,13 +98,11 @@ class ProfilePage extends StatelessWidget {
 
       child: Column(
         children: [
-          // ✅ foto profil + tombol edit
           Stack(
             children: [
               CircleAvatar(
                 radius: 48,
                 backgroundColor: AppColors.borderLight,
-
                 child: Icon(
                   Icons.person,
                   size: 52,
@@ -91,21 +113,17 @@ class ProfilePage extends StatelessWidget {
               Positioned(
                 bottom: 0,
                 right: 0,
-
                 child: Container(
                   width: 28,
                   height: 28,
-
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     shape: BoxShape.circle,
-
                     border: Border.all(
                       color: AppColors.surface,
                       width: 2,
                     ),
                   ),
-
                   child: const Icon(
                     Icons.edit,
                     size: 14,
@@ -119,7 +137,7 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 14),
 
           Text(
-            _name,
+            _name.isEmpty ? '-' : _name,
             style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -130,7 +148,7 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 4),
 
           Text(
-            _role.toUpperCase(),
+            _role.isEmpty ? '-' : _role.toUpperCase(),
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -152,18 +170,17 @@ class ProfilePage extends StatelessWidget {
 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           _buildInfoField(
             label: 'Full Name',
-            value: _name,
+            value: _name.isEmpty ? '-' : _name,
           ),
 
           Divider(height: 1, color: AppColors.borderLight),
 
           _buildInfoField(
             label: 'Role',
-            value: _role,
+            value: _role.isEmpty ? '-' : _role,
           ),
         ],
       ),
@@ -182,7 +199,6 @@ class ProfilePage extends StatelessWidget {
 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Text(
             label,
@@ -232,7 +248,6 @@ class ProfilePage extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.danger),
           backgroundColor: AppColors.dangerLight,
-
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -256,7 +271,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // ✅ konfirmasi sebelum logout
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -292,9 +306,12 @@ class ProfilePage extends StatelessWidget {
           ),
 
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final authService = GetIt.instance<AuthService>();
+              await authService.logout();
+
+              if (!context.mounted) return;
               Navigator.pop(ctx);
-              // ✅ kembali ke login dan hapus semua route
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(

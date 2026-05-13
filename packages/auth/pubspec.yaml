@@ -18,6 +18,8 @@ dependencies:
   dio: ^5.4.0
   shared_preferences: ^2.3.0
   google_fonts: ^8.1.0
+  core_services:
+    path: ../core_services
 
 dev_dependencies:
   flutter_test:

@@ -7,7 +7,7 @@ class AuthService {
   AuthService({required this.apiService});
 
   // POST /api/Auth/login
-  Future<Map<String, dynamic>> login({
+  Future<void> login({
     required String email,
     required String password,
   }) async {
@@ -22,15 +22,13 @@ class AuthService {
 
       final data = response.data as Map<String, dynamic>;
 
-      // Simpan token dan info user ke SharedPreferences
+      // Simpan token & info user
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', data['token'] as String);
       await prefs.setString('user_role', data['role'] as String);
       await prefs.setString('user_name', data['fullName'] as String);
-
-      return data;
     } catch (e) {
-      throw Exception('Login gagal: $e');
+      throw Exception('Email atau password salah');
     }
   }
 
@@ -39,7 +37,6 @@ class AuthService {
     required String fullName,
     required String email,
     required String password,
-    required String role,
   }) async {
     try {
       await apiService.client.post(
@@ -48,15 +45,15 @@ class AuthService {
           'fullName': fullName,
           'email': email,
           'password': password,
-          'role': role,
+          'role': 'QualityManager', // untuk sekarang hanya Quality Manager
         },
       );
     } catch (e) {
-      throw Exception('Register gagal: $e');
+      throw Exception('Registrasi gagal, email mungkin sudah terdaftar');
     }
   }
 
-  // Logout — hapus token dari SharedPreferences
+  // Logout — hapus semua data tersimpan
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
