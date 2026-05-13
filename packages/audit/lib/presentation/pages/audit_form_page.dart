@@ -24,8 +24,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   final List<String> _departments = ['Production', 'Warehouse'];
 
-  static const String _iso9001 = 'ISO 9001:2015';
-  static const String _iso14001 = 'ISO 14001:2015';
+  static const String _iso9001 = 'ISO9001';
+  static const String _iso14001 = 'ISO14001';
 
   String? _selectedDepartment;
   DateTime? _selectedDate;
@@ -303,7 +303,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             value: _iso9001,
             groupValue: _selectedIso,
             onChanged: (value) => setState(() => _selectedIso = value),
-            title: Text(_iso9001, style: GoogleFonts.inter(fontSize: 12)),
+            title: Text('ISO 9001', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryLight,
@@ -312,7 +312,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             value: _iso14001,
             groupValue: _selectedIso,
             onChanged: (value) => setState(() => _selectedIso = value),
-            title: Text(_iso14001, style: GoogleFonts.inter(fontSize: 12)),
+            title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryLight,

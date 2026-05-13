@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
-import 'package:core_services/core_services.dart';        // TAMBAH
-import 'package:get_it/get_it.dart';                    // TAMBAH
+import 'package:core_services/core_services.dart';
+import 'package:get_it/get_it.dart';
 
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/action_button.dart';
+import '../widgets/role_dropdown.dart'; // TAMBAH KEMBALI
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,14 +16,15 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _fullNameController = TextEditingController();      // TAMBAH
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isObscured = true;
   bool _isObscuredConfirm = true;
-  bool _isLoading = false;                                  // TAMBAH
-  String? _errorMessage;                                    // TAMBAH
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _selectedRole = 'QualityManager'; // default Quality Manager
 
   @override
   void dispose() {
@@ -34,7 +36,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _onRegister() async {
-    // Validasi
     if (_fullNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
@@ -61,6 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
         fullName: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        role: _selectedRole ?? 'QualityManager',
       );
 
       if (!mounted) return;
@@ -84,11 +86,14 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             children: [
               const Icon(Icons.shield, size: 45, color: AppColors.primary),
-              const Text('QualiTrack',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary)),
+              const Text(
+                'QualiTrack',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
               const SizedBox(height: 40),
 
               Container(
@@ -97,19 +102,21 @@ class _RegisterPageState extends State<RegisterPage> {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 20)
+                    BoxShadow(color: Colors.black12, blurRadius: 20),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Sign Up',
-                        style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary)),
+                    const Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
 
-                    // TAMBAH: Full Name field
                     const InputLabel('Full Name'),
                     TextField(
                       controller: _fullNameController,
@@ -137,10 +144,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         hint: '••••••••',
                         icon: Icons.lock_outline,
                         suffix: IconButton(
-                          icon: Icon(_isObscured
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                              size: 20),
+                          icon: Icon(
+                            _isObscured
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 20,
+                          ),
                           onPressed: () =>
                               setState(() => _isObscured = !_isObscured),
                         ),
@@ -155,22 +164,31 @@ class _RegisterPageState extends State<RegisterPage> {
                         hint: '••••••••',
                         icon: Icons.lock_outline,
                         suffix: IconButton(
-                          icon: Icon(_isObscuredConfirm
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                              size: 20),
+                          icon: Icon(
+                            _isObscuredConfirm
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 20,
+                          ),
                           onPressed: () => setState(
                               () => _isObscuredConfirm = !_isObscuredConfirm),
                         ),
                       ),
                     ),
 
-                    // TAMBAH: error message
+                    // TAMBAH KEMBALI: Role dropdown
+                    const InputLabel('Role'),
+                    RoleDropdown(
+                      selectedRole: _selectedRole,
+                      onChanged: (val) => setState(() => _selectedRole = val),
+                    ),
+
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 8),
-                      Text(_errorMessage!,
-                          style: const TextStyle(
-                              color: Colors.red, fontSize: 13)),
+                      Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                      ),
                     ],
 
                     const SizedBox(height: 25),
@@ -179,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ? const Center(child: CircularProgressIndicator())
                         : ActionButton(
                             label: 'SIGN UP',
-                            onPressed: _onRegister,         // UBAH
+                            onPressed: _onRegister,
                           ),
                   ],
                 ),
@@ -187,8 +205,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Back to Login',
-                    style: TextStyle(color: Colors.grey)),
+                child: const Text(
+                  'Back to Login',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             ],
           ),

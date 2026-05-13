@@ -37,6 +37,7 @@ class AuthService {
     required String fullName,
     required String email,
     required String password,
+    required String role,
   }) async {
     try {
       await apiService.client.post(
