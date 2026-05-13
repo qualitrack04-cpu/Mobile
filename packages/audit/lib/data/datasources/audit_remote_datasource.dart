@@ -1,6 +1,7 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:audit/data/models/audit_model.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
+import 'package:dio/dio.dart';
 
 class AuditRemoteDatasource {
   final ApiService apiService;
@@ -40,9 +41,19 @@ class AuditRemoteDatasource {
         'schedules': schedules,
       };
 
-      final response = await apiService.client.post('/api/AuditPlan', data: body);
+      final response = await apiService.client.post(
+        '/api/AuditPlan',
+        data: body,
+      );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
+      // Tambah ini sementara
+      if (e is DioException && e.response != null) {
+        print('=== STATUS: ${e.response?.statusCode} ===');
+        print('=== ERROR RESPONSE BODY ===');
+        print(e.response?.data);
+        print('===========================');
+      }
       throw Exception('Gagal membuat audit: $e');
     }
   }
@@ -67,8 +78,10 @@ class AuditRemoteDatasource {
         'schedules': schedules,
       };
 
-      final response =
-          await apiService.client.put('/api/AuditPlan/$id', data: body);
+      final response = await apiService.client.put(
+        '/api/AuditPlan/$id',
+        data: body,
+      );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Gagal mengupdate audit: $e');

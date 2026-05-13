@@ -39,7 +39,7 @@ class AuditRepositoryImpl implements AuditRepository {
           // Ini adalah contoh default, idealnya dari input user
           {
             'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
-            'auditorId': '00000000-0000-0000-0000-000000000000', // ganti dengan auditorId asli
+            'auditorName': auditorName,
             'scheduledDate': '${date.year}-${date.month.toString().padLeft(2,'0')}-01',
             'department': department,
           }
@@ -72,7 +72,7 @@ class AuditRepositoryImpl implements AuditRepository {
         schedules: [
           {
             'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
-            'auditorId': '00000000-0000-0000-0000-000000000000',
+            'auditorName': auditorName,
             'scheduledDate': '${date.year}-${date.month.toString().padLeft(2,'0')}-01',
             'department': department,
           }
