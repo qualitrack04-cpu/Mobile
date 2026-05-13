@@ -22,6 +22,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final _auditorController = TextEditingController();
   final _descriptionController = TextEditingController();
 
+  // FIX 2: ScrollController untuk auto-scroll ke field aktif
+  final _scrollController = ScrollController();
+
   // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
     'Production': 'Produksi',
@@ -31,14 +34,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
 
-  String? _selectedDepartment; // menyimpan label (tampilan)
+  String? _selectedDepartment;
   DateTime? _selectedDate;
   bool _isPriority = false;
   String? _selectedIso;
 
   bool get _isEdit => widget.audit != null;
 
-  // Konversi label → value backend saat submit
   String get _departmentValue =>
       _departments[_selectedDepartment] ?? _selectedDepartment ?? '';
 
@@ -51,7 +53,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _titleController.text = audit.title;
       _auditorController.text = audit.auditorName;
       _descriptionController.text = audit.description;
-      // Cari label berdasarkan value dari backend (misal "Produksi" → "Production")
       _selectedDepartment = _departments.entries
           .where((e) => e.value == audit.department)
           .map((e) => e.key)
@@ -70,6 +71,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _titleController.dispose();
     _auditorController.dispose();
     _descriptionController.dispose();
+    _scrollController.dispose(); // FIX 2: dispose scroll controller
     super.dispose();
   }
 
@@ -79,7 +81,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedDepartment != null &&
       _selectedDate != null;
 
-  // ✅ PERUBAHAN UTAMA: dispatch event ke BLoC, tidak lagi pop entity manual
   void _onSubmit() {
     if (!_isFormValid) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +100,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         title: _titleController.text.trim(),
         auditorName: _auditorController.text.trim(),
         isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _departmentValue, // kirim value backend, bukan label
+        department: _departmentValue,
         date: _selectedDate!,
         description: _descriptionController.text.trim(),
         isPriority: _isPriority,
@@ -109,7 +110,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         title: _titleController.text.trim(),
         auditorName: _auditorController.text.trim(),
         isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _departmentValue, // kirim value backend, bukan label
+        department: _departmentValue,
         date: _selectedDate!,
         description: _descriptionController.text.trim(),
         isPriority: _isPriority,
@@ -122,7 +123,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final appBarFontSize = (screenWidth * 0.07).clamp(22.0, 32.0);
 
-    // ✅ BlocListener: tutup page setelah create/update berhasil
+    // FIX 1: Hitung padding bawah = tinggi FAB + jarak aman
+    const double fabHeight = 58;
+    const double fabBottomMargin = 16; // jarak FAB dari bawah layar
+    const double extraPadding = 16;
+    const double bottomPadding = fabHeight + fabBottomMargin + extraPadding;
+
     return BlocListener<AuditBloc, AuditState>(
       listener: (context, state) {
         if (state is AuditCreated || state is AuditUpdated) {
@@ -139,6 +145,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
+        // FIX 2: true agar scaffold otomatis resize saat keyboard muncul
+        resizeToAvoidBottomInset: true,
 
         appBar: AppBar(
           backgroundColor: AppColors.surface,
@@ -180,7 +188,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   ),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 58,
+                    height: fabHeight,
                     child: ElevatedButton.icon(
                       onPressed: (_isFormValid && !isLoading) ? _onSubmit : null,
                       style: ElevatedButton.styleFrom(
@@ -218,7 +226,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
         ),
 
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
+          controller: _scrollController, // FIX 2: pasang controller
+          // FIX 1: padding bawah cukup agar konten tidak tertutup FAB
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, bottomPadding),
+          // FIX 2: keyboard otomatis scroll ke field yang sedang aktif
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             children: [
               Container(
@@ -247,7 +259,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -281,6 +292,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
           TextField(
             controller: controller,
             style: GoogleFonts.inter(fontSize: 12),
+            // FIX 2: keyboard muncul → Flutter otomatis scroll ke field ini
+            textInputAction: TextInputAction.next,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
@@ -354,7 +367,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDepartment, // label (tampilan)
+              value: _selectedDepartment,
               isExpanded: true,
               hint: Text(
                 'Select department',
@@ -362,7 +375,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
               ),
               items: _departments.keys.map((label) {
                 return DropdownMenuItem<String>(
-                  value: label, // simpan label sebagai selected value
+                  value: label,
                   child: Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.black87)),
                 );
               }).toList(),
@@ -455,6 +468,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             controller: _descriptionController,
             maxLines: 2,
             style: GoogleFonts.inter(fontSize: 12),
+            textInputAction: TextInputAction.done,
             decoration: InputDecoration(
               hintText: 'Detail the non-conformance observed during the audit...',
               hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
