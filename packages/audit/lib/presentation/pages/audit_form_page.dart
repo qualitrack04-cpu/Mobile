@@ -22,17 +22,25 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final _auditorController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  final List<String> _departments = ['Production', 'Warehouse'];
+  // label (tampilan) → value (dikirim ke backend)
+  final Map<String, String> _departments = {
+    'Production': 'Produksi',
+    'Warehouse': 'Warehouse',
+  };
 
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
 
-  String? _selectedDepartment;
+  String? _selectedDepartment; // menyimpan label (tampilan)
   DateTime? _selectedDate;
   bool _isPriority = false;
   String? _selectedIso;
 
   bool get _isEdit => widget.audit != null;
+
+  // Konversi label → value backend saat submit
+  String get _departmentValue =>
+      _departments[_selectedDepartment] ?? _selectedDepartment ?? '';
 
   @override
   void initState() {
@@ -43,7 +51,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _titleController.text = audit.title;
       _auditorController.text = audit.auditorName;
       _descriptionController.text = audit.description;
-      _selectedDepartment = audit.department;
+      // Cari label berdasarkan value dari backend (misal "Produksi" → "Production")
+      _selectedDepartment = _departments.entries
+          .where((e) => e.value == audit.department)
+          .map((e) => e.key)
+          .firstOrNull;
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
@@ -87,7 +99,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         title: _titleController.text.trim(),
         auditorName: _auditorController.text.trim(),
         isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _selectedDepartment!,
+        department: _departmentValue, // kirim value backend, bukan label
         date: _selectedDate!,
         description: _descriptionController.text.trim(),
         isPriority: _isPriority,
@@ -97,7 +109,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         title: _titleController.text.trim(),
         auditorName: _auditorController.text.trim(),
         isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _selectedDepartment!,
+        department: _departmentValue, // kirim value backend, bukan label
         date: _selectedDate!,
         description: _descriptionController.text.trim(),
         isPriority: _isPriority,
@@ -342,19 +354,19 @@ class _AuditFormPageState extends State<AuditFormPage> {
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDepartment,
+              value: _selectedDepartment, // label (tampilan)
               isExpanded: true,
               hint: Text(
                 'Select department',
                 style: GoogleFonts.inter(fontSize: 15, color: AppColors.textDisabled),
               ),
-              items: _departments.map((dept) {
+              items: _departments.keys.map((label) {
                 return DropdownMenuItem<String>(
-                  value: dept,
-                  child: Text(dept, style: GoogleFonts.inter(fontSize: 15, color: Colors.black87)),
+                  value: label, // simpan label sebagai selected value
+                  child: Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.black87)),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => _selectedDepartment = value),
+              onChanged: (label) => setState(() => _selectedDepartment = label),
             ),
           ),
         ],
