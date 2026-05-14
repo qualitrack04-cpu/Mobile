@@ -78,7 +78,7 @@ class CapaDetailPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                capa.rootCause,
+                capa.findingTitle.isNotEmpty ? capa.findingTitle : capa.rootCause,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class CapaDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    capa.picId.toUpperCase(),
+                    capa.picName.isNotEmpty ? capa.picName : capa.picId.toUpperCase(),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,

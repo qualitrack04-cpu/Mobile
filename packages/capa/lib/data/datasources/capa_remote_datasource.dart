@@ -64,7 +64,7 @@ class CapaRemoteDatasource {
         'rootCause': rootCause,
         'correctiveAction': correctiveAction,
         'preventiveAction': preventiveAction,
-        'picName': picId,  // ✅ picId di Flutter isinya nama, kirim ke picName
+        'picId': picId,  // ✅ picId di Flutter isinya nama, kirim ke picName
         'deadline': '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
       final response = await apiService.client.post(
@@ -113,8 +113,10 @@ class CapaRemoteDatasource {
         'Open': 0,
         'InProgress': 1,
         'In Progress': 1,
-        'Done': 2,
-        'Closed': 2,
+        'Pending Verification': 2,
+        'PendingVerification': 2,
+        'Done': 3,
+        'Closed': 3,
       };
       final statusInt = statusMap[status] ?? 0;
       await apiService.client.patch('/api/Capa/$id/status', data: statusInt);

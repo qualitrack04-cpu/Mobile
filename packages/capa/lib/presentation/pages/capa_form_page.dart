@@ -59,8 +59,8 @@ class _CapaFormPageState extends State<CapaFormPage> {
       final fRes = await api.client.get('/api/Finding');
       final findingsRaw = fRes.data as List<dynamic>;
 
-      // Load semua users untuk PIC: GET /api/Auth/users
-      final uRes = await api.client.get('/api/Auth/users');
+      // Load semua users untuk PIC: GET /api/Auth/auditors (karena /users tidak ada)
+      final uRes = await api.client.get('/api/Auth/auditors');
       final usersRaw = uRes.data['data'] as List<dynamic>;
 
       setState(() {

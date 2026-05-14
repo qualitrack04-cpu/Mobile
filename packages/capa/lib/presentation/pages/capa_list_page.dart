@@ -158,7 +158,7 @@ class _CapaCardState extends State<_CapaCard> {
   late String _currentStatus;
 
   // ✅ opsi dropdown status
-  static const List<String> _statusOptions = ['Open', 'In Progress', 'Done'];
+  static const List<String> _statusOptions = ['Open', 'In Progress', 'Pending Verification', 'Closed'];
 
   @override
   void initState() {
@@ -226,7 +226,7 @@ class _CapaCardState extends State<_CapaCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.capa.picId,
+                  widget.capa.picName.isNotEmpty ? widget.capa.picName : widget.capa.picId.toUpperCase(),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

@@ -8,6 +8,8 @@ class Capa extends Equatable {
   final String correctiveAction;
   final String preventiveAction;
   final String picId;
+  final String picName;
+  final String findingTitle;
   final DateTime deadline;
   final bool isClosed;
   final DateTime createdAt;
@@ -21,6 +23,8 @@ class Capa extends Equatable {
     required this.correctiveAction,
     required this.preventiveAction,
     required this.picId,
+    required this.picName,
+    required this.findingTitle,
     required this.deadline,
     required this.isClosed,
     required this.createdAt,
@@ -36,6 +40,8 @@ class Capa extends Equatable {
         correctiveAction,
         preventiveAction,
         picId,
+        picName,
+        findingTitle,
         deadline,
         isClosed,
         createdAt,
