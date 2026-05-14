@@ -350,23 +350,52 @@ class _AuditFormPageState extends State<AuditFormPage> {
               ),
             )
           else if (_auditors.isEmpty)
-            Row(
-              children: [
-                Text(
-                  'Gagal memuat auditor.',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.danger,
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryMuted.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: AppColors.primaryLight),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Daftar auditor belum tersedia',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.primaryLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _isLoadingAuditors = true);
-                    context.read<AuditBloc>().add(const LoadAuditors());
-                  },
-                  child: const Text('Coba lagi'),
-                ),
-              ],
+                  InkWell(
+                    onTap: () {
+                      setState(() => _isLoadingAuditors = true);
+                      context.read<AuditBloc>().add(const LoadAuditors());
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Muat Ulang',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             DropdownButtonHideUnderline(

@@ -35,14 +35,27 @@ class _AuditListView extends StatefulWidget {
 
 class _AuditListViewState extends State<_AuditListView> {
   bool _isPrioritySelected = false;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   // ✅ FIX: Simpan list audit terakhir supaya tidak hilang saat state transisi
   // (AuditLoading, AuditDeleted, AuditCreated, dll tidak menghapus list)
   List<AuditEntity> _lastAudits = [];
   bool _isFirstLoad = true;
 
-  List<AuditEntity> _applyFilter(List<AuditEntity> audits) {
-    final filtered = _isPrioritySelected
+  List<AuditEntity> _applyFilter(List<AuditEntity> audits, bool isPriority) {
+    final filtered = isPriority
         ? audits.where((e) => e.isPriority).toList()
         : List<AuditEntity>.from(audits);
 
@@ -78,10 +91,28 @@ class _AuditListViewState extends State<_AuditListView> {
       body: Column(
         children: [
           AuditFilter(
-            isPrioritySelected: _isPrioritySelected,
-            onChanged: (value) => setState(() => _isPrioritySelected = value),
+            pageController: _pageController,
+            onChanged: (value) {
+              setState(() => _isPrioritySelected = value);
+              _pageController.animateToPage(
+                value ? 1 : 0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            },
           ),
-          Expanded(child: _buildBody()),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _isPrioritySelected = index == 1);
+              },
+              children: [
+                _buildBody(isPriority: false),
+                _buildBody(isPriority: true),
+              ],
+            ),
+          ),
         ],
       ),
 
@@ -115,7 +146,7 @@ class _AuditListViewState extends State<_AuditListView> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({required bool isPriority}) {
     return BlocConsumer<AuditBloc, AuditState>(
       listener: (context, state) {
         if (state is AuditError) {
@@ -234,7 +265,7 @@ class _AuditListViewState extends State<_AuditListView> {
           ),
         );
 
-        final displayList = isLoading ? skeletonList : _applyFilter(audits);
+        final displayList = isLoading ? skeletonList : _applyFilter(audits, isPriority);
 
         // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai first load
         // dan benar-benar kosong — bukan saat transisi state
