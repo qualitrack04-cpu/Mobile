@@ -206,7 +206,7 @@ class _RegisterPageState extends State<RegisterPage> {
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text(
-                  'Back to Login',
+                  'Back to Sign In',
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
