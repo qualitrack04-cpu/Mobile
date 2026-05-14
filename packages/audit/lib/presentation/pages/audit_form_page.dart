@@ -30,7 +30,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   // State lokal daftar auditor dari backend
   List<AuditorEntity> _auditors = [];
-  bool _isLoadingAuditors = false;
+  bool _isLoadingAuditors = true;
 
   // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
