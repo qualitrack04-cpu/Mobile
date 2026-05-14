@@ -134,14 +134,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   icon: Icons.search,
                 ),
                 _SummaryCard(
-                  count: summary.capaDone.toString(),
-                  title: 'Capa\nDone',
+                  count: summary.totalCapa.toString(),
+                  title: 'CAPA',
                   icon: Icons.checklist_rtl,
-                ),
-                _SummaryCard(
-                  count: summary.capaOverdue.toString(),
-                  title: 'Capa\nOverdue',
-                  icon: Icons.warning_amber_rounded,
                 ),
               ],
             );
