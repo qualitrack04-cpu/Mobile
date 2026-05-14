@@ -1,4 +1,3 @@
-export 'data/datasources/capa_mock_datasource.dart';
 export 'data/datasources/capa_remote_datasource.dart';
 export 'data/models/capa_model.dart';
 export 'data/repositories/capa_repository_impl.dart';
