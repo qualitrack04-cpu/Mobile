@@ -314,8 +314,6 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFF0F0);
       case FindingCategory.minorNC:
         return Colors.white;
-      case FindingCategory.observation:
-        return Colors.white;
       case FindingCategory.ofi:
         return Colors.white;
     }
@@ -327,8 +325,6 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }
@@ -358,10 +354,8 @@ class _FindingCard extends StatelessWidget {
         return 'Major NC';
       case FindingCategory.minorNC:
         return 'Minor NC';
-      case FindingCategory.observation:
-        return 'Conform';
       case FindingCategory.ofi:
-        return 'Observe';
+        return 'OFI';
     }
   }
 
@@ -371,8 +365,6 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFDDDD);
       case FindingCategory.minorNC:
         return const Color(0xFFFFEDD5);
-      case FindingCategory.observation:
-        return const Color(0xFFD5F5E3);
       case FindingCategory.ofi:
         return const Color(0xFFDDE8FF);
     }
@@ -384,8 +376,6 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }

@@ -96,40 +96,36 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
     final finding = widget.finding;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFD0DCF0), width: 1.2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: category badge + clause ref
+            // ── Judul besar (clauseRef)
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildCategoryBadge(finding.category),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      finding.clauseRef,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0D2B55),
-                      ),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+              child: Text(
+                finding.clauseRef,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0D2B55),
+                  height: 1.3,
+                ),
               ),
             ),
 
-            // Description
+            const SizedBox(height: 16),
+
+            // ── DESCRIPTION label + teks
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,11 +134,11 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
-                      letterSpacing: 0.5,
+                      color: Color(0xFF7A8FAD),
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     finding.description,
                     style: const TextStyle(
@@ -155,11 +151,11 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
               ),
             ),
 
-            const Divider(height: 1, indent: 16, endIndent: 16),
+            const SizedBox(height: 20),
 
-            // Evidence Photos — dari backend
+            // ── EVIDENCE PHOTOS label + grid foto
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -168,11 +164,11 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D2B55),
-                      letterSpacing: 0.5,
+                      color: Color(0xFF7A8FAD),
+                      letterSpacing: 0.8,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   FutureBuilder<List<String>>(
                     future: _evidenceFuture,
                     builder: (context, snapshot) {
@@ -209,7 +205,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                         );
                       }
 
-                      // Tampilkan max 3 thumbnail, sisanya pakai counter
                       final shown = urls.take(3).toList();
                       final remaining = urls.length - 3;
 
@@ -227,7 +222,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                               ),
                             ),
                           ],
-                          // Tambah slot kosong jika < 3 foto
                           for (int i = shown.length; i < 3; i++) ...[
                             const SizedBox(width: 8),
                             Expanded(
@@ -255,30 +249,33 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
               ),
             ),
 
+            const SizedBox(height: 20),
             const Divider(height: 1, indent: 16, endIndent: 16),
 
-            // Info rows
+            // ── Info rows: AUDITOR, DEPT, DATE
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
+                  if (finding.auditorName != null && finding.auditorName!.isNotEmpty) ...[
+                    _buildInfoRow(
+                      icon: Icons.person_outline,
+                      label: 'AUDITOR',
+                      value: finding.auditorName!,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   _buildInfoRow(
                     icon: Icons.business_outlined,
                     label: 'DEPT',
                     value: finding.department,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.calendar_today_outlined,
                     label: 'DATE',
                     value:
                         '${finding.foundAt.day} ${_getMonth(finding.foundAt.month)} ${finding.foundAt.year}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    icon: Icons.flag_outlined,
-                    label: 'STATUS',
-                    value: _getStatusLabel(finding.status),
                   ),
                 ],
               ),
@@ -303,10 +300,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
         bg = const Color(0xFFFFEDD5);
         fg = Colors.orange;
         label = 'Minor NC';
-      case FindingCategory.observation:
-        bg = const Color(0xFFD5F5E3);
-        fg = Colors.green;
-        label = 'Observation';
       case FindingCategory.ofi:
         bg = const Color(0xFFDDE8FF);
         fg = const Color(0xFF3B6FD4);
@@ -337,14 +330,14 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.black54),
+        Icon(icon, size: 17, color: Colors.black45),
         const SizedBox(width: 8),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Colors.black54,
+            color: Colors.black45,
             letterSpacing: 0.5,
           ),
         ),
@@ -354,7 +347,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Color(0xFF0D2B55),
           ),
         ),
       ],
@@ -367,17 +360,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return months[month - 1];
-  }
-
-  String _getStatusLabel(FindingStatus status) {
-    switch (status) {
-      case FindingStatus.open:
-        return 'Open';
-      case FindingStatus.inProgress:
-        return 'In Progress';
-      case FindingStatus.closed:
-        return 'Closed';
-    }
   }
 }
 

@@ -31,11 +31,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   final List<String> _departments = [
     'Production',
-    'Quality Control',
-    'Maintenance',
-    'Engineering',
     'Warehouse',
-    'HR',
   ];
 
   @override
@@ -273,7 +269,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     final categories = {
       FindingCategory.majorNC: 'Major NC',
       FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
       FindingCategory.ofi: 'OFI',
     };
     return Padding(

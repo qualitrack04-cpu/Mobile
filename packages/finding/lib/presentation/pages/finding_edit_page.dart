@@ -29,11 +29,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   final List<String> _departments = [
     'Production',
-    'Quality Control',
-    'Maintenance',
-    'Engineering',
     'Warehouse',
-    'HR',
   ];
 
   @override
@@ -44,6 +40,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
         TextEditingController(text: widget.finding.description);
     _selectedCategory = widget.finding.category;
     _selectedDepartment = widget.finding.department;
+
+    if (_selectedDepartment != null &&
+        !_departments.contains(_selectedDepartment)) {
+      _departments.add(_selectedDepartment!);
+    }
   }
 
   @override
@@ -266,7 +267,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     final categories = {
       FindingCategory.majorNC: 'Major NC',
       FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
       FindingCategory.ofi: 'OFI',
     };
     return Padding(
