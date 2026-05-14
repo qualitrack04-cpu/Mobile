@@ -4,7 +4,7 @@ publish_to: "none"
 version: 0.0.1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.11.5
 
 dependencies:
   flutter:
@@ -17,7 +17,9 @@ dependencies:
   get_it: ^7.6.4
   core:
     path: ../core
-    
+  core_services:
+    path: ../core_services
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
