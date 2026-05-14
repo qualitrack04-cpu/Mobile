@@ -55,9 +55,15 @@ class _CapaFormPageState extends State<CapaFormPage> {
     try {
       final api = GetIt.instance<ApiService>();
 
-      // Load findings: GET /api/Finding
-      final fRes = await api.client.get('/api/Finding');
-      final findingsRaw = fRes.data as List<dynamic>;
+      // Load findings: GET /api/Finding/without-capa (endpoint khusus dari tim backend)
+      final fRes = await api.client.get('/api/Finding/without-capa');
+      // Handle response yang mungkin berupa array langsung atau wrapped {data: [...]}
+      final dynamic fData = fRes.data;
+      final findingsRaw = fData is List
+          ? fData
+          : (fData is Map && fData['data'] is List)
+              ? fData['data'] as List<dynamic>
+              : <dynamic>[];
 
       // Load semua users untuk PIC: GET /api/Auth/auditors (karena /users tidak ada)
       final uRes = await api.client.get('/api/Auth/auditors');

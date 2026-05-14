@@ -6,6 +6,11 @@ String _parseError(Object e, String fallback) {
   if (e is DioException) {
     final data = e.response?.data;
     if (data is Map) {
+      if (data.containsKey('errors')) {
+        // ASP.NET validation errors
+        final errors = data['errors'] as Map<String, dynamic>;
+        return errors.values.map((e) => e.toString()).join('\n');
+      }
       final msg = data['message'] as String?;
       if (msg != null && msg.isNotEmpty) return msg;
     }

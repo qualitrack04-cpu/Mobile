@@ -78,7 +78,7 @@ class CapaDetailPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                capa.findingTitle.isNotEmpty ? capa.findingTitle : capa.rootCause,
+                capa.rootCause,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -116,8 +116,8 @@ class CapaDetailPage extends StatelessWidget {
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
             _buildSection(
-              label: 'PROBLEM TITLE',
-              value: capa.rootCause,
+              label: 'FINDING',
+              value: capa.findingTitle.isNotEmpty ? capa.findingTitle : capa.rootCause,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
