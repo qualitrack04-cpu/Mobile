@@ -165,19 +165,24 @@ class ChecklistCard extends StatelessWidget {
   }
 
   Widget _buildPassButton(bool isPass, bool isFail) {
+    // PASS disable hanya kalau finding sudah disubmit (hasFinding == true),
+    // supaya user masih bisa ganti dari FAIL ke PASS selama finding belum diisi
+    final bool passDisabled = checklist.hasFinding;
     return SizedBox(
       height: 42,
       child: ElevatedButton.icon(
-        onPressed: isFail ? null : onPass,
+        onPressed: passDisabled ? null : onPass,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          // FIX: hapus padding horizontal fixed, biar Expanded yang atur lebar
           backgroundColor: isPass
               ? AppColors.successLight
               : const Color(0xFFF3F4F6),
           foregroundColor: isPass ? AppColors.success : AppColors.textDisabled,
-          disabledBackgroundColor: const Color(0xFFF3F4F6),
-          disabledForegroundColor: AppColors.textDisabled,
+          disabledBackgroundColor: isPass
+              ? AppColors.successLight
+              : const Color(0xFFF3F4F6),
+          disabledForegroundColor:
+              isPass ? AppColors.success : AppColors.textDisabled,
           side: BorderSide(
             color: isPass ? AppColors.success : const Color(0xFFD1D5DB),
           ),

@@ -343,64 +343,99 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       builder: (context, state) {
         final isLoading = state is AuditLoading;
 
-        // ✅ FIX: tombol hanya aktif kalau progress 100% dan tidak sedang loading
-        final isComplete = _progress >= 1.0 && _checklists.isNotEmpty;
+        // ✅ FIX: semua checklist harus dijawab (isPassed != null),
+        // dan yang FAIL wajib sudah ada finding (hasFinding == true)
+        final allAnswered =
+            _checklists.isNotEmpty && _checklists.every((c) => c.isPassed != null);
+        final failWithoutFinding =
+            _checklists.any((c) => c.isPassed == false && !c.hasFinding);
+        final isComplete = allAnswered && !failWithoutFinding;
         final canSubmit = isComplete && !isLoading;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ✅ Tampilkan hint kalau belum 100%
-            if (!isComplete && _checklists.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(bottom: 8, left: screenWidth * 0.06, right: screenWidth * 0.06),
-                child: Text(
-                  'Selesaikan semua checklist terlebih dahulu (${_completedCount}/${_checklists.length})',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
+        void handleSubmitPress() {
+          if (isLoading) return;
+          if (canSubmit) {
+            _onSubmitChecklist();
+          } else {
+            final message = failWithoutFinding
+                ? 'Checklist yang FAIL harus memiliki finding.\nTambahkan finding terlebih dahulu.'
+                : 'Semua checklist harus dijawab terlebih dahulu.\n${_completedCount} dari ${_checklists.length} selesai.';
+            showDialog<void>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  // ✅ null = disabled kalau belum 100% atau sedang loading
-                  onPressed: canSubmit ? _onSubmitChecklist : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryLight,
-                    // ✅ Warna tombol saat disabled berbeda supaya user tahu
-                    disabledBackgroundColor: AppColors.primaryMuted,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                title: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppColors.primaryLight),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Belum Bisa Submit',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  message,
+                  style: GoogleFonts.inter(fontSize: 14, height: 1.6),
+                ),
+                actions: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryLight,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      'Mengerti',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : Text(
-                          'Submit Checklist',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                ],
+              ),
+            );
+          }
+        }
+
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : handleSubmitPress,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: canSubmit
+                    ? AppColors.primaryLight
+                    : AppColors.primaryMuted,
+                disabledBackgroundColor: AppColors.primaryMuted,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Text(
+                      'Submit Checklist',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
-          ],
+          ),
         );
       },
     );
