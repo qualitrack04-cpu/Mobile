@@ -194,7 +194,7 @@ class AuditCard extends StatelessWidget {
 
         Flexible(
           child: Text(
-            audit.department,
+            audit.department == 'Produksi' ? 'Production' : audit.department,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.inter(
