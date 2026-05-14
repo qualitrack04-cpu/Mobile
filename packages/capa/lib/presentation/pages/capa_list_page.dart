@@ -344,10 +344,18 @@ class _CapaCardState extends State<_CapaCard> {
   }
 
   Color _getBorderColor() {
-    if (_currentStatus == 'Closed') return Colors.green;
-    if (_currentStatus == 'In Progress') return Colors.orange;
-    if (_currentStatus == 'Open') return Colors.red;
-    return Colors.grey.shade300;
+    switch (widget.capa.findingCategory) {
+      case 'MajorNC':
+        return Colors.red;
+      case 'MinorNC':
+        return Colors.orange;
+      case 'Observation':
+        return Colors.green;
+      case 'OFI':
+        return const Color(0xFF3B6FD4);
+      default:
+        return Colors.grey.shade300;
+    }
   }
 
   String _getMonth(int month) {

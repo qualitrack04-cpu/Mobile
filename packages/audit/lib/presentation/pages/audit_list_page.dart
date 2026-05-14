@@ -119,15 +119,89 @@ class _AuditListViewState extends State<_AuditListView> {
     return BlocConsumer<AuditBloc, AuditState>(
       listener: (context, state) {
         if (state is AuditError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.danger,
-            ),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: AppColors.danger,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+              ),
+            );
         }
 
-        // ✅ FIX: Update _lastAudits setiap kali dapat data baru
+        if (state is AuditDeleted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 10),
+                    Text('Audit berhasil dihapus'),
+                  ],
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        }
+
+        if (state is AuditCreated) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 10),
+                    Text('Audit berhasil dibuat'),
+                  ],
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        }
+
+        if (state is AuditUpdated) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 10),
+                    Text('Audit berhasil diperbarui'),
+                  ],
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        }
+
+        // Update _lastAudits setiap kali dapat data baru
         if (state is AuditLoaded) {
           _lastAudits = state.audits;
           _isFirstLoad = false;
@@ -176,48 +250,89 @@ class _AuditListViewState extends State<_AuditListView> {
           );
         }
 
-        return Skeletonizer(
-          // ✅ Skeletonizer hanya aktif saat first load
-          enabled: isLoading,
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 100),
-            itemCount: displayList.length,
-            itemBuilder: (context, index) {
-              final audit = displayList[index];
-              return AuditCard(
-                audit: audit,
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () async {
+            context.read<AuditBloc>().add(const LoadAudits());
+            // Tunggu sampai state AuditLoaded atau AuditError
+            await context.read<AuditBloc>().stream.firstWhere(
+              (s) => s is AuditLoaded || s is AuditError,
+            );
+          },
+          child: Skeletonizer(
+            // Skeletonizer hanya aktif saat first load
+            enabled: isLoading,
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 100),
+              itemCount: displayList.length,
+              itemBuilder: (context, index) {
+                final audit = displayList[index];
+                return AuditCard(
+                  audit: audit,
 
-                onEdit: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<AuditBloc>(),
-                        child: AuditFormPage(audit: audit),
+                  onEdit: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<AuditBloc>(),
+                          child: AuditFormPage(audit: audit),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
 
-                onChecklist: audit.isFinished
-                    ? null
-                    : () async {
-                        await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider.value(
-                              value: context.read<AuditBloc>(),
-                              child: AuditChecklistPage(audit: audit),
+                  onChecklist: audit.isFinished
+                      ? null
+                      : () async {
+                          await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BlocProvider.value(
+                                value: context.read<AuditBloc>(),
+                                child: AuditChecklistPage(audit: audit),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
 
-                onDelete: () {
-                  context.read<AuditBloc>().add(DeleteAuditEvent(audit: audit));
-                },
-              );
-            },
+                  onDelete: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text('Hapus Audit?'),
+                        content: Text(
+                          'Audit "${audit.title}" akan dihapus secara permanen.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Batal'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.danger,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Hapus'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && context.mounted) {
+                      context.read<AuditBloc>().add(DeleteAuditEvent(audit: audit));
+                    }
+                  },
+                );
+              },
+            ),
           ),
         );
       },

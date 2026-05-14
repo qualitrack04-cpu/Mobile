@@ -5,6 +5,7 @@ class CapaMockDatasource {
     CapaModel(
       id: '1',
       findingId: '1',
+      findingCategory: 'MajorNC',
       rootCause: 'Tidak ada SOP tertulis untuk prosedur dokumentasi',
       correctiveAction: 'Buat SOP dokumen produksi yang lengkap',
       preventiveAction: 'Training rutin tiap bulan untuk semua staff',
@@ -12,11 +13,12 @@ class CapaMockDatasource {
       deadline: DateTime(2026, 5, 12),
       isClosed: true,
       createdAt: DateTime(2024, 10, 24),
-      status: 'Done', // ✅ isClosed harus true kalau Done
+      status: 'Done',
     ),
     CapaModel(
       id: '2',
       findingId: '2',
+      findingCategory: 'MinorNC',
       rootCause: 'Jadwal kalibrasi tidak dipantau secara rutin',
       correctiveAction: 'Buat sistem reminder kalibrasi otomatis',
       preventiveAction: 'Audit kalibrasi setiap 3 bulan sekali',
@@ -29,6 +31,7 @@ class CapaMockDatasource {
     CapaModel(
       id: '3',
       findingId: '3',
+      findingCategory: 'Observation',
       rootCause: 'Form pemeliharaan tidak diisi dengan lengkap',
       correctiveAction: 'Revisi form pemeliharaan dan training pengisian',
       preventiveAction: 'Checklist verifikasi form setiap minggu',
@@ -73,7 +76,7 @@ class CapaMockDatasource {
       deadline: deadline,
       isClosed: false,
       createdAt: DateTime.now(),
-      status: '',
+      status: '', findingCategory: '',
     );
     _mockCapas.add(newCapa);
     return newCapa;
@@ -95,6 +98,7 @@ class CapaMockDatasource {
     final updated = CapaModel(
       id: _mockCapas[index].id,
       findingId: _mockCapas[index].findingId,
+      status: status, findingCategory: '',
       rootCause: rootCause,
       correctiveAction: correctiveAction,
       preventiveAction: preventiveAction,
@@ -102,7 +106,6 @@ class CapaMockDatasource {
       deadline: deadline,
       isClosed: status == 'Done',
       createdAt: _mockCapas[index].createdAt,
-      status: status,
     );
     _mockCapas[index] = updated;
     return updated;
@@ -126,7 +129,7 @@ class CapaMockDatasource {
       deadline: _mockCapas[index].deadline,
       isClosed: status == 'Done', // ✅ konsisten
       createdAt: _mockCapas[index].createdAt,
-      status: status,
+      status: status, findingCategory: '',
     );
   }
 
@@ -150,7 +153,7 @@ class CapaMockDatasource {
       deadline: _mockCapas[index].deadline,
       isClosed: true,
       createdAt: _mockCapas[index].createdAt,
-      status: 'Done', // ✅ konsisten dengan options
+      status: 'Done', findingCategory: '', // ✅ konsisten dengan options
     );
   }
 }

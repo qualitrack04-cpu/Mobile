@@ -127,15 +127,44 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           setState(() => _checklists = state.checklists);
         }
         if (state is AuditMarkedFinished) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                    SizedBox(width: 10),
+                    Text('Checklist berhasil disubmit!'),
+                  ],
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+                duration: const Duration(seconds: 2),
+              ),
+            );
           Navigator.pop(context, true);
         }
         if (state is AuditError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.danger,
-            ),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: AppColors.danger,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+              ),
+            );
         }
       },
       child: Scaffold(

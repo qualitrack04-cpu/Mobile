@@ -4,6 +4,7 @@ class CapaModel extends Capa {
   const CapaModel({
     required super.id,
     required super.findingId,
+    required super.findingCategory,
     required super.rootCause,
     required super.correctiveAction,
     required super.preventiveAction,
@@ -18,6 +19,7 @@ class CapaModel extends Capa {
     return CapaModel(
       id: json['id'] as String,
       findingId: json['findingId'] as String,
+      findingCategory: json['findingCategory'] as String,
       rootCause: json['rootCause'] as String,
       correctiveAction: json['correctiveAction'] as String,
       preventiveAction: json['preventiveAction'] as String,

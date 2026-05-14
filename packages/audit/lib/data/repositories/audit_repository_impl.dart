@@ -12,7 +12,7 @@ class AuditRepositoryImpl implements AuditRepository {
     try {
       return await datasource.getAudits();
     } catch (e) {
-      throw Exception('Gagal mengambil data audit: $e');
+      rethrow; // pesan sudah bersih dari datasource, teruskan apa adanya
     }
   }
 
@@ -34,25 +34,18 @@ class AuditRepositoryImpl implements AuditRepository {
         year: date.year,
         description: description,
         isPriority: isPriority,
-        schedules:
-            schedules ??
-            [
-              // Minimal 1 schedule — ambil dari form
-              // Ini adalah contoh default, idealnya dari input user
-              {
-                'clauseRef': isoTemplates.isNotEmpty
-                    ? isoTemplates.first
-                    : 'N/A',
-                'auditorId': null, // belum ada fitur auditor
-                'auditorName': auditorName, // ← ini yang kurang
-                'scheduledDate':
-                    '${date.year}-${date.month.toString().padLeft(2, '0')}-01',
-                'department': department,
-              },
-            ],
+        schedules: schedules ?? [
+          {
+            'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
+            'auditorName': auditorName,
+            'scheduledDate':
+                '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+            'department': department,
+          },
+        ],
       );
     } catch (e) {
-      throw Exception('Gagal membuat audit: $e');
+      rethrow; // pesan sudah bersih dari datasource, teruskan apa adanya
     }
   }
 
@@ -78,16 +71,15 @@ class AuditRepositoryImpl implements AuditRepository {
         schedules: [
           {
             'clauseRef': isoTemplates.isNotEmpty ? isoTemplates.first : 'N/A',
-            'auditorId': null, // belum ada fitur auditor
-            'auditorName': auditorName, // ← ini yang kurang
+            'auditorName': auditorName,
             'scheduledDate':
-                '${date.year}-${date.month.toString().padLeft(2, '0')}-01',
+                '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
             'department': department,
           },
         ],
       );
     } catch (e) {
-      throw Exception('Gagal mengupdate audit: $e');
+      rethrow; // pesan sudah bersih dari datasource, teruskan apa adanya
     }
   }
 
@@ -107,7 +99,7 @@ class AuditRepositoryImpl implements AuditRepository {
     try {
       await datasource.deleteAudit(audit.id);
     } catch (e) {
-      throw Exception('Gagal menghapus audit: $e');
+      rethrow; // pesan sudah bersih dari datasource, teruskan apa adanya
     }
   }
 }

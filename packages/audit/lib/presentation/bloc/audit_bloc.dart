@@ -8,6 +8,15 @@ import 'package:audit/domain/repositories/audit_repository.dart';
 import 'audit_event.dart';
 import 'audit_state.dart';
 
+/// Strip prefix "Exception: " yang berlapis agar pesan error bersih di UI.
+String _extractMessage(Object e) {
+  String msg = e.toString();
+  while (msg.startsWith('Exception: ')) {
+    msg = msg.substring('Exception: '.length);
+  }
+  return msg.isNotEmpty ? msg : 'Terjadi kesalahan. Coba lagi.';
+}
+
 class AuditBloc extends Bloc<AuditEvent, AuditState> {
   final AuditRepository repository;
   final GetAudits getAudits;
@@ -41,7 +50,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audits = await getAudits();
       emit(AuditLoaded(audits: audits));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 
@@ -66,7 +75,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audits = await getAudits();
       emit(AuditLoaded(audits: audits));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 
@@ -92,7 +101,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audits = await getAudits();
       emit(AuditLoaded(audits: audits));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 
@@ -112,7 +121,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audits = await getAudits();
       emit(AuditLoaded(audits: audits));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 
@@ -129,7 +138,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audits = await getAudits();
       emit(AuditLoaded(audits: audits));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 
@@ -145,7 +154,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       );
       emit(ChecklistLoaded(checklists: checklists));
     } catch (e) {
-      emit(AuditError(message: e.toString()));
+      emit(AuditError(message: _extractMessage(e)));
     }
   }
 }

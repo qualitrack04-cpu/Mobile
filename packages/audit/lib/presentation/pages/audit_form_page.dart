@@ -22,8 +22,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final _auditorController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  // FIX 2: ScrollController untuk auto-scroll ke field aktif
+  // ScrollController untuk auto-scroll ke field aktif
   final _scrollController = ScrollController();
+
+  // Notifier untuk trigger rebuild FAB saat field non-text berubah (ISO, dept, date)
+  final _formNotifier = ValueNotifier<int>(0);
 
   // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
@@ -71,7 +74,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _titleController.dispose();
     _auditorController.dispose();
     _descriptionController.dispose();
-    _scrollController.dispose(); // FIX 2: dispose scroll controller
+    _scrollController.dispose();
+    _formNotifier.dispose();
     super.dispose();
   }
 
@@ -79,7 +83,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _titleController.text.trim().isNotEmpty &&
       _auditorController.text.trim().isNotEmpty &&
       _selectedDepartment != null &&
-      _selectedDate != null;
+      _selectedDate != null &&
+      _selectedIso != null;
 
   void _onSubmit() {
     if (!_isFormValid) {
@@ -131,16 +136,30 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
     return BlocListener<AuditBloc, AuditState>(
       listener: (context, state) {
-        if (state is AuditCreated || state is AuditUpdated) {
+        if (state is AuditCreated) {
+          Navigator.pop(context);
+        }
+        if (state is AuditUpdated) {
           Navigator.pop(context);
         }
         if (state is AuditError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.danger,
-            ),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: AppColors.danger,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                margin: const EdgeInsets.all(12),
+              ),
+            );
         }
       },
       child: Scaffold(
@@ -168,7 +187,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
         floatingActionButton: ListenableBuilder(
-          listenable: Listenable.merge([_titleController, _auditorController]),
+          listenable: Listenable.merge([
+            _titleController,
+            _auditorController,
+            _formNotifier,
+          ]),
           builder: (context, _) {
             return BlocBuilder<AuditBloc, AuditState>(
               builder: (context, state) {
@@ -179,11 +202,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
-                      ),
+                      if (_isFormValid)
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.4),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
+                        ),
                     ],
                   ),
                   child: SizedBox(
@@ -327,7 +351,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           RadioListTile<String>(
             value: _iso9001,
             groupValue: _selectedIso,
-            onChanged: (value) => setState(() => _selectedIso = value),
+            onChanged: (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
             title: Text('ISO 9001', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
@@ -336,7 +363,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           RadioListTile<String>(
             value: _iso14001,
             groupValue: _selectedIso,
-            onChanged: (value) => setState(() => _selectedIso = value),
+            onChanged: (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
             title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
@@ -379,7 +409,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   child: Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.black87)),
                 );
               }).toList(),
-              onChanged: (label) => setState(() => _selectedDepartment = label),
+              onChanged: (label) => setState(() {
+                _selectedDepartment = label;
+                _formNotifier.value++;
+              }),
             ),
           ),
         ],
@@ -404,7 +437,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
             );
           },
         );
-        if (picked != null) setState(() => _selectedDate = picked);
+        if (picked != null) {
+          setState(() {
+            _selectedDate = picked;
+            _formNotifier.value++;
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),

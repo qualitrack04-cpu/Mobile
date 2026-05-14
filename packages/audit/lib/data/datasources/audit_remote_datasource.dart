@@ -3,6 +3,26 @@ import 'package:audit/data/models/audit_model.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
 import 'package:dio/dio.dart';
 
+/// Ekstrak pesan error yang user-friendly dari DioException atau exception apapun.
+String _parseError(Object e, String fallback) {
+  if (e is DioException) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final msg = data['message'] as String?;
+      if (msg != null && msg.isNotEmpty) return msg;
+    }
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return 'Koneksi timeout. Pastikan internet aktif dan coba lagi.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
+    }
+  }
+  return fallback;
+}
+
 class AuditRemoteDatasource {
   final ApiService apiService;
 
@@ -17,7 +37,7 @@ class AuditRemoteDatasource {
           .map((json) => AuditModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw Exception('Gagal mengambil data audit: $e');
+      throw Exception(_parseError(e, 'Gagal mengambil data audit. Coba lagi.'));
     }
   }
 
@@ -47,14 +67,7 @@ class AuditRemoteDatasource {
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
-      // Tambah ini sementara
-      if (e is DioException && e.response != null) {
-        print('=== STATUS: ${e.response?.statusCode} ===');
-        print('=== ERROR RESPONSE BODY ===');
-        print(e.response?.data);
-        print('===========================');
-      }
-      throw Exception('Gagal membuat audit: $e');
+      throw Exception(_parseError(e, 'Gagal membuat audit. Coba lagi.'));
     }
   }
 
@@ -84,7 +97,7 @@ class AuditRemoteDatasource {
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Gagal mengupdate audit: $e');
+      throw Exception(_parseError(e, 'Gagal mengupdate audit. Coba lagi.'));
     }
   }
 
@@ -93,7 +106,7 @@ class AuditRemoteDatasource {
     try {
       await apiService.client.delete('/api/AuditPlan/$id');
     } catch (e) {
-      throw Exception('Gagal menghapus audit: $e');
+      throw Exception(_parseError(e, 'Gagal menghapus audit. Coba lagi.'));
     }
   }
 }
