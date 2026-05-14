@@ -666,7 +666,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
           ),
           Switch(
             value: _isPriority,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             onChanged: (value) => setState(() => _isPriority = value),
           ),
         ],

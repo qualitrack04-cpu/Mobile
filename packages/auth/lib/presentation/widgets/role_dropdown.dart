@@ -14,7 +14,7 @@ class RoleDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: selectedRole,
+      initialValue: selectedRole,
       decoration: customInputDecoration(
         hint: '',
         icon: Icons.person_outline,

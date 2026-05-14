@@ -11,7 +11,7 @@ import 'package:finding/domain/usecases/update_finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 
 // CAPA
-import 'package:capa/data/datasources/capa_mock_datasource.dart';
+import 'package:capa/data/datasources/capa_remote_datasource.dart';
 import 'package:capa/data/repositories/capa_repository_impl.dart';
 import 'package:capa/domain/repositories/capa_repository.dart';
 import 'package:capa/domain/usecases/get_capas.dart';
@@ -58,7 +58,7 @@ Future<void> init() async {
   );
 
   // ===== CAPA =====
-  sl.registerLazySingleton(() => CapaMockDatasource());
+  sl.registerLazySingleton(() => CapaRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<CapaRepository>(
     () => CapaRepositoryImpl(datasource: sl()),

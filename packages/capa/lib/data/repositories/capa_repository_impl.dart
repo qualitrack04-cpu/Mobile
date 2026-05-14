@@ -1,9 +1,11 @@
-import 'package:capa/data/datasources/capa_mock_datasource.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:capa/data/datasources/capa_remote_datasource.dart'; // ← ganti ini
+import 'package:capa/data/models/capa_model.dart';
 import 'package:capa/domain/entities/capa.dart';
 import 'package:capa/domain/repositories/capa_repository.dart';
 
 class CapaRepositoryImpl implements CapaRepository {
-  final CapaMockDatasource datasource;
+  final CapaRemoteDatasource datasource; // ← ganti tipe ini
 
   CapaRepositoryImpl({required this.datasource});
 

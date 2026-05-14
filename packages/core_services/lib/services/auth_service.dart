@@ -27,6 +27,7 @@ class AuthService {
       await prefs.setString('auth_token', data['token'] as String);
       await prefs.setString('user_role', data['role'] as String);
       await prefs.setString('user_name', data['fullName'] as String);
+      await prefs.setString('user_id', data['userId'].toString());
     } catch (e) {
       throw Exception('Email atau password salah');
     }

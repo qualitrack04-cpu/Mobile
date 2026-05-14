@@ -16,18 +16,26 @@ class CapaModel extends Capa {
   });
 
   factory CapaModel.fromJson(Map<String, dynamic> json) {
+    // Backend kirim status sebagai int (0=Open, 1=InProgress, 2=Closed)
+    const statusMap = {0: 'Open', 1: 'In Progress', 2: 'Closed'};
+    final statusRaw = json['status'];
+    final statusStr =
+        statusRaw is int
+            ? (statusMap[statusRaw] ?? 'Open')
+            : (statusRaw as String? ?? 'Open');
+
     return CapaModel(
       id: json['id'] as String,
       findingId: json['findingId'] as String,
-      findingCategory: json['findingCategory'] as String,
-      rootCause: json['rootCause'] as String,
-      correctiveAction: json['correctiveAction'] as String,
-      preventiveAction: json['preventiveAction'] as String,
-      picId: json['picId'] as String,
+      findingCategory: json['findingCategory'] as String? ?? '',
+      rootCause: json['rootCause'] as String? ?? '',
+      correctiveAction: json['correctiveAction'] as String? ?? '',
+      preventiveAction: json['preventiveAction'] as String? ?? '',
+      picId: json['picId'] as String? ?? '',
       deadline: DateTime.parse(json['deadline'] as String),
-      isClosed: json['isClosed'] as bool? ?? false,
+      isClosed: statusStr == 'Closed',
       createdAt: DateTime.parse(json['createdAt'] as String),
-      status: json['status'] as String,
+      status: statusStr,
     );
   }
 
