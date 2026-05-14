@@ -5,6 +5,7 @@ import 'package:audit/domain/usecases/update_audit.dart';
 import 'package:audit/domain/usecases/mark_audit_finished.dart';
 import 'package:audit/domain/usecases/get_checklist.dart';
 import 'package:audit/domain/usecases/get_auditors.dart';
+import 'package:audit/domain/usecases/submit_checklist.dart';
 import 'package:audit/domain/repositories/audit_repository.dart';
 import 'audit_event.dart';
 import 'audit_state.dart';
@@ -26,6 +27,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
   final MarkAuditFinished markAuditFinished;
   final GetChecklist getChecklist;
   final GetAuditors getAuditors;
+  final SubmitChecklist submitChecklist;
 
   AuditBloc({
     required this.repository,
@@ -35,6 +37,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     required this.markAuditFinished,
     required this.getChecklist,
     required this.getAuditors,
+    required this.submitChecklist,
   }) : super(AuditInitial()) {
     on<LoadAudits>(_onLoadAudits);
     on<CreateAuditEvent>(_onCreateAudit);
@@ -43,6 +46,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     on<DeleteAuditEvent>(_onDeleteAudit);
     on<LoadChecklist>(_onLoadChecklist);
     on<LoadAuditors>(_onLoadAuditors_);
+    on<SubmitChecklistEvent>(_onSubmitChecklist);
   }
 
   Future<void> _onLoadAudits(
@@ -170,6 +174,28 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     try {
       final auditors = await getAuditors();
       emit(AuditorsLoaded(auditors: auditors));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  // ✅ BARU: Submit semua jawaban ke backend dan selesaikan sesi
+  Future<void> _onSubmitChecklist(
+    SubmitChecklistEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      await submitChecklist(
+        sessionId: event.sessionId,
+        checklists: event.checklists,
+      );
+      // Gunakan audit.copyWith agar card di list langsung isFinished = true
+      emit(AuditMarkedFinished(audit: event.audit.copyWith(isFinished: true)));
+
+      // Reload list agar status di list page ikut terupdate
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
     } catch (e) {
       emit(AuditError(message: _extractMessage(e)));
     }

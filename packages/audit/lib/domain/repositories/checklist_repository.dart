@@ -6,4 +6,16 @@ abstract class ChecklistRepository {
     required String isoTemplate,
     required String department,
   });
-}
+
+  /// Membuat sesi audit baru, mengembalikan sessionId.
+  Future<String> createAuditSession({
+    required String scheduleId,
+    required String checklistId,
+  });
+
+  /// Menyimpan semua jawaban PASS/FAIL ke backend dan menyelesaikan sesi.
+  Future<void> submitChecklistResponses({
+    required String sessionId,
+    required List<ChecklistEntity> checklists,
+  });
+}

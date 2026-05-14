@@ -64,7 +64,7 @@ class CapaRemoteDatasource {
         'rootCause': rootCause,
         'correctiveAction': correctiveAction,
         'preventiveAction': preventiveAction,
-        'picId': picId,
+        'picName': picId,  // ✅ picId di Flutter isinya nama, kirim ke picName
         'deadline': '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
       final response = await apiService.client.post(

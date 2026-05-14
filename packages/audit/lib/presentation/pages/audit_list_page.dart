@@ -222,6 +222,7 @@ class _AuditListViewState extends State<_AuditListView> {
           4,
           (_) => AuditEntity(
             id: '',
+            scheduleId: '',
             title: 'Loading Audit Title Here',
             auditorName: 'Loading Auditor Name',
             isoTemplates: const ['ISO 9001:2015'],

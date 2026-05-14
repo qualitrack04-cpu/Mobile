@@ -34,6 +34,7 @@ import 'package:audit/domain/usecases/update_audit.dart';
 import 'package:audit/domain/usecases/mark_audit_finished.dart';
 import 'package:audit/domain/usecases/get_checklist.dart';
 import 'package:audit/domain/usecases/get_auditors.dart';
+import 'package:audit/domain/usecases/submit_checklist.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
 
 final sl = GetIt.instance;
@@ -100,6 +101,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => MarkAuditFinished(repository: sl()));
   sl.registerLazySingleton(() => GetChecklist(repository: sl()));
   sl.registerLazySingleton(() => GetAuditors(datasource: sl()));
+  sl.registerLazySingleton(() => SubmitChecklist(repository: sl()));
 
   // BLoC
   sl.registerFactory(
@@ -111,6 +113,7 @@ Future<void> init() async {
       markAuditFinished: sl(),
       getChecklist: sl(),
       getAuditors: sl(),
+      submitChecklist: sl(),
     ),
   );
 }
