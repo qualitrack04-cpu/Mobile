@@ -19,12 +19,19 @@ class CapaModel extends Capa {
 
   factory CapaModel.fromJson(Map<String, dynamic> json) {
     // Backend kirim status sebagai int (0=Open, 1=InProgress, 2=Closed)
-    const statusMap = {0: 'Open', 1: 'In Progress', 2: 'Pending Verification', 3: 'Closed'};
+    // atau sebagai string enum ("Open", "InProgress", "PendingVerification", "Closed")
+    const statusIntMap = {0: 'Open', 1: 'In Progress', 2: 'Pending Verification', 3: 'Closed'};
+    const statusStrMap = {
+      'Open': 'Open',
+      'InProgress': 'In Progress',
+      'PendingVerification': 'Pending Verification',
+      'Closed': 'Closed',
+    };
     final statusRaw = json['status'];
     final statusStr =
         statusRaw is int
-            ? (statusMap[statusRaw] ?? 'Open')
-            : (statusRaw as String? ?? 'Open');
+            ? (statusIntMap[statusRaw] ?? 'Open')
+            : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
 
     String findingTitle = '';
     String findingCategory = '';

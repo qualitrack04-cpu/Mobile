@@ -1,10 +1,10 @@
-import 'package:finding/data/datasources/finding_mock_datasource.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 
 class FindingRepositoryImpl implements FindingRepository {
-  final FindingMockDatasource datasource;
+  final FindingRemoteDatasource datasource;
 
   FindingRepositoryImpl({required this.datasource});
 

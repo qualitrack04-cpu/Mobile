@@ -3,7 +3,7 @@ import 'package:core_services/services/api_service.dart';
 import 'package:core_services/services/auth_service.dart';
 
 // Finding
-import 'package:finding/data/datasources/finding_mock_datasource.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:finding/data/repositories/finding_repository_impl.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 import 'package:finding/domain/usecases/create_finding.dart';
@@ -41,7 +41,7 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   // ===== FINDING =====
-  sl.registerLazySingleton(() => FindingMockDatasource());
+  sl.registerLazySingleton(() => FindingRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<FindingRepository>(
     () => FindingRepositoryImpl(datasource: sl()),
