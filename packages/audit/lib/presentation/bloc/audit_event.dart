@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
+import 'package:audit/domain/entities/checklist_entity.dart';
 
 abstract class AuditEvent extends Equatable {
   const AuditEvent();
@@ -122,3 +123,19 @@ class LoadChecklist extends AuditEvent {
 class LoadAuditors extends AuditEvent {
   const LoadAuditors();
 }
+
+// ✅ BARU: Submit semua jawaban checklist ke backend
+class SubmitChecklistEvent extends AuditEvent {
+  final String sessionId;
+  final List<ChecklistEntity> checklists;
+  final AuditEntity audit; // untuk reload isFinished di list
+
+  const SubmitChecklistEvent({
+    required this.sessionId,
+    required this.checklists,
+    required this.audit,
+  });
+
+  @override
+  List<Object?> get props => [sessionId, checklists, audit];
+}

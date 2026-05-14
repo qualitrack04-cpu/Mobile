@@ -21,4 +21,34 @@ class ChecklistRepositoryImpl implements ChecklistRepository {
       throw Exception('Gagal mengambil data checklist: $e');
     }
   }
-}
+
+  @override
+  Future<String> createAuditSession({
+    required String scheduleId,
+    required String checklistId,
+  }) async {
+    try {
+      return await datasource.createAuditSession(
+        scheduleId: scheduleId,
+        checklistId: checklistId,
+      );
+    } catch (e) {
+      throw Exception('Gagal membuat sesi audit: $e');
+    }
+  }
+
+  @override
+  Future<void> submitChecklistResponses({
+    required String sessionId,
+    required List<ChecklistEntity> checklists,
+  }) async {
+    try {
+      await datasource.submitChecklistResponses(
+        sessionId: sessionId,
+        checklists: checklists,
+      );
+    } catch (e) {
+      throw Exception('Gagal menyimpan hasil checklist: $e');
+    }
+  }
+}
