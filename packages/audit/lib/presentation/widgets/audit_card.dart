@@ -46,7 +46,7 @@ class AuditCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildDateSection(isFinished, isPriority),
+            _buildDateSection(isFinished, isPriority, sw),
 
             Expanded(
               child: Padding(
@@ -71,7 +71,7 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection(bool isFinished, bool isPriority) {
+  Widget _buildDateSection(bool isFinished, bool isPriority, double sw) {
     Color sectionColor;
 
     if (isFinished) {
