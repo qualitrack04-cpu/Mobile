@@ -39,7 +39,7 @@ class ChecklistRemoteDatasource {
         return ChecklistModel(
           id: json['id'] as String,
           title: json['question'] as String? ?? '',       // Question → title
-          description: json['clauseRef'] as String? ?? '', // ClauseRef → description
+          description: json['description'] as String? ?? '', // Description → description
           category: department,
           isPassed: null,
           hasFinding: false,
