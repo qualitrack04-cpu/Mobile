@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
 import 'package:audit/domain/entities/checklist_entity.dart';
+import 'package:audit/domain/entities/auditor_entity.dart';
 
 abstract class AuditState extends Equatable {
   const AuditState();
@@ -76,4 +77,14 @@ class AuditError extends AuditState {
 
   @override
   List<Object?> get props => [message];
+}
+
+// State daftar auditor berhasil dimuat (untuk dropdown di form)
+class AuditorsLoaded extends AuditState {
+  final List<AuditorEntity> auditors;
+
+  const AuditorsLoaded({required this.auditors});
+
+  @override
+  List<Object?> get props => [auditors];
 }

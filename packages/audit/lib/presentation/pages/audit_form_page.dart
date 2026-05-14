@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 
 import '../../domain/entities/audit_entity.dart';
+import '../../domain/entities/auditor_entity.dart';
 import '../bloc/audit_bloc.dart';
 import '../bloc/audit_event.dart';
 import '../bloc/audit_state.dart';
@@ -19,14 +20,17 @@ class AuditFormPage extends StatefulWidget {
 
 class _AuditFormPageState extends State<AuditFormPage> {
   final _titleController = TextEditingController();
-  final _auditorController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   // ScrollController untuk auto-scroll ke field aktif
   final _scrollController = ScrollController();
 
-  // Notifier untuk trigger rebuild FAB saat field non-text berubah (ISO, dept, date)
+  // Notifier untuk trigger rebuild FAB saat field non-text berubah (ISO, dept, date, auditor)
   final _formNotifier = ValueNotifier<int>(0);
+
+  // State lokal daftar auditor dari backend
+  List<AuditorEntity> _auditors = [];
+  bool _isLoadingAuditors = false;
 
   // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
@@ -41,6 +45,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   DateTime? _selectedDate;
   bool _isPriority = false;
   String? _selectedIso;
+  String? _selectedAuditorId;
+  String? _selectedAuditorName;
 
   bool get _isEdit => widget.audit != null;
 
@@ -51,10 +57,14 @@ class _AuditFormPageState extends State<AuditFormPage> {
   void initState() {
     super.initState();
 
+    // Muat daftar auditor saat form dibuka
+    context.read<AuditBloc>().add(const LoadAuditors());
+
     if (_isEdit) {
       final audit = widget.audit!;
       _titleController.text = audit.title;
-      _auditorController.text = audit.auditorName;
+      // Pre-select auditor berdasarkan nama dari data audit yang diedit
+      _selectedAuditorName = audit.auditorName;
       _descriptionController.text = audit.description;
       _selectedDepartment = _departments.entries
           .where((e) => e.value == audit.department)
@@ -72,7 +82,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
   @override
   void dispose() {
     _titleController.dispose();
-    _auditorController.dispose();
     _descriptionController.dispose();
     _scrollController.dispose();
     _formNotifier.dispose();
@@ -81,7 +90,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   bool get _isFormValid =>
       _titleController.text.trim().isNotEmpty &&
-      _auditorController.text.trim().isNotEmpty &&
+      _selectedAuditorId != null &&
       _selectedDepartment != null &&
       _selectedDate != null &&
       _selectedIso != null;
@@ -103,7 +112,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       bloc.add(UpdateAuditEvent(
         audit: widget.audit!,
         title: _titleController.text.trim(),
-        auditorName: _auditorController.text.trim(),
+        auditorName: _selectedAuditorName ?? '',
         isoTemplates: [_selectedIso].whereType<String>().toList(),
         department: _departmentValue,
         date: _selectedDate!,
@@ -113,7 +122,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     } else {
       bloc.add(CreateAuditEvent(
         title: _titleController.text.trim(),
-        auditorName: _auditorController.text.trim(),
+        auditorName: _selectedAuditorName ?? '',
         isoTemplates: [_selectedIso].whereType<String>().toList(),
         department: _departmentValue,
         date: _selectedDate!,
@@ -142,7 +151,25 @@ class _AuditFormPageState extends State<AuditFormPage> {
         if (state is AuditUpdated) {
           Navigator.pop(context);
         }
+        // Update daftar auditor di dropdown
+        if (state is AuditorsLoaded) {
+          setState(() {
+            _isLoadingAuditors = false;
+            _auditors = state.auditors;
+            // Mode edit: coba cocokkan auditor berdasarkan nama
+            if (_isEdit && _selectedAuditorId == null) {
+              final match = _auditors.where(
+                (a) => a.fullName == _selectedAuditorName,
+              ).firstOrNull;
+              if (match != null) {
+                _selectedAuditorId = match.id;
+                _formNotifier.value++;
+              }
+            }
+          });
+        }
         if (state is AuditError) {
+          setState(() => _isLoadingAuditors = false);
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -189,7 +216,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
         floatingActionButton: ListenableBuilder(
           listenable: Listenable.merge([
             _titleController,
-            _auditorController,
             _formNotifier,
           ]),
           builder: (context, _) {
@@ -270,11 +296,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                       controller: _titleController,
                       hint: 'Input audit title',
                     ),
-                    _buildTextField(
-                      label: 'AUDITOR NAME',
-                      controller: _auditorController,
-                      hint: 'Input auditor name',
-                    ),
+                    _buildAuditorDropdown(),
                     _buildIsoSection(),
                     _buildDepartmentDropdown(),
                     _buildDatePicker(),
@@ -286,6 +308,115 @@ class _AuditFormPageState extends State<AuditFormPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAuditorDropdown() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'AUDITOR',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingAuditors)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text('Memuat daftar auditor...'),
+                ],
+              ),
+            )
+          else if (_auditors.isEmpty)
+            Row(
+              children: [
+                Text(
+                  'Gagal memuat auditor.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.danger,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() => _isLoadingAuditors = true);
+                    context.read<AuditBloc>().add(const LoadAuditors());
+                  },
+                  child: const Text('Coba lagi'),
+                ),
+              ],
+            )
+          else
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedAuditorId,
+                isExpanded: true,
+                hint: Text(
+                  'Pilih auditor',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textDisabled,
+                  ),
+                ),
+                items: _auditors.map((auditor) {
+                  return DropdownMenuItem<String>(
+                    value: auditor.id,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          auditor.fullName,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          auditor.role,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (id) {
+                  if (id == null) return;
+                  final selected = _auditors.firstWhere((a) => a.id == id);
+                  setState(() {
+                    _selectedAuditorId = id;
+                    _selectedAuditorName = selected.fullName;
+                    _formNotifier.value++;
+                  });
+                },
+              ),
+            ),
+        ],
       ),
     );
   }

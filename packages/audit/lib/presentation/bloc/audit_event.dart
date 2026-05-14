@@ -117,3 +117,8 @@ class LoadChecklist extends AuditEvent {
   @override
   List<Object?> get props => [isoTemplate, department];
 }
+
+// Muat daftar auditor dari backend untuk dropdown
+class LoadAuditors extends AuditEvent {
+  const LoadAuditors();
+}

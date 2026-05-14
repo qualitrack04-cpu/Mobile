@@ -23,6 +23,7 @@ import 'package:capa/presentation/bloc/capa_bloc.dart';
 // Audit
 import 'package:audit/data/datasources/audit_remote_datasource.dart';
 import 'package:audit/data/datasources/checklist_remote_datasource.dart';
+import 'package:audit/data/datasources/auditor_remote_datasource.dart';
 import 'package:audit/data/repositories/audit_repository_impl.dart';
 import 'package:audit/data/repositories/checklist_repository_impl.dart';
 import 'package:audit/domain/repositories/audit_repository.dart';
@@ -32,6 +33,7 @@ import 'package:audit/domain/usecases/create_audit.dart';
 import 'package:audit/domain/usecases/update_audit.dart';
 import 'package:audit/domain/usecases/mark_audit_finished.dart';
 import 'package:audit/domain/usecases/get_checklist.dart';
+import 'package:audit/domain/usecases/get_auditors.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
 
 final sl = GetIt.instance;
@@ -82,6 +84,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AuthService(apiService: sl()));
   sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
+  sl.registerLazySingleton(() => AuditorRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<AuditRepository>(
     () => AuditRepositoryImpl(datasource: sl()),
@@ -96,6 +99,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateAudit(repository: sl()));
   sl.registerLazySingleton(() => MarkAuditFinished(repository: sl()));
   sl.registerLazySingleton(() => GetChecklist(repository: sl()));
+  sl.registerLazySingleton(() => GetAuditors(datasource: sl()));
 
   // BLoC
   sl.registerFactory(
@@ -106,6 +110,7 @@ Future<void> init() async {
       updateAudit: sl(),
       markAuditFinished: sl(),
       getChecklist: sl(),
+      getAuditors: sl(),
     ),
   );
 }

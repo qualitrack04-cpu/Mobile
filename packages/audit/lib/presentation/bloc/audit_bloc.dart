@@ -4,6 +4,7 @@ import 'package:audit/domain/usecases/create_audit.dart';
 import 'package:audit/domain/usecases/update_audit.dart';
 import 'package:audit/domain/usecases/mark_audit_finished.dart';
 import 'package:audit/domain/usecases/get_checklist.dart';
+import 'package:audit/domain/usecases/get_auditors.dart';
 import 'package:audit/domain/repositories/audit_repository.dart';
 import 'audit_event.dart';
 import 'audit_state.dart';
@@ -24,6 +25,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
   final UpdateAudit updateAudit;
   final MarkAuditFinished markAuditFinished;
   final GetChecklist getChecklist;
+  final GetAuditors getAuditors;
 
   AuditBloc({
     required this.repository,
@@ -32,6 +34,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     required this.updateAudit,
     required this.markAuditFinished,
     required this.getChecklist,
+    required this.getAuditors,
   }) : super(AuditInitial()) {
     on<LoadAudits>(_onLoadAudits);
     on<CreateAuditEvent>(_onCreateAudit);
@@ -39,6 +42,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     on<MarkAuditFinishedEvent>(_onMarkAuditFinished);
     on<DeleteAuditEvent>(_onDeleteAudit);
     on<LoadChecklist>(_onLoadChecklist);
+    on<LoadAuditors>(_onLoadAuditors_);
   }
 
   Future<void> _onLoadAudits(
@@ -157,4 +161,17 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       emit(AuditError(message: _extractMessage(e)));
     }
   }
-}
+
+  // Sengaja tidak emit AuditLoading agar list audit tidak ikut reset
+  Future<void> _onLoadAuditors_(
+    LoadAuditors event,
+    Emitter<AuditState> emit,
+  ) async {
+    try {
+      final auditors = await getAuditors();
+      emit(AuditorsLoaded(auditors: auditors));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+}
