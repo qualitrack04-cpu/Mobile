@@ -13,9 +13,11 @@ class AuditFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double sw = MediaQuery.of(context).size.width;
+
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 20,
+      margin: EdgeInsets.symmetric(
+        horizontal: sw * 0.05,
         vertical: 16,
       ),
       padding: const EdgeInsets.all(4),
@@ -31,7 +33,7 @@ class AuditFilter extends StatelessWidget {
               onTap: () => onChanged(false),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                height: 44,
+                height: (sw * 0.115).clamp(40.0, 50.0),
                 decoration: BoxDecoration(
                   color: !isPrioritySelected
                       ? const Color(0xFF6E97CC)
@@ -59,7 +61,7 @@ class AuditFilter extends StatelessWidget {
               onTap: () => onChanged(true),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                height: 44,
+                height: (sw * 0.115).clamp(40.0, 50.0),
                 decoration: BoxDecoration(
                   color: isPrioritySelected
                       ? const Color(0xFF6E97CC)

@@ -22,9 +22,11 @@ class AuditCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isFinished = audit.isFinished;
     final bool isPriority = audit.isPriority;
+    final double sw = MediaQuery.of(context).size.width;
+    final double hMargin = sw * 0.05; // ~18px di 360px, ~21px di 420px
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
 
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -48,7 +50,7 @@ class AuditCard extends StatelessWidget {
 
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(sw * 0.035),
 
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +95,10 @@ class AuditCard extends StatelessWidget {
         ),
       ),
 
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: (sw * 0.035).clamp(10.0, 16.0),
+        vertical: 20,
+      ),
 
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -187,12 +192,16 @@ class AuditCard extends StatelessWidget {
         Icon(Icons.apartment_outlined, size: 16, color: metaColor),
         const SizedBox(width: 6),
 
-        Text(
-          audit.department,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: metaColor,
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: Text(
+            audit.department,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: metaColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
 

@@ -24,10 +24,12 @@ class ChecklistCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isPass = checklist.isPassed == true;
     final bool isFail = checklist.isPassed == false;
+    final double sw = MediaQuery.of(context).size.width;
+    final double hMargin = sw * 0.05;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
+      padding: EdgeInsets.all(sw * 0.04),
 
       decoration: BoxDecoration(
         color: AppColors.surface,

@@ -205,9 +205,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
   }
 
   Widget _buildInfoCard() {
+    final double sw = MediaQuery.of(context).size.width;
+
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(sw * 0.05),
+      padding: EdgeInsets.all(sw * 0.04),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
