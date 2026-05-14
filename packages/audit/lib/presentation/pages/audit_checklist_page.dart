@@ -343,7 +343,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       builder: (context, state) {
         final isLoading = state is AuditLoading;
 
-        // ✅ FIX: semua checklist harus dijawab (isPassed != null),
+        // ✅ FIX : semua checklist harus dijawab (isPassed != null),
         // dan yang FAIL wajib sudah ada finding (hasFinding == true)
         final allAnswered =
             _checklists.isNotEmpty && _checklists.every((c) => c.isPassed != null);

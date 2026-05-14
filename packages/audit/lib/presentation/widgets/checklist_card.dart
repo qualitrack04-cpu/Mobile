@@ -232,7 +232,7 @@ class ChecklistCard extends StatelessWidget {
           'FAIL',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w700,
-            fontSize: 13, // FIX: sedikit lebih kecil, aman di semua layar
+            fontSize: 13, // FIX : sedikit lebih kecil, aman di semua layar
           ),
         ),
       ),
