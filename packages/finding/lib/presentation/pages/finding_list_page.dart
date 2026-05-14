@@ -251,12 +251,6 @@ class _FindingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            color: Colors.grey[700],
-                            size: 15,
-                          ),
-                          const SizedBox(width: 6),
                           Text(
                             'Edit',
                             style: TextStyle(
