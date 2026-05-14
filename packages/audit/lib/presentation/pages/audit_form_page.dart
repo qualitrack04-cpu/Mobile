@@ -322,7 +322,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'AUDITOR',
+            'AUDITOR NAME',
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -380,7 +380,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     color: AppColors.textDisabled,
                   ),
                 ),
-                items: _auditors.map((auditor) {
+                items: _auditors.where((a) => a.role == 'Auditor').map((auditor) {
                   return DropdownMenuItem<String>(
                     value: auditor.id,
                     child: Column(
