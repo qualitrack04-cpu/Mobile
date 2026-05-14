@@ -50,10 +50,11 @@ class AuditModel extends AuditEntity {
       auditorName: auditorName,
       isoTemplates: isoTemplates,
       department: department,
-      date: json['year'] != null
-          ? DateTime(json['year'] as int)
-          : DateTime.tryParse(json['scheduledDate'] as String? ?? '') ??
-                DateTime.now(),
+      date: firstSchedule['scheduledDate'] != null
+          ? DateTime.tryParse(firstSchedule['scheduledDate'] as String) ?? DateTime.now()
+          : json['year'] != null
+              ? DateTime(json['year'] as int)
+              : DateTime.now(),
       description: json['description'] as String? ?? '',
       isPriority: isPriority,
       isFinished: isFinished,
