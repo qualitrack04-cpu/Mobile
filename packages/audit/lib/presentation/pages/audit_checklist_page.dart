@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/services/api_service.dart';
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
 import 'package:finding/presentation/pages/finding_edit_page.dart';
 
+import '../../data/datasources/checklist_remote_datasource.dart';
 import '../../domain/entities/audit_entity.dart';
 import '../../domain/entities/checklist_entity.dart';
 import '../bloc/audit_bloc.dart';
@@ -39,6 +41,7 @@ class _AuditChecklistView extends StatefulWidget {
 
 class _AuditChecklistViewState extends State<_AuditChecklistView> {
   List<ChecklistEntity> _checklists = [];
+  String? _sessionId; // ✅ sessionId dari backend
 
   @override
   void initState() {
@@ -52,6 +55,46 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             department: widget.audit.department,
           ),
         );
+    // Buat sesi audit di backend saat halaman dibuka
+    _createSession();
+  }
+
+  Future<void> _createSession() async {
+    try {
+      // Ambil checklistId dari backend (diambil lewat datasource langsung)
+      // scheduleId = widget.audit.id (ID schedule dari AuditPlan)
+      // checklistId akan didapat dari response checklist pertama yang cocok
+      final datasource = GetIt.instance<ChecklistRemoteDatasource>();
+
+      // Cari checklistId yang cocok dulu
+      final listResponse = await GetIt.instance<ApiService>().client.get(
+        '/api/Checklist',
+        queryParameters: {
+          'standard': widget.audit.isoTemplates.isNotEmpty ? widget.audit.isoTemplates.first : '',
+          'department': widget.audit.department,
+        },
+      );
+      final checklists = listResponse.data as List<dynamic>;
+      if (checklists.isEmpty) return;
+      final checklistId = checklists[0]['id'] as String;
+
+      final sessionId = await datasource.createAuditSession(
+        scheduleId: widget.audit.scheduleId,
+        checklistId: checklistId,
+      );
+      setState(() => _sessionId = sessionId);
+    } catch (e) {
+      // Tampilkan error ke UI agar kita tahu penyebab pastinya (misal: 404 Not Found)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuat sesi audit: ${e.toString().replaceAll('Exception:', '')}'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   String get _formattedDate {
@@ -105,12 +148,33 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     }
   }
 
-  // ✅ PERUBAHAN: dispatch MarkAuditFinishedEvent ke BLoC saat submit
+  // ✅ Submit checklist: kirim semua jawaban + selesaikan sesi ke backend
   void _onSubmitChecklist() {
+    if (_sessionId == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white, size: 18),
+                SizedBox(width: 10),
+                Text('Sesi audit belum siap. Coba lagi.'),
+              ],
+            ),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(12),
+          ),
+        );
+      return;
+    }
     context.read<AuditBloc>().add(
-          MarkAuditFinishedEvent(
+          SubmitChecklistEvent(
+            sessionId: _sessionId!,
+            checklists: _checklists,
             audit: widget.audit,
-            isFinished: true,
           ),
         );
   }

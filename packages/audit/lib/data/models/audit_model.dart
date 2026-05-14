@@ -3,6 +3,7 @@ import 'package:audit/domain/entities/audit_entity.dart';
 class AuditModel extends AuditEntity {
   const AuditModel({
     required super.id,
+    required super.scheduleId,
     required super.title,
     required super.auditorName,
     required super.isoTemplates,
@@ -42,10 +43,14 @@ class AuditModel extends AuditEntity {
 
     // ✅ isFinished: tidak ada di AuditPlan backend
     // Gunakan false sebagai default (bisa dikembangkan dari AuditSession nanti)
-    final isFinished = json['isFinished'] as bool? ?? false;
+    final isFinished = firstSchedule['isFinished'] as bool? ?? false;
+
+    // ✅ scheduleId digunakan untuk membuat sesi audit
+    final scheduleId = firstSchedule['id'] as String? ?? json['id'] as String;
 
     return AuditModel(
-      id: json['id'] as String, // ✅ String (Guid)
+      id: json['id'] as String, // ✅ Kembali gunakan ID Plan agar fitur Edit/Delete berfungsi
+      scheduleId: scheduleId,   // ✅ Simpan ID Schedule terpisah
       title: json['title'] as String? ?? '',
       auditorName: auditorName,
       isoTemplates: isoTemplates,
@@ -77,6 +82,7 @@ class AuditModel extends AuditEntity {
   factory AuditModel.fromEntity(AuditEntity entity) {
     return AuditModel(
       id: entity.id,
+      scheduleId: entity.scheduleId,
       title: entity.title,
       auditorName: entity.auditorName,
       isoTemplates: entity.isoTemplates,
