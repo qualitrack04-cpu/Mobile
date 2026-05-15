@@ -5,6 +5,8 @@ import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
 import 'package:get_it/get_it.dart';
+import 'package:core/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CapaDetailPage extends StatelessWidget {
   final String capaId;
@@ -13,6 +15,8 @@ class CapaDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return BlocProvider(
       create: (_) => GetIt.instance<CapaBloc>()..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
       child: Scaffold(
@@ -21,15 +25,15 @@ class CapaDetailPage extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
+            icon: const Icon(Icons.arrow_back, color: AppColors.primary),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'CAPA Detail',
-            style: TextStyle(
-              color: Color(0xFF0D2B55),
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
+            style: GoogleFonts.inter(
+              fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
             ),
           ),
         ),

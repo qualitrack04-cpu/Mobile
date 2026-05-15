@@ -202,10 +202,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
             icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           ),
           title: Text(
-            _isEdit ? 'Edit Plan' : 'Create Plan',
+            _isEdit ? 'Edit Audit' : 'Create Audit',
             style: GoogleFonts.inter(
-              fontSize: appBarFontSize,
-              fontWeight: FontWeight.w800,
+              fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+              fontWeight: FontWeight.w700,
               color: AppColors.primary,
             ),
           ),
