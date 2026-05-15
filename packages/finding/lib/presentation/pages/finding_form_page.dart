@@ -13,12 +13,16 @@ class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
   final String? auditorName;
   final String? clauseRef;
+  final String? sessionId;          // ✅ TAMBAH
+  final String? checklistItemId;    // ✅ TAMBAH
 
   const FindingFormPage({
     super.key,
     this.initialDepartment,
     this.auditorName,
     this.clauseRef,
+    this.sessionId,          // ✅ TAMBAH
+    this.checklistItemId,    // ✅ TAMBAH
   });
 
   @override
@@ -617,6 +621,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
             auditorName: widget.auditorName,
+            sessionId: widget.sessionId,           // ✅ TAMBAH
+            checklistItemId: widget.checklistItemId, // ✅ TAMBAH
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

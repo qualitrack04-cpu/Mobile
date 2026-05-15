@@ -27,23 +27,32 @@ class _FindingEditPageState extends State<FindingEditPage> {
   String? _selectedDepartment;
   late FindingCategory _selectedCategory;
 
-  // ✅ Simpan gambar dari device
+  // Evidence baru dari device (lokal)
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
+
+  // ✅ Evidence lama dari server — simpan sebagai state supaya bisa hapus reaktif
+  List<Map<String, String>> _existingEvidences = [];
+  bool _evidencesLoading = true;
+  int _originalEvidenceCount = 0; // ← tracking jumlah awal untuk _isDirty
+
+  // ✅ Tracking fileId yang sedang dihapus (supaya bisa tampilkan loading per item)
+  final Set<String> _deletingIds = {};
 
   final List<String> _departments = [
     'Production',
     'Warehouse',
   ];
 
-  late Future<List<String>> _evidenceFuture;
-
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.finding.clauseRef)..addListener(() => setState(() {}));
+    _titleController =
+        TextEditingController(text: widget.finding.clauseRef)
+          ..addListener(() => setState(() {}));
     _descriptionController =
-        TextEditingController(text: widget.finding.description)..addListener(() => setState(() {}));
+        TextEditingController(text: widget.finding.description)
+          ..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
     _selectedDepartment = widget.finding.department;
 
@@ -52,8 +61,48 @@ class _FindingEditPageState extends State<FindingEditPage> {
       _departments.add(_selectedDepartment!);
     }
 
-    _evidenceFuture = GetIt.instance<FindingRemoteDatasource>()
-        .getEvidenceUrls(widget.finding.id);
+    // ✅ Load evidence ke state (bukan Future) supaya bisa di-update saat hapus
+    _loadExistingEvidences();
+  }
+
+  Future<void> _loadExistingEvidences() async {
+    try {
+      final evidences = await GetIt.instance<FindingRemoteDatasource>()
+          .getEvidences(widget.finding.id);
+      if (mounted) {
+        setState(() {
+          _existingEvidences = evidences;
+          _originalEvidenceCount = evidences.length; // ← simpan jumlah awal
+          _evidencesLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _evidencesLoading = false);
+    }
+  }
+
+  // ✅ Hapus evidence dari server lalu update UI
+  Future<void> _deleteExistingEvidence(String fileId) async {
+    setState(() => _deletingIds.add(fileId));
+    try {
+      await GetIt.instance<FindingRemoteDatasource>().deleteEvidence(fileId);
+      if (mounted) {
+        setState(() {
+          _existingEvidences.removeWhere((e) => e['id'] == fileId);
+          _deletingIds.remove(fileId);
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _deletingIds.remove(fileId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menghapus evidence. Coba lagi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -144,7 +193,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     }
   }
 
-  // ✅ Ambil banyak gambar sekaligus dari galeri
   Future<void> _pickMultipleImages() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage(
@@ -166,7 +214,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     }
   }
 
-  void _removeImage(int index) {
+  void _removeNewImage(int index) {
     setState(() => _evidenceImages.removeAt(index));
   }
 
@@ -201,7 +249,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 backgroundColor: Colors.green,
               ),
             );
-            // Pop dengan Finding object agar pemanggil bisa menyimpan data terbaru.
             Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
@@ -240,7 +287,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
-                        hint: 'Detail the non-conformance observed during the audit...',
+                        hint:
+                            'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
                       ),
                       _buildDivider(),
@@ -273,12 +321,15 @@ class _FindingEditPageState extends State<FindingEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
@@ -307,12 +358,15 @@ class _FindingEditPageState extends State<FindingEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('CATEGORY',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
+          const Text(
+            'CATEGORY',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
           DropdownButtonHideUnderline(
             child: DropdownButton<FindingCategory>(
               value: _selectedCategory,
@@ -321,8 +375,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
               items: categories.entries.map((e) {
                 return DropdownMenuItem(
                   value: e.key,
-                  child: Text(e.value,
-                      style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                  child: Text(
+                    e.value,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -341,24 +397,31 @@ class _FindingEditPageState extends State<FindingEditPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('DEPARTMENT',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
+          const Text(
+            'DEPARTMENT',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedDepartment,
               isExpanded: true,
-              hint: const Text('Select Department',
-                  style: TextStyle(color: Colors.black26, fontSize: 14)),
+              hint: const Text(
+                'Select Department',
+                style: TextStyle(color: Colors.black26, fontSize: 14),
+              ),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
               items: _departments.map((dept) {
                 return DropdownMenuItem(
                   value: dept,
-                  child: Text(dept,
-                      style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                  child: Text(
+                    dept,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
                 );
               }).toList(),
               onChanged: (value) => setState(() => _selectedDepartment = value),
@@ -381,10 +444,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             InteractiveViewer(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.network(url, fit: BoxFit.contain),
               ),
             ),
             Positioned(
@@ -417,81 +477,153 @@ class _FindingEditPageState extends State<FindingEditPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('EVIDENCE',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                      letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} foto baru',
-                  style: const TextStyle(fontSize: 11, color: Colors.black38)),
+              const Text(
+                'EVIDENCE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                '${_existingEvidences.length + _evidenceImages.length} foto',
+                style: const TextStyle(fontSize: 11, color: Colors.black38),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          
-          // Tampilkan Existing Evidence (Dari URL)
-          FutureBuilder<List<String>>(
-            future: _evidenceFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                );
-              }
 
-              final existingUrls = snapshot.data ?? [];
-              if (existingUrls.isEmpty) return const SizedBox.shrink();
+          // ✅ Evidence lama dari server
+          if (_evidencesLoading)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_existingEvidences.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: _existingEvidences.map((evidence) {
+                  final fileId = evidence['id']!;
+                  final url = evidence['url']!;
+                  final isDeleting = _deletingIds.contains(fileId);
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: existingUrls.map((url) {
-                    return Stack(
-                      children: [
-                        GestureDetector(
-                          onTap: () => _showNetworkImageDialog(context, url),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.grey[200],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                url,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Icon(
-                                  Icons.broken_image_outlined,
-                                  color: Colors.grey[400],
-                                  size: 28,
+                  return Stack(
+                    children: [
+                      // Thumbnail
+                      GestureDetector(
+                        onTap: isDeleting
+                            ? null
+                            : () => _showNetworkImageDialog(context, url),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: isDeleting
+                                // ← Tampilkan loading saat sedang dihapus
+                                ? const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.red,
+                                    ),
+                                  )
+                                : Image.network(
+                                    url,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.broken_image_outlined,
+                                      color: Colors.grey[400],
+                                      size: 28,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+
+                      // ✅ Tombol hapus (X merah) — hanya tampil kalau tidak sedang dihapus
+                      if (!isDeleting)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _confirmDeleteEvidence(fileId),
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
                                 ),
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 12,
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              );
-            },
-          ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
 
-          // Tampilkan Evidence Baru (Lokal XFile)
+          // Evidence baru (lokal, belum diupload)
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: [
               ..._evidenceImages.asMap().entries.map((entry) {
-                return _buildImageThumbnail(entry.value, entry.key);
+                return _buildNewImageThumbnail(entry.value, entry.key);
               }),
               _buildAddImageButton(),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Konfirmasi sebelum hapus supaya tidak tidak sengaja terhapus
+  void _confirmDeleteEvidence(String fileId) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text(
+          'Hapus Evidence?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text('Evidence ini akan dihapus permanen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _deleteExistingEvidence(fileId);
+            },
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -510,10 +642,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             InteractiveViewer(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.contain,
-                ),
+                child: Image.file(File(imagePath), fit: BoxFit.contain),
               ),
             ),
             Positioned(
@@ -537,7 +666,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
-  Widget _buildImageThumbnail(XFile image, int index) {
+  Widget _buildNewImageThumbnail(XFile image, int index) {
     return Stack(
       children: [
         GestureDetector(
@@ -558,7 +687,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
           top: 4,
           right: 4,
           child: GestureDetector(
-            onTap: () => _removeImage(index),
+            onTap: () => _removeNewImage(index),
             child: Container(
               width: 22,
               height: 22,
@@ -592,8 +721,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
             Icon(Icons.add_photo_alternate_outlined,
                 color: Colors.grey[600], size: 28),
             const SizedBox(height: 4),
-            Text('Add Image',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+            Text(
+              'Add Image',
+              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -605,7 +736,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
         _descriptionController.text != widget.finding.description ||
         _selectedCategory != widget.finding.category ||
         _selectedDepartment != widget.finding.department ||
-        _evidenceImages.isNotEmpty;
+        _evidenceImages.isNotEmpty ||
+        _existingEvidences.length != _originalEvidenceCount; // ← evidence dihapus
   }
 
   Widget _buildEditButton(BuildContext context, FindingState state) {
@@ -613,26 +745,36 @@ class _FindingEditPageState extends State<FindingEditPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is FindingLoading || !_isDirty) ? null : () => _onSubmit(context),
+        onPressed: (state is FindingLoading || !_isDirty)
+            ? null
+            : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
           disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: state is FindingLoading
             ? const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Edit Finding',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
+                  Text(
+                    'Edit Finding',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   SizedBox(width: 8),
                   Icon(Icons.edit, color: Colors.white, size: 18),
                 ],
@@ -644,14 +786,16 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void _onSubmit(BuildContext context) {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Title tidak boleh kosong!'),
-          backgroundColor: Colors.orange));
+        content: Text('Title tidak boleh kosong!'),
+        backgroundColor: Colors.orange,
+      ));
       return;
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Description tidak boleh kosong!'),
-          backgroundColor: Colors.orange));
+        content: Text('Description tidak boleh kosong!'),
+        backgroundColor: Colors.orange,
+      ));
       return;
     }
 

@@ -8,16 +8,16 @@ import 'finding_state.dart';
 class FindingBloc extends Bloc<FindingEvent, FindingState> {
   final FindingRepository repository;
   final CreateFinding createFinding;
-  final UpdateFinding updateFinding; // ✅ BARU
+  final UpdateFinding updateFinding;
 
   FindingBloc({
     required this.repository,
     required this.createFinding,
-    required this.updateFinding, // ✅ BARU
+    required this.updateFinding,
   }) : super(FindingInitial()) {
     on<LoadFindings>(_onLoadFindings);
     on<CreateFindingEvent>(_onCreateFinding);
-    on<UpdateFindingEvent>(_onUpdateFinding); // ✅ BARU
+    on<UpdateFindingEvent>(_onUpdateFinding);
     on<LoadFindingDetail>(_onLoadFindingDetail);
   }
 
@@ -62,6 +62,8 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
         department: event.department,
         auditorName: event.auditorName,
+        sessionId: event.sessionId,             // ✅ TAMBAH
+        checklistItemId: event.checklistItemId, // ✅ TAMBAH
       );
 
       // Upload evidence photos if any
@@ -78,7 +80,6 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
     }
   }
 
-  // ✅ BARU: handler untuk update finding
   Future<void> _onUpdateFinding(
     UpdateFindingEvent event,
     Emitter<FindingState> emit,

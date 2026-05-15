@@ -13,6 +13,8 @@ class CreateFinding {
     required String clauseRef,
     required String department,
     String? auditorName,
+    String? sessionId,          // ✅ TAMBAH
+    String? checklistItemId,    // ✅ TAMBAH
   }) async {
     return await repository.createFinding(
       category: category,
@@ -20,6 +22,8 @@ class CreateFinding {
       clauseRef: clauseRef,
       department: department,
       auditorName: auditorName,
+      sessionId: sessionId,             // ✅ TAMBAH
+      checklistItemId: checklistItemId, // ✅ TAMBAH
     );
   }
 }

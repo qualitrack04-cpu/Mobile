@@ -36,6 +36,8 @@ class FindingRepositoryImpl implements FindingRepository {
     required String clauseRef,
     required String department,
     String? auditorName,
+    String? sessionId,          // ✅ TAMBAH
+    String? checklistItemId,    // ✅ TAMBAH
   }) async {
     try {
       return await datasource.createFinding(
@@ -44,13 +46,14 @@ class FindingRepositoryImpl implements FindingRepository {
         clauseRef: clauseRef,
         department: department,
         auditorName: auditorName,
+        sessionId: sessionId,             // ✅ TAMBAH
+        checklistItemId: checklistItemId, // ✅ TAMBAH
       );
     } catch (e) {
       throw Exception('Gagal membuat finding: $e');
     }
   }
 
-  // ✅ BARU
   @override
   Future<Finding> updateFinding({
     required String id,

@@ -8,19 +8,21 @@ class FindingRemoteDatasource {
 
   FindingRemoteDatasource({required this.apiService});
 
-  /// Ambil daftar URL foto evidence untuk finding tertentu
-  /// Memanggil GET /api/Upload/finding/{findingId}
-  Future<List<String>> getEvidenceUrls(String findingId) async {
+  /// Ambil daftar evidence (id + url) untuk finding tertentu
+  /// GET /api/Upload/finding/{findingId}
+  Future<List<Map<String, String>>> getEvidences(String findingId) async {
     try {
       final response =
           await apiService.client.get('/api/Upload/finding/$findingId');
       final List<dynamic> data = response.data as List<dynamic>;
       return data.map((e) {
         final urlStr = e['url'] as String;
-        if (urlStr.startsWith('http')) {
-          return urlStr;
-        }
-        return '${ApiService.baseUrl}$urlStr';
+        // Ambil id evidence — sesuaikan key-nya jika berbeda dari backend
+        final id = e['id'] as String? ?? e['fileId'] as String? ?? '';
+        final fullUrl = urlStr.startsWith('http')
+            ? urlStr
+            : '${ApiService.baseUrl}$urlStr';
+        return {'id': id, 'url': fullUrl};
       }).toList();
     } catch (_) {
       return [];
@@ -33,13 +35,13 @@ class FindingRemoteDatasource {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath, filename: fileName),
     });
-
     await apiService.client.post(
       '/api/Upload/finding/$findingId',
       data: formData,
     );
   }
 
+  /// Hapus satu evidence — DELETE /api/Upload/{fileId}
   Future<void> deleteEvidence(String fileId) async {
     await apiService.client.delete('/api/Upload/$fileId');
   }
@@ -74,13 +76,16 @@ class FindingRemoteDatasource {
     required String clauseRef,
     required String department,
     String? auditorName,
+    String? sessionId,
+    String? checklistItemId,
   }) async {
     final response = await apiService.client.post(
       '/api/Finding',
       data: {
         'title': description,
         'department': department,
-        'sessionId': null,
+        'sessionId': sessionId,
+        'checklistItemId': checklistItemId,
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,

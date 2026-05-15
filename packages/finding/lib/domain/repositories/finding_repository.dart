@@ -12,17 +12,19 @@ abstract class FindingRepository {
   Future<Finding> createFinding({
     required FindingCategory category,
     required String description,
-    required String clauseRef, 
+    required String clauseRef,
     required String department,
     String? auditorName,
+    String? sessionId,          // ✅ TAMBAH
+    String? checklistItemId,    // ✅ TAMBAH
   });
 
-  // ✅ BARU: update keseluruhan data finding
   Future<Finding> updateFinding({
     required String id,
     required FindingCategory category,
     required String description,
-    required String clauseRef, required String department,
+    required String clauseRef,
+    required String department,
   });
 
   Future<void> updateFindingStatus({
