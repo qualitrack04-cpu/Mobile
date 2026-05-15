@@ -56,25 +56,31 @@ class CapaListPage extends StatelessWidget {
                 if (state is CapaLoaded) {
                   return Stack(
                     children: [
-                      ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                        children: [
-                          if (state.capas.isEmpty)
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 100),
-                                child: Text(
-                                  'Belum ada CAPA',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 16,
+                      RefreshIndicator(
+                        onRefresh: () async {
+                          context.read<CapaBloc>().add(const LoadCapas());
+                          await Future.delayed(const Duration(milliseconds: 800));
+                        },
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                          children: [
+                            if (state.capas.isEmpty)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 100),
+                                  child: Text(
+                                    'Belum ada CAPA',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          else
-                            ...state.capas.map((capa) => _CapaCard(capa: capa)),
-                        ],
+                              )
+                            else
+                              ...state.capas.map((capa) => _CapaCard(capa: capa)),
+                          ],
+                        ),
                       ),
 
                       // FAB

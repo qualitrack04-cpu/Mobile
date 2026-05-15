@@ -59,27 +59,33 @@ class FindingListPage extends StatelessWidget {
                 if (state is FindingLoaded) {
                   return Stack(
                     children: [
-                      ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                        children: [
-                          if (state.findings.isEmpty)
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 100),
-                                child: Text(
-                                  'Belum ada finding',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 16,
+                      RefreshIndicator(
+                        onRefresh: () async {
+                          context.read<FindingBloc>().add(const LoadFindings());
+                          await Future.delayed(const Duration(milliseconds: 800));
+                        },
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                          children: [
+                            if (state.findings.isEmpty)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 100),
+                                  child: Text(
+                                    'Belum ada finding',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
+                              )
+                            else
+                              ...state.findings.map(
+                                (finding) => _FindingCard(finding: finding),
                               ),
-                            )
-                          else
-                            ...state.findings.map(
-                              (finding) => _FindingCard(finding: finding),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
 
                       // FAB tambah finding baru
