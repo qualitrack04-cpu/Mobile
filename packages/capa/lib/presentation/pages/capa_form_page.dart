@@ -19,7 +19,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _actionController = TextEditingController();
-  DateTime? _selectedDeadline;
+  DateTime? _selectedDeadline = DateTime.now();
   String? _selectedFindingId;
   String? _selectedPicId;
 
@@ -426,10 +426,12 @@ class _CapaFormPageState extends State<CapaFormPage> {
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () async {
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
               final picked = await showDatePicker(
                 context: context,
-                initialDate: DateTime.now().add(const Duration(days: 30)),
-                firstDate: DateTime.now(),
+                initialDate: _selectedDeadline ?? today,
+                firstDate: today,
                 lastDate: DateTime(2030),
               );
               if (picked != null) {
