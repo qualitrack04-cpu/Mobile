@@ -10,7 +10,16 @@ import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FindingFormPage extends StatefulWidget {
-  const FindingFormPage({super.key});
+  final String? initialDepartment;
+  final String? auditorName;
+  final String? clauseRef;
+
+  const FindingFormPage({
+    super.key,
+    this.initialDepartment,
+    this.auditorName,
+    this.clauseRef,
+  });
 
   @override
   State<FindingFormPage> createState() => _FindingFormPageState();
@@ -39,6 +48,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialDepartment != null && _departments.contains(widget.initialDepartment)) {
+      _selectedDepartment = widget.initialDepartment;
+    } else if (widget.initialDepartment != null) {
+      _departments.add(widget.initialDepartment!);
+      _selectedDepartment = widget.initialDepartment;
+    }
+    if (widget.clauseRef != null) {
+      _titleController.text = widget.clauseRef!;
+    }
     _titleController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
   }
@@ -570,6 +588,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            auditorName: widget.auditorName,
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

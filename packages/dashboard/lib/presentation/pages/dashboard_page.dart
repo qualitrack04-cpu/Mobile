@@ -37,13 +37,27 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: AppColors.background,
 
       appBar: AppBar(
-        title: Text(
-          'QualiTrack',
-          style: GoogleFonts.inter(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w700,
-            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Logo Q — tinggi disesuaikan dengan cap-height huruf
+            Image.asset(
+              'assets/icon/QualiTrack.png',
+              height: (screenWidth * 0.075).clamp(26.0, 34.0),
+              fit: BoxFit.contain,
+            ),
+            // Tanpa SizedBox — langsung sambung ke "Track"
+            Text(
+              'Track',
+              style: GoogleFonts.inter(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: (screenWidth * 0.06).clamp(20.0, 26.0),
+                height: 1.0,
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,

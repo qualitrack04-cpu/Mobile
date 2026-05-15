@@ -12,7 +12,9 @@ abstract class FindingRepository {
   Future<Finding> createFinding({
     required FindingCategory category,
     required String description,
-    required String clauseRef, required String department,
+    required String clauseRef, 
+    required String department,
+    String? auditorName,
   });
 
   // ✅ BARU: update keseluruhan data finding
@@ -31,6 +33,4 @@ abstract class FindingRepository {
   Future<void> deleteFinding(String id);
 
   Future<void> uploadEvidence(String findingId, String filePath);
-
-  Future<void> deleteEvidence(String fileId);
 }

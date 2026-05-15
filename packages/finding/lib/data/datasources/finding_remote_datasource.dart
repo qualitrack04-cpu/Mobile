@@ -27,25 +27,6 @@ class FindingRemoteDatasource {
     }
   }
 
-  Future<List<Map<String, String>>> getEvidenceData(String findingId) async {
-    try {
-      final response = await apiService.client.get('/api/Upload/finding/$findingId');
-      final List<dynamic> data = response.data as List<dynamic>;
-      return data.map((e) {
-        final urlStr = e['url'] as String;
-        final id = e['fileId'] as String;
-        final url = urlStr.startsWith('http') ? urlStr : '${ApiService.baseUrl}$urlStr';
-        return {'id': id, 'url': url};
-      }).toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> deleteEvidence(String fileId) async {
-    await apiService.client.delete('/api/Upload/$fileId');
-  }
-
   /// Upload foto evidence untuk finding
   Future<void> uploadEvidence(String findingId, String filePath) async {
     final fileName = filePath.split('/').last;
@@ -57,6 +38,10 @@ class FindingRemoteDatasource {
       '/api/Upload/finding/$findingId',
       data: formData,
     );
+  }
+
+  Future<void> deleteEvidence(String fileId) async {
+    await apiService.client.delete('/api/Upload/$fileId');
   }
 
   Future<List<FindingModel>> getFindings({
@@ -88,6 +73,7 @@ class FindingRemoteDatasource {
     required String description,
     required String clauseRef,
     required String department,
+    String? auditorName,
   }) async {
     final response = await apiService.client.post(
       '/api/Finding',
@@ -98,6 +84,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
+        'auditorName': auditorName ?? '',
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
