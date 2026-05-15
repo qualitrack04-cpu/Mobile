@@ -39,9 +39,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.finding.clauseRef);
+    _titleController = TextEditingController(text: widget.finding.clauseRef)..addListener(() => setState(() {}));
     _descriptionController =
-        TextEditingController(text: widget.finding.description);
+        TextEditingController(text: widget.finding.description)..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
     _selectedDepartment = widget.finding.department;
 
@@ -574,12 +574,20 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
+  bool get _isDirty {
+    return _titleController.text != widget.finding.clauseRef ||
+        _descriptionController.text != widget.finding.description ||
+        _selectedCategory != widget.finding.category ||
+        _selectedDepartment != widget.finding.department ||
+        _evidenceImages.isNotEmpty;
+  }
+
   Widget _buildEditButton(BuildContext context, FindingState state) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: state is FindingLoading ? null : () => _onSubmit(context),
+        onPressed: (state is FindingLoading || !_isDirty) ? null : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
           disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
