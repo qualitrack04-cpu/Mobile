@@ -10,7 +10,16 @@ import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FindingFormPage extends StatefulWidget {
-  const FindingFormPage({super.key});
+  final String? initialDepartment;
+  final String? auditorName;
+  final String? clauseRef;
+
+  const FindingFormPage({
+    super.key,
+    this.initialDepartment,
+    this.auditorName,
+    this.clauseRef,
+  });
 
   @override
   State<FindingFormPage> createState() => _FindingFormPageState();
@@ -39,6 +48,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialDepartment != null && _departments.contains(widget.initialDepartment)) {
+      _selectedDepartment = widget.initialDepartment;
+    } else if (widget.initialDepartment != null) {
+      _departments.add(widget.initialDepartment!);
+      _selectedDepartment = widget.initialDepartment;
+    }
     _titleController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
   }
@@ -333,6 +348,37 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   Widget _buildDepartmentDropdown() {
+    // Jika department sudah diset dari audit checklist, tampilkan sebagai read-only
+    if (widget.initialDepartment != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('DEPARTMENT',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedDepartment ?? widget.initialDepartment!,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                ),
+                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Jika bukan dari audit checklist, tampilkan dropdown biasa
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
@@ -570,6 +616,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            auditorName: widget.auditorName,
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

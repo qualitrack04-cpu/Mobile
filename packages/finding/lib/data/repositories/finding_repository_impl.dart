@@ -35,6 +35,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required String description,
     required String clauseRef,
     required String department,
+    String? auditorName,
   }) async {
     try {
       return await datasource.createFinding(
@@ -42,6 +43,7 @@ class FindingRepositoryImpl implements FindingRepository {
         description: description,
         clauseRef: clauseRef,
         department: department,
+        auditorName: auditorName,
       );
     } catch (e) {
       throw Exception('Gagal membuat finding: $e');
@@ -97,15 +99,6 @@ class FindingRepositoryImpl implements FindingRepository {
       await datasource.uploadEvidence(findingId, filePath);
     } catch (e) {
       throw Exception('Gagal upload evidence: $e');
-    }
-  }
-
-  @override
-  Future<void> deleteEvidence(String fileId) async {
-    try {
-      await datasource.deleteEvidence(fileId);
-    } catch (e) {
-      throw Exception('Gagal menghapus evidence: $e');
     }
   }
 }

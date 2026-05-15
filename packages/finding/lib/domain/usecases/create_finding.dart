@@ -12,12 +12,14 @@ class CreateFinding {
     required String description,
     required String clauseRef,
     required String department,
+    String? auditorName,
   }) async {
     return await repository.createFinding(
       category: category,
       description: description,
       clauseRef: clauseRef,
       department: department,
+      auditorName: auditorName,
     );
   }
 }

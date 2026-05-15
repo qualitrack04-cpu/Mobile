@@ -20,6 +20,7 @@ dependencies:
     path: ../core
   core_services:
     path: ../core_services
+  skeletonizer: ^2.1.3
 
   
     

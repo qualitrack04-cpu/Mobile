@@ -6,6 +6,7 @@ import 'package:core/app_colors.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
+import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/pages/finding_form_page.dart';
 import 'package:finding/presentation/pages/finding_edit_page.dart';
 
@@ -117,7 +118,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (_) => GetIt.instance<FindingBloc>(),
-          child: const FindingFormPage(),
+          child: FindingFormPage(
+            initialDepartment: widget.audit.department,
+            auditorName: widget.audit.auditorName,
+            clauseRef: checklist.description,
+          ),
         ),
       ),
     );
@@ -126,6 +131,12 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       setState(() {
         checklist.hasFinding = true;
         checklist.finding = result;
+      });
+
+      // ✅ Tunggu sebentar lalu refresh global FindingBloc
+      // Delay diperlukan agar navigasi selesai dulu sebelum state berubah
+      Future.delayed(const Duration(milliseconds: 300), () {
+        GetIt.instance<FindingBloc>().add(const LoadFindings());
       });
     }
   }

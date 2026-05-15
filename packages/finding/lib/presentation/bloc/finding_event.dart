@@ -23,6 +23,7 @@ class CreateFindingEvent extends FindingEvent {
   final String description;
   final String clauseRef;
   final String department;
+  final String? auditorName;
   final List<String> evidencePaths;
 
   const CreateFindingEvent({
@@ -30,11 +31,12 @@ class CreateFindingEvent extends FindingEvent {
     required this.description,
     required this.clauseRef,
     required this.department,
+    this.auditorName,
     this.evidencePaths = const [],
   });
 
   @override
-  List<Object?> get props => [category, description, clauseRef, department, evidencePaths];
+  List<Object?> get props => [category, description, clauseRef, department, auditorName, evidencePaths];
 }
 
 // ✅ BARU: event untuk edit finding

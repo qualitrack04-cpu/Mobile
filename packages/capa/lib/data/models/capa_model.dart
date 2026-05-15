@@ -33,13 +33,17 @@ class CapaModel extends Capa {
             ? (statusIntMap[statusRaw] ?? 'Open')
             : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
 
-    String findingTitle = '';
-    String findingCategory = '';
-    if (json['finding'] != null) {
+    String findingTitle = json['findingTitle'] as String? ?? '';
+    // Baca findingCategory langsung dari root JSON yang sudah dikirim backend
+    String findingCategory = json['findingCategory'] as String? ?? '';
+    
+    // Fallback: jika backend masih kirim objek finding (misal endpoint lama)
+    if (json['finding'] != null && findingTitle.isEmpty) {
       final clause = json['finding']['clauseRef'] as String? ?? '';
       final desc = json['finding']['description'] as String? ?? '';
       findingTitle = clause.isNotEmpty ? '$clause - $desc' : desc;
-      
+    }
+    if (json['finding'] != null && findingCategory.isEmpty) {
       final categoryRaw = json['finding']['category'];
       if (categoryRaw is int) {
         const categoryMap = {0: 'MajorNC', 1: 'MinorNC', 2: 'Observation', 3: 'OFI'};
@@ -47,6 +51,12 @@ class CapaModel extends Capa {
       } else if (categoryRaw is String) {
         findingCategory = categoryRaw;
       }
+    }
+
+    // picName langsung ada di root level CAPAResponseDto
+    String picName = json['picName'] as String? ?? '';
+    if (picName.isEmpty && json['pic'] != null) {
+      picName = json['pic']['fullName'] as String? ?? '';
     }
 
     return CapaModel(
@@ -57,7 +67,7 @@ class CapaModel extends Capa {
       correctiveAction: json['correctiveAction'] as String? ?? '',
       preventiveAction: json['preventiveAction'] as String? ?? '',
       picId: json['picId'] as String? ?? '',
-      picName: (json['pic'] != null) ? (json['pic']['fullName'] as String? ?? '') : '',
+      picName: picName,
       findingTitle: findingTitle,
       deadline: DateTime.parse(json['deadline'] as String),
       isClosed: statusStr == 'Closed',
