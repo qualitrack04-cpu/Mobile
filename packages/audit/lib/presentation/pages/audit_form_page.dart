@@ -30,7 +30,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   // State lokal daftar auditor dari backend
   List<AuditorEntity> _auditors = [];
-  bool _isLoadingAuditors = false;
+  bool _isLoadingAuditors = true;
 
   // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
@@ -140,7 +140,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     // FIX 1: Hitung padding bawah = tinggi FAB + jarak aman
     const double fabHeight = 58;
     const double fabBottomMargin = 16; // jarak FAB dari bawah layar
-    const double extraPadding = 16;
+    const double extraPadding = 64; // Tambah padding ekstra agar tidak mepet FAB saat mentok bawah
     const double bottomPadding = fabHeight + fabBottomMargin + extraPadding;
 
     return BlocListener<AuditBloc, AuditState>(
@@ -202,10 +202,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
             icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           ),
           title: Text(
-            _isEdit ? 'Edit Plan' : 'Create Plan',
+            _isEdit ? 'Edit Audit' : 'Create Audit',
             style: GoogleFonts.inter(
-              fontSize: appBarFontSize,
-              fontWeight: FontWeight.w800,
+              fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+              fontWeight: FontWeight.w700,
               color: AppColors.primary,
             ),
           ),
@@ -280,7 +280,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
           // FIX 1: padding bawah cukup agar konten tidak tertutup FAB
           padding: const EdgeInsets.fromLTRB(18, 18, 18, bottomPadding),
           // FIX 2: keyboard otomatis scroll ke field yang sedang aktif
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
           child: Column(
             children: [
               Container(
@@ -350,23 +350,52 @@ class _AuditFormPageState extends State<AuditFormPage> {
               ),
             )
           else if (_auditors.isEmpty)
-            Row(
-              children: [
-                Text(
-                  'Gagal memuat auditor.',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.danger,
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryMuted.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: AppColors.primaryLight),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Daftar auditor belum tersedia',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.primaryLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _isLoadingAuditors = true);
-                    context.read<AuditBloc>().add(const LoadAuditors());
-                  },
-                  child: const Text('Coba lagi'),
-                ),
-              ],
+                  InkWell(
+                    onTap: () {
+                      setState(() => _isLoadingAuditors = true);
+                      context.read<AuditBloc>().add(const LoadAuditors());
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Muat Ulang',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             DropdownButtonHideUnderline(
@@ -449,6 +478,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             style: GoogleFonts.inter(fontSize: 12),
             // FIX 2: keyboard muncul → Flutter otomatis scroll ke field ini
             textInputAction: TextInputAction.next,
+            scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
@@ -638,6 +668,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             maxLines: 2,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.done,
+            scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
               hintText: 'Detail the non-conformance observed during the audit...',
               hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
@@ -666,7 +697,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
           ),
           Switch(
             value: _isPriority,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             onChanged: (value) => setState(() => _isPriority = value),
           ),
         ],

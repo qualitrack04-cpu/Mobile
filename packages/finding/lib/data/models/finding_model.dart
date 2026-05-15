@@ -11,6 +11,7 @@ class FindingModel extends Finding {
     required super.foundAt,
     required super.status,
     required super.department,
+    super.auditorName,
   });
 
   // JSON dari backend → FindingModel
@@ -24,6 +25,7 @@ class FindingModel extends Finding {
       foundAt: DateTime.parse(json['foundAt'] as String),
       status: FindingStatus.fromString(json['status'] as String),
       department: json['department'] as String,
+      auditorName: json['auditorName'] as String?,
     );
   }
 

@@ -1,7 +1,6 @@
 enum FindingCategory {
   majorNC,
   minorNC,
-  observation,
   ofi;
 
   // Konversi dari string backend (MajorNC → majorNC)
@@ -11,12 +10,10 @@ enum FindingCategory {
         return FindingCategory.majorNC;
       case 'MinorNC':
         return FindingCategory.minorNC;
-      case 'Observation':
-        return FindingCategory.observation;
       case 'OFI':
         return FindingCategory.ofi;
       default:
-        return FindingCategory.observation;
+        throw Exception('Unknown finding category: $value');
     }
   }
 
@@ -27,8 +24,6 @@ enum FindingCategory {
         return 'MajorNC';
       case FindingCategory.minorNC:
         return 'MinorNC';
-      case FindingCategory.observation:
-        return 'Observation';
       case FindingCategory.ofi:
         return 'OFI';
     }

@@ -7,6 +7,10 @@ import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
+import 'package:get_it/get_it.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
+import 'package:core/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FindingEditPage extends StatefulWidget {
   final Finding finding;
@@ -29,21 +33,27 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   final List<String> _departments = [
     'Production',
-    'Quality Control',
-    'Maintenance',
-    'Engineering',
     'Warehouse',
-    'HR',
   ];
+
+  late Future<List<String>> _evidenceFuture;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.finding.clauseRef);
+    _titleController = TextEditingController(text: widget.finding.clauseRef)..addListener(() => setState(() {}));
     _descriptionController =
-        TextEditingController(text: widget.finding.description);
+        TextEditingController(text: widget.finding.description)..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
     _selectedDepartment = widget.finding.department;
+
+    if (_selectedDepartment != null &&
+        !_departments.contains(_selectedDepartment)) {
+      _departments.add(_selectedDepartment!);
+    }
+
+    _evidenceFuture = GetIt.instance<FindingRemoteDatasource>()
+        .getEvidenceUrls(widget.finding.id);
   }
 
   @override
@@ -102,7 +112,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
+                  _pickMultipleImages();
                 },
               ),
             ],
@@ -134,27 +144,51 @@ class _FindingEditPageState extends State<FindingEditPage> {
     }
   }
 
+  // ✅ Ambil banyak gambar sekaligus dari galeri
+  Future<void> _pickMultipleImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1080,
+      );
+      if (images.isNotEmpty) {
+        setState(() => _evidenceImages.addAll(images));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _removeImage(int index) {
     setState(() => _evidenceImages.removeAt(index));
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F7),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Edit Finding',
-          style: TextStyle(
-            color: Color(0xFF0D2B55),
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+          style: GoogleFonts.inter(
+            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
           ),
         ),
       ),
@@ -266,7 +300,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     final categories = {
       FindingCategory.majorNC: 'Major NC',
       FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
       FindingCategory.ofi: 'OFI',
     };
     return Padding(
@@ -336,6 +369,45 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
+  void _showNetworkImageDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEvidenceSection() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -351,11 +423,66 @@ class _FindingEditPageState extends State<FindingEditPage> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                       letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} foto',
+              Text('${_evidenceImages.length} foto baru',
                   style: const TextStyle(fontSize: 11, color: Colors.black38)),
             ],
           ),
           const SizedBox(height: 12),
+          
+          // Tampilkan Existing Evidence (Dari URL)
+          FutureBuilder<List<String>>(
+            future: _evidenceFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+
+              final existingUrls = snapshot.data ?? [];
+              if (existingUrls.isEmpty) return const SizedBox.shrink();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: existingUrls.map((url) {
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _showNetworkImageDialog(context, url),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[200],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.grey[400],
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+
+          // Tampilkan Evidence Baru (Lokal XFile)
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -371,17 +498,59 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
+  void _showImageDialog(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(imagePath),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildImageThumbnail(XFile image, int index) {
     return Stack(
       children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            image: DecorationImage(
-              image: FileImage(File(image.path)),
-              fit: BoxFit.cover,
+        GestureDetector(
+          onTap: () => _showImageDialog(context, image.path),
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: FileImage(File(image.path)),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
@@ -431,12 +600,20 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
+  bool get _isDirty {
+    return _titleController.text != widget.finding.clauseRef ||
+        _descriptionController.text != widget.finding.description ||
+        _selectedCategory != widget.finding.category ||
+        _selectedDepartment != widget.finding.department ||
+        _evidenceImages.isNotEmpty;
+  }
+
   Widget _buildEditButton(BuildContext context, FindingState state) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: state is FindingLoading ? null : () => _onSubmit(context),
+        onPressed: (state is FindingLoading || !_isDirty) ? null : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
           disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
@@ -485,6 +662,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );
   }

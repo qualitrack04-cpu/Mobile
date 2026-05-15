@@ -11,7 +11,7 @@ import 'package:finding/domain/usecases/update_finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 
 // CAPA
-import 'package:capa/data/datasources/capa_mock_datasource.dart';
+import 'package:capa/data/datasources/capa_remote_datasource.dart';
 import 'package:capa/data/repositories/capa_repository_impl.dart';
 import 'package:capa/domain/repositories/capa_repository.dart';
 import 'package:capa/domain/usecases/get_capas.dart';
@@ -20,51 +20,46 @@ import 'package:capa/domain/usecases/create_capa.dart';
 import 'package:capa/domain/usecases/closeout_capa.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 
-// Audit (comment dulu - ada bug)
-// import 'package:audit/data/datasources/audit_remote_datasource.dart';
-// import 'package:audit/data/datasources/checklist_remote_datasource.dart';
-// import 'package:audit/data/repositories/audit_repository_impl.dart';
-// import 'package:audit/data/repositories/checklist_repository_impl.dart';
-// import 'package:audit/domain/repositories/audit_repository.dart';
-// import 'package:audit/domain/repositories/checklist_repository.dart';
-// import 'package:audit/domain/usecases/get_audits.dart';
-// import 'package:audit/domain/usecases/create_audit.dart';
-// import 'package:audit/domain/usecases/update_audit.dart';
-// import 'package:audit/domain/usecases/mark_audit_finished.dart';
-// import 'package:audit/domain/usecases/get_checklist.dart';
-// import 'package:audit/presentation/bloc/audit_bloc.dart';
+// Audit
+import 'package:audit/data/datasources/audit_remote_datasource.dart';
+import 'package:audit/data/datasources/checklist_remote_datasource.dart';
+import 'package:audit/data/datasources/auditor_remote_datasource.dart';
+import 'package:audit/data/repositories/audit_repository_impl.dart';
+import 'package:audit/data/repositories/checklist_repository_impl.dart';
+import 'package:audit/domain/repositories/audit_repository.dart';
+import 'package:audit/domain/repositories/checklist_repository.dart';
+import 'package:audit/domain/usecases/get_audits.dart';
+import 'package:audit/domain/usecases/create_audit.dart';
+import 'package:audit/domain/usecases/update_audit.dart';
+import 'package:audit/domain/usecases/mark_audit_finished.dart';
+import 'package:audit/domain/usecases/get_checklist.dart';
+import 'package:audit/domain/usecases/get_auditors.dart';
+import 'package:audit/domain/usecases/submit_checklist.dart';
+import 'package:audit/presentation/bloc/audit_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // ===== CORE SERVICES =====
-  sl.registerLazySingleton(() => ApiService());
-  sl.registerLazySingleton(() => AuthService(apiService: sl()));
-
   // ===== FINDING =====
-  sl.registerLazySingleton(
-    () => FindingRemoteDatasource(apiService: sl()),
-  );
+  sl.registerLazySingleton(() => FindingRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<FindingRepository>(
-    () => FindingRepositoryImpl(
-      remoteDatasource: sl(),
-    ),
+    () => FindingRepositoryImpl(datasource: sl()),
   );
 
   sl.registerLazySingleton(() => CreateFinding(repository: sl()));
-  sl.registerLazySingleton(() => UpdateFinding(repository: sl()));
+  sl.registerLazySingleton(() => UpdateFinding(repository: sl())); // ✅ BARU
 
   sl.registerFactory(
     () => FindingBloc(
       repository: sl(),
       createFinding: sl(),
-      updateFinding: sl(),
+      updateFinding: sl(), // ✅ BARU
     ),
   );
 
   // ===== CAPA =====
-  sl.registerLazySingleton(() => CapaMockDatasource());
+  sl.registerLazySingleton(() => CapaRemoteDatasource(apiService: sl()));
 
   sl.registerLazySingleton<CapaRepository>(
     () => CapaRepositoryImpl(datasource: sl()),
@@ -85,28 +80,40 @@ Future<void> init() async {
     ),
   );
 
-  // ===== AUDIT ===== (comment dulu - ada bug)
-  // sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
-  // sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
-  // sl.registerLazySingleton<AuditRepository>(
-  //   () => AuditRepositoryImpl(datasource: sl()),
-  // );
-  // sl.registerLazySingleton<ChecklistRepository>(
-  //   () => ChecklistRepositoryImpl(datasource: sl()),
-  // );
-  // sl.registerLazySingleton(() => GetAudits(repository: sl()));
-  // sl.registerLazySingleton(() => CreateAudit(repository: sl()));
-  // sl.registerLazySingleton(() => UpdateAudit(repository: sl()));
-  // sl.registerLazySingleton(() => MarkAuditFinished(repository: sl()));
-  // sl.registerLazySingleton(() => GetChecklist(repository: sl()));
-  // sl.registerFactory(
-  //   () => AuditBloc(
-  //     repository: sl(),
-  //     getAudits: sl(),
-  //     createAudit: sl(),
-  //     updateAudit: sl(),
-  //     markAuditFinished: sl(),
-  //     getChecklist: sl(),
-  //   ),
-  // );
+  // ===== AUDIT =====
+  sl.registerLazySingleton(() => ApiService());
+  sl.registerLazySingleton(() => AuthService(apiService: sl()));
+  sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
+  sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
+  sl.registerLazySingleton(() => AuditorRemoteDatasource(apiService: sl()));
+
+  sl.registerLazySingleton<AuditRepository>(
+    () => AuditRepositoryImpl(datasource: sl()),
+  );
+  sl.registerLazySingleton<ChecklistRepository>(
+    () => ChecklistRepositoryImpl(datasource: sl()),
+  );
+
+  // Usecases
+  sl.registerLazySingleton(() => GetAudits(repository: sl()));
+  sl.registerLazySingleton(() => CreateAudit(repository: sl()));
+  sl.registerLazySingleton(() => UpdateAudit(repository: sl()));
+  sl.registerLazySingleton(() => MarkAuditFinished(repository: sl()));
+  sl.registerLazySingleton(() => GetChecklist(repository: sl()));
+  sl.registerLazySingleton(() => GetAuditors(datasource: sl()));
+  sl.registerLazySingleton(() => SubmitChecklist(repository: sl()));
+
+  // BLoC
+  sl.registerFactory(
+    () => AuditBloc(
+      repository: sl(),
+      getAudits: sl(),
+      createAudit: sl(),
+      updateAudit: sl(),
+      markAuditFinished: sl(),
+      getChecklist: sl(),
+      getAuditors: sl(),
+      submitChecklist: sl(),
+    ),
+  );
 }

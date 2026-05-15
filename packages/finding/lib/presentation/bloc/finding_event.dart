@@ -23,16 +23,18 @@ class CreateFindingEvent extends FindingEvent {
   final String description;
   final String clauseRef;
   final String department;
+  final List<String> evidencePaths;
 
   const CreateFindingEvent({
     required this.category,
     required this.description,
     required this.clauseRef,
     required this.department,
+    this.evidencePaths = const [],
   });
 
   @override
-  List<Object?> get props => [category, description, clauseRef, department];
+  List<Object?> get props => [category, description, clauseRef, department, evidencePaths];
 }
 
 // ✅ BARU: event untuk edit finding
@@ -42,6 +44,7 @@ class UpdateFindingEvent extends FindingEvent {
   final String description;
   final String clauseRef;
   final String department;
+  final List<String> evidencePaths;
 
   const UpdateFindingEvent({
     required this.id,
@@ -49,10 +52,11 @@ class UpdateFindingEvent extends FindingEvent {
     required this.description,
     required this.clauseRef,
     required this.department,
+    this.evidencePaths = const [],
   });
 
   @override
-  List<Object?> get props => [id, category, description, clauseRef];
+  List<Object?> get props => [id, category, description, clauseRef, department, evidencePaths];
 }
 
 class LoadFindingDetail extends FindingEvent {

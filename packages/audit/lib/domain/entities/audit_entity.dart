@@ -1,5 +1,6 @@
 class AuditEntity {
   final String id;
+  final String scheduleId;
   final String title;
   final String auditorName;
   final List<String> isoTemplates;
@@ -11,6 +12,7 @@ class AuditEntity {
 
   const AuditEntity({
     required this.id,
+    required this.scheduleId,
     required this.title,
     required this.auditorName,
     required this.isoTemplates,
@@ -23,6 +25,7 @@ class AuditEntity {
 
   AuditEntity copyWith({
     String? id,
+    String? scheduleId,
     String? title,
     String? auditorName,
     List<String>? isoTemplates,
@@ -34,6 +37,7 @@ class AuditEntity {
   }) {
     return AuditEntity(
       id: id ?? this.id,
+      scheduleId: scheduleId ?? this.scheduleId,
       title: title ?? this.title,
       auditorName: auditorName ?? this.auditorName,
       isoTemplates: isoTemplates ?? this.isoTemplates,

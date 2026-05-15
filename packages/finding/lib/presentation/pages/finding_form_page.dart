@@ -6,6 +6,8 @@ import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
+import 'package:core/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FindingFormPage extends StatefulWidget {
   const FindingFormPage({super.key});
@@ -31,11 +33,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   final List<String> _departments = [
     'Production',
-    'Quality Control',
-    'Maintenance',
-    'Engineering',
     'Warehouse',
-    'HR',
   ];
 
   @override
@@ -102,7 +100,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
+                  _pickMultipleImages();
                 },
               ),
             ],
@@ -112,17 +110,41 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Ambil gambar dari sumber yang dipilih
+  // ✅ Ambil satu gambar dari kamera
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        imageQuality: 80, // kompres sedikit agar tidak terlalu besar
+        imageQuality: 80,
         maxWidth: 1080,
       );
       if (image != null) {
         setState(() {
           _evidenceImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ Ambil banyak gambar sekaligus dari galeri
+  Future<void> _pickMultipleImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1080,
+      );
+      if (images.isNotEmpty) {
+        setState(() {
+          _evidenceImages.addAll(images);
         });
       }
     } catch (e) {
@@ -146,21 +168,23 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F7),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0D2B55)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Finding Form',
-          style: TextStyle(
-            color: Color(0xFF0D2B55),
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+        title: Text(
+          'Create Finding',
+          style: GoogleFonts.inter(
+            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
           ),
         ),
       ),
@@ -273,7 +297,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     final categories = {
       FindingCategory.majorNC: 'Major NC',
       FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
       FindingCategory.ofi: 'OFI',
     };
     return Padding(
@@ -380,18 +403,60 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
+  void _showImageDialog(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(imagePath),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ✅ Thumbnail gambar nyata dengan tombol hapus
   Widget _buildImageThumbnail(XFile image, int index) {
     return Stack(
       children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            image: DecorationImage(
-              image: FileImage(File(image.path)),
-              fit: BoxFit.cover,
+        GestureDetector(
+          onTap: () => _showImageDialog(context, image.path),
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: FileImage(File(image.path)),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),
@@ -505,6 +570,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );
   }

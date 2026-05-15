@@ -62,6 +62,12 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
         department: event.department,
       );
+
+      // Upload evidence photos if any
+      for (final path in event.evidencePaths) {
+        await repository.uploadEvidence(finding.id, path);
+      }
+
       emit(FindingCreated(finding: finding));
 
       final findings = await repository.getFindings();
@@ -85,6 +91,12 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
         department: event.department,
       );
+
+      // Upload new evidence photos if any
+      for (final path in event.evidencePaths) {
+        await repository.uploadEvidence(finding.id, path);
+      }
+
       emit(FindingUpdated(finding: finding));
 
       final findings = await repository.getFindings();

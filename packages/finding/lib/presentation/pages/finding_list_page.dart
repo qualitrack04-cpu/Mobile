@@ -11,6 +11,7 @@ import 'package:finding/presentation/pages/finding_edit_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -19,12 +20,26 @@ class FindingListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => GetIt.instance<FindingBloc>()..add(const LoadFindings()),
-      child: Builder(
-        builder: (context) {
-          // ✅ Tambahkan ini
-          final screenWidth = MediaQuery.of(context).size.width;
+      child: const _FindingListView(),
+    );
+  }
+}
 
-          return Scaffold(
+class _FindingListView extends StatefulWidget {
+  const _FindingListView();
+
+  @override
+  State<_FindingListView> createState() => _FindingListViewState();
+}
+
+class _FindingListViewState extends State<_FindingListView> {
+  List<Finding> _lastFindings = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
               backgroundColor: AppColors.surface,
@@ -39,13 +54,15 @@ class FindingListPage extends StatelessWidget {
               ),
             ),
 
-            body: BlocBuilder<FindingBloc, FindingState>(
-              builder: (context, state) {
-                if (state is FindingLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
-                  );
+            body: BlocConsumer<FindingBloc, FindingState>(
+              listener: (context, state) {
+                if (state is FindingLoaded) {
+                  _lastFindings = state.findings;
                 }
+              },
+              builder: (context, state) {
+                final isLoading = state is FindingLoading || state is FindingInitial;
+                final findings = state is FindingLoaded ? state.findings : _lastFindings;
 
                 if (state is FindingError) {
                   return Center(
@@ -56,33 +73,62 @@ class FindingListPage extends StatelessWidget {
                   );
                 }
 
-                if (state is FindingLoaded) {
-                  return Stack(
-                    children: [
-                      ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                        children: [
-                          if (state.findings.isEmpty)
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 100),
-                                child: Text(
-                                  'Belum ada finding',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 16,
+                // Skeleton placeholder saat first load
+                final skeletonList = List.generate(
+                  4,
+                  (_) => Finding(
+                    id: '',
+                    category: FindingCategory.majorNC,
+                    description: 'Loading Description Here',
+                    clauseRef: '-',
+                    foundAt: DateTime.now(),
+                    status: FindingStatus.open,
+                    department: 'Department Name',
+                  ),
+                );
+
+                final displayList = isLoading ? skeletonList : findings;
+
+                // Urutkan berdasarkan kategori
+                final sortedFindings = List.of(displayList)..sort((a, b) {
+                  return a.category.index.compareTo(b.category.index);
+                });
+
+                return Stack(
+                  children: [
+                    RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<FindingBloc>().add(const LoadFindings());
+                        await Future.delayed(const Duration(milliseconds: 800));
+                      },
+                      child: Skeletonizer(
+                        enabled: isLoading,
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                          children: [
+                            if (!isLoading && sortedFindings.isEmpty)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 100),
+                                  child: Text(
+                                    'Belum ada finding',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
+                              )
+                            else
+                              ...sortedFindings.map(
+                                (finding) => _FindingCard(finding: finding),
                               ),
-                            )
-                          else
-                            ...state.findings.map(
-                              (finding) => _FindingCard(finding: finding),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
+                    ),
 
-                      // FAB tambah finding baru
+                    // FAB tambah finding baru
                       // FAB tambah finding baru
                       Positioned(
                         bottom: 16,
@@ -140,15 +186,9 @@ class FindingListPage extends StatelessWidget {
                       ),
                     ],
                   );
-                }
-
-                return const SizedBox();
               },
             ),
           );
-        },
-      ),
-    );
   }
 }
 
@@ -180,14 +220,14 @@ class _FindingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Baris atas: deskripsi + badge category
+              // Baris atas: title + badge category
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
-                      finding.description,
+                      finding.clauseRef,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -203,9 +243,9 @@ class _FindingCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // clauseRef
+              // description
               Text(
-                finding.clauseRef,
+                finding.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 13, color: Colors.black54),
@@ -251,12 +291,6 @@ class _FindingCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            color: Colors.grey[700],
-                            size: 15,
-                          ),
-                          const SizedBox(width: 6),
                           Text(
                             'Edit',
                             style: TextStyle(
@@ -314,8 +348,6 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFF0F0);
       case FindingCategory.minorNC:
         return Colors.white;
-      case FindingCategory.observation:
-        return Colors.white;
       case FindingCategory.ofi:
         return Colors.white;
     }
@@ -327,8 +359,6 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }
@@ -358,10 +388,8 @@ class _FindingCard extends StatelessWidget {
         return 'Major NC';
       case FindingCategory.minorNC:
         return 'Minor NC';
-      case FindingCategory.observation:
-        return 'Conform';
       case FindingCategory.ofi:
-        return 'Observe';
+        return 'OFI';
     }
   }
 
@@ -371,8 +399,6 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFDDDD);
       case FindingCategory.minorNC:
         return const Color(0xFFFFEDD5);
-      case FindingCategory.observation:
-        return const Color(0xFFD5F5E3);
       case FindingCategory.ofi:
         return const Color(0xFFDDE8FF);
     }
@@ -384,8 +410,6 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }

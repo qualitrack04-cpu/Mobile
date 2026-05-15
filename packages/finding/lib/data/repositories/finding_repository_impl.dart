@@ -1,19 +1,12 @@
-import 'package:finding/data/datasources/finding_mock_datasource.dart';
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 
 class FindingRepositoryImpl implements FindingRepository {
-  final FindingMockDatasource? mockDatasource;
-  final FindingRemoteDatasource? remoteDatasource;
+  final FindingRemoteDatasource datasource;
 
-  FindingRepositoryImpl({
-    this.mockDatasource,
-    this.remoteDatasource,
-  });
-
-  bool get _useRemote => remoteDatasource != null;
+  FindingRepositoryImpl({required this.datasource});
 
   @override
   Future<List<Finding>> getFindings({
@@ -21,16 +14,7 @@ class FindingRepositoryImpl implements FindingRepository {
     FindingCategory? category,
   }) async {
     try {
-      if (_useRemote) {
-        return await remoteDatasource!.getFindings(
-          status: status,
-          category: category,
-        );
-      }
-      return await mockDatasource!.getFindings(
-        status: status,
-        category: category,
-      );
+      return await datasource.getFindings(status: status, category: category);
     } catch (e) {
       throw Exception('Gagal mengambil data finding: $e');
     }
@@ -39,10 +23,7 @@ class FindingRepositoryImpl implements FindingRepository {
   @override
   Future<Finding> getFindingDetail(String id) async {
     try {
-      if (_useRemote) {
-        return await remoteDatasource!.getFindingDetail(id);
-      }
-      return await mockDatasource!.getFindingDetail(id);
+      return await datasource.getFindingDetail(id);
     } catch (e) {
       throw Exception('Gagal mengambil detail finding: $e');
     }
@@ -56,15 +37,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required String department,
   }) async {
     try {
-      if (_useRemote) {
-        return await remoteDatasource!.createFinding(
-          category: category,
-          description: description,
-          clauseRef: clauseRef,
-          department: department,
-        );
-      }
-      return await mockDatasource!.createFinding(
+      return await datasource.createFinding(
         category: category,
         description: description,
         clauseRef: clauseRef,
@@ -75,6 +48,7 @@ class FindingRepositoryImpl implements FindingRepository {
     }
   }
 
+  // ✅ BARU
   @override
   Future<Finding> updateFinding({
     required String id,
@@ -84,16 +58,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required String department,
   }) async {
     try {
-      if (_useRemote) {
-        return await remoteDatasource!.updateFinding(
-          id: id,
-          category: category,
-          description: description,
-          clauseRef: clauseRef,
-          department: department,
-        );
-      }
-      return await mockDatasource!.updateFinding(
+      return await datasource.updateFinding(
         id: id,
         category: category,
         description: description,
@@ -101,7 +66,7 @@ class FindingRepositoryImpl implements FindingRepository {
         department: department,
       );
     } catch (e) {
-      throw Exception('Gagal update finding: $e');
+      throw Exception('Gagal mengupdate finding: $e');
     }
   }
 
@@ -111,17 +76,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required FindingStatus status,
   }) async {
     try {
-      if (_useRemote) {
-        await remoteDatasource!.updateFindingStatus(
-          id: id,
-          status: status,
-        );
-        return;
-      }
-      await mockDatasource!.updateFindingStatus(
-        id: id,
-        status: status,
-      );
+      await datasource.updateFindingStatus(id: id, status: status);
     } catch (e) {
       throw Exception('Gagal update status finding: $e');
     }
@@ -130,13 +85,27 @@ class FindingRepositoryImpl implements FindingRepository {
   @override
   Future<void> deleteFinding(String id) async {
     try {
-      if (_useRemote) {
-        await remoteDatasource!.deleteFinding(id);
-        return;
-      }
-      await mockDatasource!.deleteFinding(id);
+      await datasource.deleteFinding(id);
     } catch (e) {
       throw Exception('Gagal menghapus finding: $e');
+    }
+  }
+
+  @override
+  Future<void> uploadEvidence(String findingId, String filePath) async {
+    try {
+      await datasource.uploadEvidence(findingId, filePath);
+    } catch (e) {
+      throw Exception('Gagal upload evidence: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteEvidence(String fileId) async {
+    try {
+      await datasource.deleteEvidence(fileId);
+    } catch (e) {
+      throw Exception('Gagal menghapus evidence: $e');
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
@@ -7,39 +8,79 @@ class FindingRemoteDatasource {
 
   FindingRemoteDatasource({required this.apiService});
 
+  /// Ambil daftar URL foto evidence untuk finding tertentu
+  /// Memanggil GET /api/Upload/finding/{findingId}
+  Future<List<String>> getEvidenceUrls(String findingId) async {
+    try {
+      final response =
+          await apiService.client.get('/api/Upload/finding/$findingId');
+      final List<dynamic> data = response.data as List<dynamic>;
+      return data.map((e) {
+        final urlStr = e['url'] as String;
+        if (urlStr.startsWith('http')) {
+          return urlStr;
+        }
+        return '${ApiService.baseUrl}$urlStr';
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, String>>> getEvidenceData(String findingId) async {
+    try {
+      final response = await apiService.client.get('/api/Upload/finding/$findingId');
+      final List<dynamic> data = response.data as List<dynamic>;
+      return data.map((e) {
+        final urlStr = e['url'] as String;
+        final id = e['fileId'] as String;
+        final url = urlStr.startsWith('http') ? urlStr : '${ApiService.baseUrl}$urlStr';
+        return {'id': id, 'url': url};
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> deleteEvidence(String fileId) async {
+    await apiService.client.delete('/api/Upload/$fileId');
+  }
+
+  /// Upload foto evidence untuk finding
+  Future<void> uploadEvidence(String findingId, String filePath) async {
+    final fileName = filePath.split('/').last;
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+    });
+
+    await apiService.client.post(
+      '/api/Upload/finding/$findingId',
+      data: formData,
+    );
+  }
+
   Future<List<FindingModel>> getFindings({
-  FindingStatus? status,
-  FindingCategory? category,
-}) async {
-  try {
-    print('🔍 Fetching findings from API...'); // ← tambah ini
-    
-    final queryParams = <String, dynamic>{};
-    if (status != null) queryParams['status'] = status.toBackendString();
-    if (category != null) queryParams['category'] = category.toBackendString();
+    FindingStatus? status,
+    FindingCategory? category,
+  }) async {
+    final params = <String, dynamic>{};
+    if (status != null) params['status'] = status.toBackendString();
+    if (category != null) params['category'] = category.toBackendString();
 
     final response = await apiService.client.get(
       '/api/Finding',
-      queryParameters: queryParams,
+      queryParameters: params.isNotEmpty ? params : null,
     );
 
-    print('✅ Response: ${response.data}'); // ← tambah ini
-    
-    final List<dynamic> data = response.data;
-    return data.map((json) => FindingModel.fromJson(json)).toList();
-  } catch (e) {
-    print('❌ Error: $e'); // ← tambah ini
-    throw Exception('Gagal mengambil data finding: $e');
+    final List<dynamic> data = response.data as List<dynamic>;
+    return data
+        .map((json) => FindingModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
-}
 
   Future<FindingModel> getFindingDetail(String id) async {
-    try {
-      final response = await apiService.client.get('/api/Finding/$id');
-      return FindingModel.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Gagal mengambil detail finding: $e');
-    }
+    final response = await apiService.client.get('/api/Finding/$id');
+    return FindingModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<FindingModel> createFinding({
@@ -48,20 +89,18 @@ class FindingRemoteDatasource {
     required String clauseRef,
     required String department,
   }) async {
-    try {
-      final response = await apiService.client.post(
-        '/api/Finding',
-        data: {
-          'category': category.toBackendString(),
-          'description': description,
-          'clauseRef': clauseRef,
-          'department': department,
-        },
-      );
-      return FindingModel.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Gagal membuat finding: $e');
-    }
+    final response = await apiService.client.post(
+      '/api/Finding',
+      data: {
+        'title': description,
+        'department': department,
+        'sessionId': null,
+        'category': category.toBackendString(),
+        'description': description,
+        'clauseRef': clauseRef,
+      },
+    );
+    return FindingModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<FindingModel> updateFinding({
@@ -71,41 +110,30 @@ class FindingRemoteDatasource {
     required String clauseRef,
     required String department,
   }) async {
-    try {
-      final response = await apiService.client.put(
-        '/api/Finding/$id',
-        data: {
-          'category': category.toBackendString(),
-          'description': description,
-          'clauseRef': clauseRef,
-          'department': department,
-        },
-      );
-      return FindingModel.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Gagal update finding: $e');
-    }
+    final response = await apiService.client.put(
+      '/api/Finding/$id',
+      data: {
+        'title': description,
+        'department': department,
+        'category': category.toBackendString(),
+        'description': description,
+        'clauseRef': clauseRef,
+      },
+    );
+    return FindingModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> updateFindingStatus({
     required String id,
     required FindingStatus status,
   }) async {
-    try {
-      await apiService.client.patch(
-        '/api/Finding/$id/status',
-        data: status.toBackendString(),
-      );
-    } catch (e) {
-      throw Exception('Gagal update status finding: $e');
-    }
+    await apiService.client.patch(
+      '/api/Finding/$id/status',
+      data: status.toBackendString(),
+    );
   }
 
   Future<void> deleteFinding(String id) async {
-    try {
-      await apiService.client.delete('/api/Finding/$id');
-    } catch (e) {
-      throw Exception('Gagal menghapus finding: $e');
-    }
+    await apiService.client.delete('/api/Finding/$id');
   }
 }
