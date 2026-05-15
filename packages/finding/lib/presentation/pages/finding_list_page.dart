@@ -180,14 +180,14 @@ class _FindingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Baris atas: deskripsi + badge category
+              // Baris atas: title + badge category
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
-                      finding.description,
+                      finding.clauseRef,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -203,9 +203,9 @@ class _FindingCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              // clauseRef
+              // description
               Text(
-                finding.clauseRef,
+                finding.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 13, color: Colors.black54),

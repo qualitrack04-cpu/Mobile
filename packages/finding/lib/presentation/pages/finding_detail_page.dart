@@ -262,7 +262,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                     icon: Icons.calendar_today_outlined,
                     label: 'DATE',
                     value:
-                        '${finding.foundAt.day} ${_getMonth(finding.foundAt.month)} ${finding.foundAt.year}',
+                        '${finding.foundAt.toLocal().day} ${_getMonth(finding.foundAt.toLocal().month)} ${finding.foundAt.toLocal().year}',
                   ),
                 ],
               ),
