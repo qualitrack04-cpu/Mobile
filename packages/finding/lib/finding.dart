@@ -1,4 +1,3 @@
-export 'data/datasources/finding_mock_datasource.dart';
 export 'data/datasources/finding_remote_datasource.dart';
 export 'data/models/finding_model.dart';
 export 'data/repositories/finding_repository_impl.dart';

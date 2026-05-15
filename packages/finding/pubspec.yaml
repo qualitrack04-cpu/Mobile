@@ -17,6 +17,8 @@ dependencies:
   get_it: ^7.6.4
   core:
     path: ../core
+  core_services:
+    path: ../core_services
     
 dev_dependencies:
   flutter_test:
