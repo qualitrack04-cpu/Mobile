@@ -17,23 +17,34 @@ class ApiService {
     ));
 
     // Interceptor: otomatis sisipkan JWT token di setiap request
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('auth_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-      onError: (DioException error, handler) {
-        // Token expired atau unauthorized
-        if (error.response?.statusCode == 401) {
-          // TODO: redirect ke halaman login
-        }
-        return handler.next(error);
-      },
-    ));
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString('auth_token');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          print('REQUEST: ${options.method} ${options.baseUrl}${options.path}');
+          print('BODY: ${options.data}');
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          print('RESPONSE ${response.statusCode}: ${response.data}');
+          return handler.next(response);
+        },
+        onError: (DioException error, handler) {
+          print('ERROR: ${error.type}');
+          print('ERROR MESSAGE: ${error.message}');
+          print('ERROR RESPONSE: ${error.response?.data}');
+          print('STATUS CODE: ${error.response?.statusCode}');
+          if (error.response?.statusCode == 401) {
+            // TODO: redirect ke halaman login
+          }
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   Dio get client => _dio;
