@@ -140,7 +140,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     // FIX 1: Hitung padding bawah = tinggi FAB + jarak aman
     const double fabHeight = 58;
     const double fabBottomMargin = 16; // jarak FAB dari bawah layar
-    const double extraPadding = 16;
+    const double extraPadding = 64; // Tambah padding ekstra agar tidak mepet FAB saat mentok bawah
     const double bottomPadding = fabHeight + fabBottomMargin + extraPadding;
 
     return BlocListener<AuditBloc, AuditState>(
@@ -280,7 +280,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
           // FIX 1: padding bawah cukup agar konten tidak tertutup FAB
           padding: const EdgeInsets.fromLTRB(18, 18, 18, bottomPadding),
           // FIX 2: keyboard otomatis scroll ke field yang sedang aktif
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
           child: Column(
             children: [
               Container(
@@ -478,6 +478,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             style: GoogleFonts.inter(fontSize: 12),
             // FIX 2: keyboard muncul → Flutter otomatis scroll ke field ini
             textInputAction: TextInputAction.next,
+            scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
@@ -667,6 +668,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
             maxLines: 2,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.done,
+            scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
               hintText: 'Detail the non-conformance observed during the audit...',
               hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
