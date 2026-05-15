@@ -54,9 +54,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _departments.add(widget.initialDepartment!);
       _selectedDepartment = widget.initialDepartment;
     }
-    if (widget.clauseRef != null) {
-      _titleController.text = widget.clauseRef!;
-    }
     _titleController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
   }
@@ -351,6 +348,37 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   Widget _buildDepartmentDropdown() {
+    // Jika department sudah diset dari audit checklist, tampilkan sebagai read-only
+    if (widget.initialDepartment != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('DEPARTMENT',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedDepartment ?? widget.initialDepartment!,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                ),
+                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Jika bukan dari audit checklist, tampilkan dropdown biasa
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(

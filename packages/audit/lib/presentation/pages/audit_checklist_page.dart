@@ -128,12 +128,15 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     );
 
     if (result != null) {
-      // ✅ Refresh list finding global agar saat kembali ke page Finding, data sudah up-to-date
-      GetIt.instance<FindingBloc>().add(const LoadFindings());
-      
       setState(() {
         checklist.hasFinding = true;
         checklist.finding = result;
+      });
+
+      // ✅ Tunggu sebentar lalu refresh global FindingBloc
+      // Delay diperlukan agar navigasi selesai dulu sebelum state berubah
+      Future.delayed(const Duration(milliseconds: 300), () {
+        GetIt.instance<FindingBloc>().add(const LoadFindings());
       });
     }
   }
