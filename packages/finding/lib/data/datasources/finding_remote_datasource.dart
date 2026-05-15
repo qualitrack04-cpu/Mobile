@@ -19,9 +19,14 @@ class FindingRemoteDatasource {
         final urlStr = e['url'] as String;
         // Ambil id evidence — sesuaikan key-nya jika berbeda dari backend
         final id = e['id'] as String? ?? e['fileId'] as String? ?? '';
-        final fullUrl = urlStr.startsWith('http')
+        var fullUrl = urlStr.startsWith('http')
             ? urlStr
             : '${ApiService.baseUrl}$urlStr';
+        
+        if (fullUrl.startsWith('http://backendqualitrack')) {
+          fullUrl = fullUrl.replaceFirst('http://', 'https://');
+        }
+        
         return {'id': id, 'url': fullUrl};
       }).toList();
     } catch (_) {

@@ -100,63 +100,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
     }
   }
 
-  // ✅ Hapus evidence: panggil API lalu update state lokal
-  Future<void> _deleteEvidence(String fileId, int index) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text(
-          'Hapus Evidence?',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        content: const Text('Foto ini akan dihapus secara permanen.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: Colors.black54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child:
-                const Text('Hapus', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      await GetIt.instance<FindingRemoteDatasource>().deleteEvidence(fileId);
-      if (mounted) {
-        setState(() => _evidences.removeAt(index));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Evidence berhasil dihapus'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menghapus: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final finding = widget.finding;
@@ -315,24 +258,30 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
       );
     }
 
-    // ✅ Grid foto — 3 per baris, dengan tombol hapus di pojok kanan atas
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _evidences.asMap().entries.map((entry) {
-        final index = entry.key;
-        final evidence = entry.value;
-        final fileId = evidence['id'] ?? '';
-        final url = evidence['url'] ?? '';
+    // ✅ Row dengan max 3 gambar, gambar ke-3 ada +N jika lebih
+    final shown = _evidences.take(3).toList();
+    final remaining = _evidences.length - 3;
 
-        return _EvidenceThumbnail(
-          url: url,
-          fileId: fileId,
-          allEvidences: _evidences,
-          index: index,
-          onDelete: () => _deleteEvidence(fileId, index),
-        );
-      }).toList(),
+    return Row(
+      children: [
+        for (int i = 0; i < shown.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: _EvidenceThumbnail(
+              url: shown[i]['url'] ?? '',
+              fileId: shown[i]['id'] ?? '',
+              allEvidences: _evidences,
+              index: i,
+              showCounter: i == 2 && remaining > 0,
+              remaining: remaining,
+            ),
+          ),
+        ],
+        for (int i = shown.length; i < 3; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          const Expanded(child: SizedBox.shrink()),
+        ],
+      ],
     );
   }
 
@@ -382,22 +331,24 @@ class _EvidenceThumbnail extends StatelessWidget {
   final String fileId;
   final List<Map<String, String>> allEvidences;
   final int index;
-  final VoidCallback onDelete;
+  final bool showCounter;
+  final int remaining;
 
   const _EvidenceThumbnail({
     required this.url,
     required this.fileId,
     required this.allEvidences,
     required this.index,
-    required this.onDelete,
+    this.showCounter = false,
+    this.remaining = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 100,
-      height: 100,
+    return AspectRatio(
+      aspectRatio: 1,
       child: Stack(
+        fit: StackFit.expand,
         children: [
           // ── Foto
           GestureDetector(
@@ -408,7 +359,6 @@ class _EvidenceThumbnail extends StatelessWidget {
                   builder: (_) => _EvidenceGalleryPage(
                     evidences: allEvidences,
                     initialIndex: index,
-                    onDelete: onDelete,
                   ),
                 ),
               );
@@ -417,8 +367,6 @@ class _EvidenceThumbnail extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 url,
-                width: 100,
-                height: 100,
                 fit: BoxFit.cover,
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;
@@ -438,25 +386,40 @@ class _EvidenceThumbnail extends StatelessWidget {
               ),
             ),
           ),
-
-          // ✅ Tombol hapus di pojok kanan atas
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: onDelete,
-              child: Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
+          
+          // ✅ Counter overlay "+N" di foto ke-3 jika ada lebih
+          if (showCounter && remaining > 0)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _EvidenceGalleryPage(
+                        evidences: allEvidences,
+                        initialIndex: index,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+$remaining',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 12),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -467,12 +430,10 @@ class _EvidenceThumbnail extends StatelessWidget {
 class _EvidenceGalleryPage extends StatefulWidget {
   final List<Map<String, String>> evidences;
   final int initialIndex;
-  final VoidCallback onDelete;
 
   const _EvidenceGalleryPage({
     required this.evidences,
     required this.initialIndex,
-    required this.onDelete,
   });
 
   @override
@@ -507,17 +468,6 @@ class _EvidenceGalleryPageState extends State<_EvidenceGalleryPage> {
           '${_current + 1} / ${widget.evidences.length}',
           style: const TextStyle(color: Colors.white),
         ),
-        // ✅ Tombol hapus di AppBar gallery
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            tooltip: 'Hapus foto ini',
-            onPressed: () {
-              widget.onDelete();
-              Navigator.pop(context);
-            },
-          ),
-        ],
       ),
       body: PageView.builder(
         controller: _controller,
