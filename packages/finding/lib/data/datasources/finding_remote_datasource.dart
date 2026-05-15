@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
@@ -20,6 +21,19 @@ class FindingRemoteDatasource {
     } catch (_) {
       return [];
     }
+  }
+
+  /// Upload foto evidence untuk finding
+  Future<void> uploadEvidence(String findingId, String filePath) async {
+    final fileName = filePath.split('/').last;
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+    });
+
+    await apiService.client.post(
+      '/api/Upload/finding/$findingId',
+      data: formData,
+    );
   }
 
   Future<List<FindingModel>> getFindings({
