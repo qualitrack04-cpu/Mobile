@@ -542,6 +542,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );
   }

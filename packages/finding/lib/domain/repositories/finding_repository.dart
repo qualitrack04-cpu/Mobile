@@ -31,4 +31,6 @@ abstract class FindingRepository {
   Future<void> deleteFinding(String id);
 
   Future<void> uploadEvidence(String findingId, String filePath);
+
+  Future<void> deleteEvidence(String fileId);
 }

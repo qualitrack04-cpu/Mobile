@@ -15,12 +15,35 @@ class FindingRemoteDatasource {
       final response =
           await apiService.client.get('/api/Upload/finding/$findingId');
       final List<dynamic> data = response.data as List<dynamic>;
-      return data
-          .map((e) => '${ApiService.baseUrl}${e['url'] as String}')
-          .toList();
+      return data.map((e) {
+        final urlStr = e['url'] as String;
+        if (urlStr.startsWith('http')) {
+          return urlStr;
+        }
+        return '${ApiService.baseUrl}$urlStr';
+      }).toList();
     } catch (_) {
       return [];
     }
+  }
+
+  Future<List<Map<String, String>>> getEvidenceData(String findingId) async {
+    try {
+      final response = await apiService.client.get('/api/Upload/finding/$findingId');
+      final List<dynamic> data = response.data as List<dynamic>;
+      return data.map((e) {
+        final urlStr = e['url'] as String;
+        final id = e['fileId'] as String;
+        final url = urlStr.startsWith('http') ? urlStr : '${ApiService.baseUrl}$urlStr';
+        return {'id': id, 'url': url};
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> deleteEvidence(String fileId) async {
+    await apiService.client.delete('/api/Upload/$fileId');
   }
 
   /// Upload foto evidence untuk finding

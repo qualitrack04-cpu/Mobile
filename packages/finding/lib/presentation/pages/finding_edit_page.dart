@@ -7,6 +7,8 @@ import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
+import 'package:get_it/get_it.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 
 class FindingEditPage extends StatefulWidget {
   final Finding finding;
@@ -32,6 +34,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
     'Warehouse',
   ];
 
+  late Future<List<String>> _evidenceFuture;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +49,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
         !_departments.contains(_selectedDepartment)) {
       _departments.add(_selectedDepartment!);
     }
+
+    _evidenceFuture = GetIt.instance<FindingRemoteDatasource>()
+        .getEvidenceUrls(widget.finding.id);
   }
 
   @override
@@ -336,6 +343,45 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
+  void _showNetworkImageDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEvidenceSection() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -351,11 +397,66 @@ class _FindingEditPageState extends State<FindingEditPage> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                       letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} foto',
+              Text('${_evidenceImages.length} foto baru',
                   style: const TextStyle(fontSize: 11, color: Colors.black38)),
             ],
           ),
           const SizedBox(height: 12),
+          
+          // Tampilkan Existing Evidence (Dari URL)
+          FutureBuilder<List<String>>(
+            future: _evidenceFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+
+              final existingUrls = snapshot.data ?? [];
+              if (existingUrls.isEmpty) return const SizedBox.shrink();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: existingUrls.map((url) {
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => _showNetworkImageDialog(context, url),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[200],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.grey[400],
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+
+          // Tampilkan Evidence Baru (Lokal XFile)
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -527,6 +628,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _selectedDepartment!,
+            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );
   }

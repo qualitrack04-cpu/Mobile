@@ -225,20 +225,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                           for (int i = shown.length; i < 3; i++) ...[
                             const SizedBox(width: 8),
                             Expanded(
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    color: Colors.grey[400],
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
+                              child: const SizedBox.shrink(),
                             ),
                           ],
                         ],

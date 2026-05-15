@@ -90,4 +90,22 @@ class FindingRepositoryImpl implements FindingRepository {
       throw Exception('Gagal menghapus finding: $e');
     }
   }
+
+  @override
+  Future<void> uploadEvidence(String findingId, String filePath) async {
+    try {
+      await datasource.uploadEvidence(findingId, filePath);
+    } catch (e) {
+      throw Exception('Gagal upload evidence: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteEvidence(String fileId) async {
+    try {
+      await datasource.deleteEvidence(fileId);
+    } catch (e) {
+      throw Exception('Gagal menghapus evidence: $e');
+    }
+  }
 }
