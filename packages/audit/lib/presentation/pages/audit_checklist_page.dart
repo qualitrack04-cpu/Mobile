@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/domain/entities/finding.dart';
@@ -44,7 +45,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
   List<ChecklistEntity> _checklists = [];
   String? _sessionId;
   bool _progressLoaded = false;
-  bool _isInitializing = true; // ← flag loading awal
+  bool _isInitializing = true;
 
   @override
   void initState() {
@@ -74,12 +75,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           _progressLoaded = true;
           await _loadExistingProgress(savedSessionId);
         }
-        // Kalau checklist belum selesai load, _isInitializing akan di-set false
-        // oleh _loadExistingProgress yang dipanggil dari BlocListener ChecklistLoaded
         return;
       }
 
-      // Belum ada → buat session baru
       final listResponse = await GetIt.instance<ApiService>().client.get(
         '/api/Checklist',
         queryParameters: {
@@ -91,7 +89,6 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       );
       final checklists = listResponse.data as List<dynamic>;
       if (checklists.isEmpty) {
-        // Tidak ada checklist sama sekali → selesai loading
         if (mounted) setState(() => _isInitializing = false);
         return;
       }
@@ -110,9 +107,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         _progressLoaded = true;
         await _loadExistingProgress(sessionId);
       }
-      // Kalau checklist belum selesai load, BlocListener yang akan handle
     } catch (e) {
-      // Session gagal dibuat → tetap hentikan loading supaya UI tidak freeze
       if (mounted) {
         setState(() => _isInitializing = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,10 +163,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             );
           }
         }
-        _isInitializing = false; // ← semua siap, baru tampil
+        _isInitializing = false;
       });
     } catch (_) {
-      // Progress tidak bisa diload, tetap lanjut tampilkan checklist
       if (mounted) setState(() => _isInitializing = false);
     }
   }
@@ -188,8 +182,18 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
 
   String get _formattedDate {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final date = widget.audit.date;
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
@@ -272,7 +276,6 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       return;
     }
 
-    // Hapus session dari local storage saat submit
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionKey);
 
@@ -292,21 +295,15 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
 
     return BlocListener<AuditBloc, AuditState>(
       listener: (context, state) {
-        // ── ChecklistLoaded ──────────────────────────────────────────────
         if (state is ChecklistLoaded) {
           setState(() => _checklists = state.checklists);
 
           if (_sessionId != null && !_progressLoaded) {
             _progressLoaded = true;
             _loadExistingProgress(_sessionId!);
-            // _loadExistingProgress yang akan set _isInitializing = false
-          } else if (_sessionId == null) {
-            // Session belum siap, tunggu _createSession selesai.
-            // _isInitializing tetap true sampai session + progress selesai.
           }
-        }
-        // ── AuditMarkedFinished ──────────────────────────────────────────
-        else if (state is AuditMarkedFinished) {
+          // Jika _sessionId masih null, tunggu _createSession selesai
+        } else if (state is AuditMarkedFinished) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -332,9 +329,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               ),
             );
           Navigator.pop(context, true);
-        }
-        // ── AuditError ───────────────────────────────────────────────────
-        else if (state is AuditError) {
+        } else if (state is AuditError) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -508,27 +503,35 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // CHECKLIST CONTENT — skeleton saat loading, list saat sudah siap
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildChecklistContent() {
-    // ← Tampilkan loading spinner sampai semua data siap
     if (_isInitializing) {
       return Expanded(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                color: AppColors.primaryLight,
-                strokeWidth: 3,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Memuat checklist...',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.textMuted,
+        child: Skeletonizer(
+          enabled: true,
+          effect: const ShimmerEffect(
+            baseColor: Color(0xFFE8EDF2),
+            highlightColor: Color(0xFFF5F7FA),
+          ),
+          child: ListView.builder(
+            padding: const EdgeInsets.only(top: 12, bottom: 120),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return ChecklistCard(
+                checklist: ChecklistEntity(
+                  id: 'skeleton-$index',
+                  title: 'Loading judul checklist item',
+                  description:
+                      'Deskripsi checklist sedang dimuat, harap tunggu sebentar.',
+                  category: 'Loading',
+                  isPassed:
+                      null, // null = belum dijawab, tombol PASS/FAIL tampil normal
+                  hasFinding: false,
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       );
@@ -569,6 +572,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // SUBMIT BUTTON — tidak ada spinner, cukup disable saat loading/initializing
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildSubmitButton(double screenWidth) {
     return BlocBuilder<AuditBloc, AuditState>(
       builder: (context, state) {
@@ -641,7 +647,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: (isLoading || _isInitializing) ? null : handleSubmitPress,
+              onPressed: (isLoading || _isInitializing)
+                  ? null
+                  : handleSubmitPress,
               style: ElevatedButton.styleFrom(
                 backgroundColor: canSubmit
                     ? AppColors.primaryLight
@@ -651,23 +659,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                  : Text(
-                      'Submit Checklist',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+              child: Text(
+                'Submit Checklist',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         );

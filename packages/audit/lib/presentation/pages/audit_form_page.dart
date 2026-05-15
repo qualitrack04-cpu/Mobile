@@ -21,18 +21,12 @@ class AuditFormPage extends StatefulWidget {
 class _AuditFormPageState extends State<AuditFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-
-  // ScrollController untuk auto-scroll ke field aktif
   final _scrollController = ScrollController();
-
-  // Notifier untuk trigger rebuild FAB saat field non-text berubah (ISO, dept, date, auditor)
   final _formNotifier = ValueNotifier<int>(0);
 
-  // State lokal daftar auditor dari backend
   List<AuditorEntity> _auditors = [];
   bool _isLoadingAuditors = true;
 
-  // label (tampilan) → value (dikirim ke backend)
   final Map<String, String> _departments = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
@@ -48,24 +42,55 @@ class _AuditFormPageState extends State<AuditFormPage> {
   String? _selectedAuditorId;
   String? _selectedAuditorName;
 
+  // ── Snapshot nilai awal saat mode edit ──────────────────────────────────
+  String? _initialTitle;
+  String? _initialDescription;
+  String? _initialDepartment;
+  DateTime? _initialDate;
+  bool? _initialIsPriority;
+  String? _initialIso;
+  String? _initialAuditorId;
+  // ─────────────────────────────────────────────────────────────────────────
+
   bool get _isEdit => widget.audit != null;
 
   String get _departmentValue =>
       _departments[_selectedDepartment] ?? _selectedDepartment ?? '';
 
+  // Apakah ada perubahan dari nilai awal (hanya relevan di mode edit)
+  bool get _hasChanges {
+    if (!_isEdit) return true; // mode create: selalu "ada perubahan"
+    return _titleController.text.trim() != _initialTitle ||
+        _descriptionController.text.trim() != _initialDescription ||
+        _selectedDepartment != _initialDepartment ||
+        _selectedDate != _initialDate ||
+        _isPriority != _initialIsPriority ||
+        _selectedIso != _initialIso ||
+        _selectedAuditorId != _initialAuditorId;
+  }
+
+  bool get _isFormValid =>
+      _titleController.text.trim().isNotEmpty &&
+      _selectedAuditorId != null &&
+      _selectedDepartment != null &&
+      _selectedDate != null &&
+      _selectedIso != null;
+
+  // Tombol aktif hanya jika form valid DAN (create || ada perubahan)
+  bool get _canSubmit => _isFormValid && _hasChanges;
+
   @override
   void initState() {
     super.initState();
 
-    // Muat daftar auditor saat form dibuka
     context.read<AuditBloc>().add(const LoadAuditors());
 
     if (_isEdit) {
       final audit = widget.audit!;
+
       _titleController.text = audit.title;
-      // Pre-select auditor berdasarkan nama dari data audit yang diedit
-      _selectedAuditorName = audit.auditorName;
       _descriptionController.text = audit.description;
+      _selectedAuditorName = audit.auditorName;
       _selectedDepartment = _departments.entries
           .where((e) => e.value == audit.department)
           .map((e) => e.key)
@@ -76,7 +101,20 @@ class _AuditFormPageState extends State<AuditFormPage> {
         (t) => t == _iso9001 || t == _iso14001,
         orElse: () => '',
       );
+
+      // Simpan snapshot awal
+      _initialTitle = audit.title;
+      _initialDescription = audit.description;
+      _initialDepartment = _selectedDepartment;
+      _initialDate = audit.date;
+      _initialIsPriority = audit.isPriority;
+      _initialIso = _selectedIso;
+      // _initialAuditorId akan di-set setelah auditors selesai dimuat (di BlocListener)
     }
+
+    // Trigger rebuild FAB setiap kali text field berubah
+    _titleController.addListener(() => _formNotifier.value++);
+    _descriptionController.addListener(() => _formNotifier.value++);
   }
 
   @override
@@ -88,23 +126,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     super.dispose();
   }
 
-  bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
-      _selectedAuditorId != null &&
-      _selectedDepartment != null &&
-      _selectedDate != null &&
-      _selectedIso != null;
-
   void _onSubmit() {
-    if (!_isFormValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all required fields'),
-          backgroundColor: AppColors.danger,
-        ),
-      );
-      return;
-    }
+    if (!_canSubmit) return;
 
     final bloc = context.read<AuditBloc>();
 
@@ -135,39 +158,36 @@ class _AuditFormPageState extends State<AuditFormPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final appBarFontSize = (screenWidth * 0.07).clamp(22.0, 32.0);
 
-    // FIX 1: Hitung padding bawah = tinggi FAB + jarak aman
     const double fabHeight = 58;
-    const double fabBottomMargin = 16; // jarak FAB dari bawah layar
-    const double extraPadding = 64; // Tambah padding ekstra agar tidak mepet FAB saat mentok bawah
+    const double fabBottomMargin = 16;
+    const double extraPadding = 64;
     const double bottomPadding = fabHeight + fabBottomMargin + extraPadding;
 
     return BlocListener<AuditBloc, AuditState>(
       listener: (context, state) {
-        if (state is AuditCreated) {
-          Navigator.pop(context);
-        }
-        if (state is AuditUpdated) {
-          Navigator.pop(context);
-        }
-        // Update daftar auditor di dropdown
+        if (state is AuditCreated) Navigator.pop(context);
+        if (state is AuditUpdated) Navigator.pop(context);
+
         if (state is AuditorsLoaded) {
           setState(() {
             _isLoadingAuditors = false;
             _auditors = state.auditors;
-            // Mode edit: coba cocokkan auditor berdasarkan nama
+
             if (_isEdit && _selectedAuditorId == null) {
-              final match = _auditors.where(
-                (a) => a.fullName == _selectedAuditorName,
-              ).firstOrNull;
+              final match = _auditors
+                  .where((a) => a.fullName == _selectedAuditorName)
+                  .firstOrNull;
               if (match != null) {
                 _selectedAuditorId = match.id;
+                // Simpan juga ke snapshot awal supaya perbandingan akurat
+                _initialAuditorId = match.id;
                 _formNotifier.value++;
               }
             }
           });
         }
+
         if (state is AuditError) {
           setState(() => _isLoadingAuditors = false);
           ScaffoldMessenger.of(context)
@@ -183,7 +203,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 ),
                 backgroundColor: AppColors.danger,
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 margin: const EdgeInsets.all(12),
               ),
             );
@@ -191,9 +213,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        // FIX 2: true agar scaffold otomatis resize saat keyboard muncul
         resizeToAvoidBottomInset: true,
-
         appBar: AppBar(
           backgroundColor: AppColors.surface,
           elevation: 0,
@@ -210,25 +230,21 @@ class _AuditFormPageState extends State<AuditFormPage> {
             ),
           ),
         ),
-
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
         floatingActionButton: ListenableBuilder(
-          listenable: Listenable.merge([
-            _titleController,
-            _formNotifier,
-          ]),
+          listenable: Listenable.merge([_titleController, _descriptionController, _formNotifier]),
           builder: (context, _) {
             return BlocBuilder<AuditBloc, AuditState>(
               builder: (context, state) {
                 final isLoading = state is AuditLoading;
+                final canPress = _canSubmit && !isLoading;
 
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
-                      if (_isFormValid)
+                      if (canPress)
                         BoxShadow(
                           color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 15,
@@ -240,7 +256,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     width: double.infinity,
                     height: fabHeight,
                     child: ElevatedButton.icon(
-                      onPressed: (_isFormValid && !isLoading) ? _onSubmit : null,
+                      onPressed: canPress ? _onSubmit : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         disabledBackgroundColor: AppColors.primaryMuted,
@@ -274,12 +290,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
             );
           },
         ),
-
         body: SingleChildScrollView(
-          controller: _scrollController, // FIX 2: pasang controller
-          // FIX 1: padding bawah cukup agar konten tidak tertutup FAB
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(18, 18, 18, bottomPadding),
-          // FIX 2: keyboard otomatis scroll ke field yang sedang aktif
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
           child: Column(
             children: [
@@ -404,10 +417,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 isExpanded: true,
                 hint: Text(
                   'Pilih auditor',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textDisabled,
-                  ),
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled),
                 ),
                 items: _auditors.where((a) => a.role == 'Auditor').map((auditor) {
                   return DropdownMenuItem<String>(
@@ -418,17 +428,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
                       children: [
                         Text(
                           auditor.fullName,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
+                          style: GoogleFonts.inter(fontSize: 13, color: Colors.black87),
                         ),
                         Text(
                           auditor.role,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
+                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -476,7 +480,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
           TextField(
             controller: controller,
             style: GoogleFonts.inter(fontSize: 12),
-            // FIX 2: keyboard muncul → Flutter otomatis scroll ke field ini
             textInputAction: TextInputAction.next,
             scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
@@ -567,7 +570,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
               items: _departments.keys.map((label) {
                 return DropdownMenuItem<String>(
                   value: label,
-                  child: Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.black87)),
+                  child: Text(
+                    label,
+                    style: GoogleFonts.inter(fontSize: 15, color: Colors.black87),
+                  ),
                 );
               }).toList(),
               onChanged: (label) => setState(() {
@@ -632,7 +638,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
                       : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: _selectedDate == null ? AppColors.textDisabled : AppColors.textSecondary,
+                    color: _selectedDate == null
+                        ? AppColors.textDisabled
+                        : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -698,7 +706,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           Switch(
             value: _isPriority,
             activeThumbColor: AppColors.primary,
-            onChanged: (value) => setState(() => _isPriority = value),
+            onChanged: (value) => setState(() {
+              _isPriority = value;
+              _formNotifier.value++; // trigger rebuild FAB
+            }),
           ),
         ],
       ),
