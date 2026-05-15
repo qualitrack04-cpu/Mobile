@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -81,13 +82,10 @@ class _DashboardPageState extends State<DashboardPage> {
         child: FutureBuilder<DashboardSummary>(
           future: _summaryFuture,
           builder: (context, snapshot) {
-            // Loading
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
             // Error
-            if (snapshot.hasError) {
+            if (snapshot.hasError && !isLoading) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -108,37 +106,44 @@ class _DashboardPageState extends State<DashboardPage> {
               );
             }
 
-            // Data berhasil dimuat
-            final summary = snapshot.data!;
+            // Data berhasil dimuat atau skeleton
+            final summary = snapshot.data ?? DashboardSummary(
+              totalAudit: 0,
+              totalFinding: 0,
+              totalCapa: 0,
+            );
 
-            return ListView(
-              padding: const EdgeInsets.all(20.0),
-              children: [
-                Text(
-                  'Summary',
-                  style: GoogleFonts.inter(
-                    fontSize: (screenWidth * 0.055).clamp(18.0, 22.0),
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+            return Skeletonizer(
+              enabled: isLoading,
+              child: ListView(
+                padding: const EdgeInsets.all(20.0),
+                children: [
+                  Text(
+                    'Summary',
+                    style: GoogleFonts.inter(
+                      fontSize: (screenWidth * 0.055).clamp(18.0, 22.0),
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _SummaryCard(
-                  count: summary.totalAudit.toString(),
-                  title: 'Audit',
-                  icon: Icons.assignment_outlined,
-                ),
-                _SummaryCard(
-                  count: summary.totalFinding.toString(),
-                  title: 'Finding',
-                  icon: Icons.search,
-                ),
-                _SummaryCard(
-                  count: summary.totalCapa.toString(),
-                  title: 'CAPA',
-                  icon: Icons.checklist_rtl,
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  _SummaryCard(
+                    count: summary.totalAudit.toString(),
+                    title: 'Audit',
+                    icon: Icons.assignment_outlined,
+                  ),
+                  _SummaryCard(
+                    count: summary.totalFinding.toString(),
+                    title: 'Finding',
+                    icon: Icons.search,
+                  ),
+                  _SummaryCard(
+                    count: summary.totalCapa.toString(),
+                    title: 'CAPA',
+                    icon: Icons.checklist_rtl,
+                  ),
+                ],
+              ),
             );
           },
         ),

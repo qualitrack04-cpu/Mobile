@@ -100,7 +100,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
+                  _pickMultipleImages();
                 },
               ),
             ],
@@ -110,17 +110,41 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Ambil gambar dari sumber yang dipilih
+  // ✅ Ambil satu gambar dari kamera
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        imageQuality: 80, // kompres sedikit agar tidak terlalu besar
+        imageQuality: 80,
         maxWidth: 1080,
       );
       if (image != null) {
         setState(() {
           _evidenceImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ✅ Ambil banyak gambar sekaligus dari galeri
+  Future<void> _pickMultipleImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1080,
+      );
+      if (images.isNotEmpty) {
+        setState(() {
+          _evidenceImages.addAll(images);
         });
       }
     } catch (e) {

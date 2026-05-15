@@ -9,6 +9,7 @@ import 'package:capa/presentation/pages/capa_detail_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -17,12 +18,26 @@ class CapaListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => GetIt.instance<CapaBloc>()..add(const LoadCapas()),
-      child: Builder(
-        builder: (context) {
-          // ✅ Tambahkan ini
-          final screenWidth = MediaQuery.of(context).size.width;
+      child: const _CapaListView(),
+    );
+  }
+}
 
-          return Scaffold(
+class _CapaListView extends StatefulWidget {
+  const _CapaListView();
+
+  @override
+  State<_CapaListView> createState() => _CapaListViewState();
+}
+
+class _CapaListViewState extends State<_CapaListView> {
+  List<Capa> _lastCapas = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
               backgroundColor: AppColors.surface,
@@ -36,13 +51,15 @@ class CapaListPage extends StatelessWidget {
                 ),
               ),
             ),
-            body: BlocBuilder<CapaBloc, CapaState>(
-              builder: (context, state) {
-                if (state is CapaLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
-                  );
+            body: BlocConsumer<CapaBloc, CapaState>(
+              listener: (context, state) {
+                if (state is CapaLoaded) {
+                  _lastCapas = state.capas;
                 }
+              },
+              builder: (context, state) {
+                final isLoading = state is CapaLoading || state is CapaInitial;
+                final capas = state is CapaLoaded ? state.capas : _lastCapas;
 
                 if (state is CapaError) {
                   return Center(
@@ -53,18 +70,41 @@ class CapaListPage extends StatelessWidget {
                   );
                 }
 
-                if (state is CapaLoaded) {
-                  return Stack(
-                    children: [
-                      RefreshIndicator(
-                        onRefresh: () async {
-                          context.read<CapaBloc>().add(const LoadCapas());
-                          await Future.delayed(const Duration(milliseconds: 800));
-                        },
+                // Skeleton placeholder saat first load
+                final skeletonList = List.generate(
+                  4,
+                  (_) => Capa(
+                    id: '',
+                    findingId: '',
+                    findingCategory: 'MajorNC',
+                    findingTitle: 'Loading Finding Title',
+                    picId: '',
+                    picName: 'Loading PIC Name',
+                    rootCause: 'Loading Root Cause',
+                    correctiveAction: 'Loading Corrective Action Here',
+                    preventiveAction: '',
+                    deadline: DateTime.now(),
+                    isClosed: false,
+                    status: 'Open',
+                    createdAt: DateTime.now(),
+                  ),
+                );
+
+                final displayList = isLoading ? skeletonList : capas;
+
+                return Stack(
+                  children: [
+                    RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<CapaBloc>().add(const LoadCapas());
+                        await Future.delayed(const Duration(milliseconds: 800));
+                      },
+                      child: Skeletonizer(
+                        enabled: isLoading,
                         child: ListView(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                           children: [
-                            if (state.capas.isEmpty)
+                            if (!isLoading && displayList.isEmpty)
                               const Center(
                                 child: Padding(
                                   padding: EdgeInsets.only(top: 100),
@@ -78,12 +118,13 @@ class CapaListPage extends StatelessWidget {
                                 ),
                               )
                             else
-                              ...state.capas.map((capa) => _CapaCard(capa: capa)),
+                              ...displayList.map((capa) => _CapaCard(capa: capa)),
                           ],
                         ),
                       ),
+                    ),
 
-                      // FAB
+                    // FAB
                       // FAB
                       Positioned(
                         bottom: 16,
@@ -140,15 +181,9 @@ class CapaListPage extends StatelessWidget {
                       ),
                     ],
                   );
-                }
-
-                return const SizedBox();
               },
             ),
           );
-        },
-      ),
-    );
   }
 }
 
