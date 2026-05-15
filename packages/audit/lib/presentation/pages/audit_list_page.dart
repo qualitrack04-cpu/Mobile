@@ -239,10 +239,8 @@ class _AuditListViewState extends State<_AuditListView> {
         }
       },
       builder: (context, state) {
-        // ✅ FIX: isLoading hanya true saat PERTAMA kali load (belum punya data)
-        // Saat delete/create/update, tetap tampilkan data lama — tidak blank
-        final isLoading = _isFirstLoad &&
-            (state is AuditLoading || state is AuditInitial);
+        // ✅ FIX: Skeletonizer muncul saat loading apa saja
+        final isLoading = state is AuditLoading || state is AuditInitial;
 
         // ✅ FIX: Selalu pakai _lastAudits saat transisi state
         // Ini mencegah list kosong saat state AuditDeleted/AuditCreated/dll
@@ -267,9 +265,9 @@ class _AuditListViewState extends State<_AuditListView> {
 
         final displayList = isLoading ? skeletonList : _applyFilter(audits, isPriority);
 
-        // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai first load
-        // dan benar-benar kosong — bukan saat transisi state
-        if (!isLoading && !_isFirstLoad && displayList.isEmpty) {
+        // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai loading
+        // dan benar-benar kosong
+        if (!isLoading && displayList.isEmpty) {
           return Center(
             child: Text(
               'No Audit Data',

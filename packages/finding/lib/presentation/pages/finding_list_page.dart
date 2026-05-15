@@ -57,6 +57,11 @@ class FindingListPage extends StatelessWidget {
                 }
 
                 if (state is FindingLoaded) {
+                  // ✅ Urutkan berdasarkan kategori (MajorNC = 0, MinorNC = 1, OFI = 2)
+                  final sortedFindings = List.of(state.findings)..sort((a, b) {
+                    return a.category.index.compareTo(b.category.index);
+                  });
+
                   return Stack(
                     children: [
                       RefreshIndicator(
@@ -81,7 +86,7 @@ class FindingListPage extends StatelessWidget {
                                 ),
                               )
                             else
-                              ...state.findings.map(
+                              ...sortedFindings.map(
                                 (finding) => _FindingCard(finding: finding),
                               ),
                           ],
