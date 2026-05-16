@@ -247,8 +247,10 @@ class _AuditListViewState extends State<_AuditListView> {
         final audits = state is AuditLoaded ? state.audits : _lastAudits;
 
         // Skeleton placeholder saat first load
+        // Gunakan jumlah data sebelumnya agar tidak misleading. Jika kosong & bukan first load, count = 0
+        final skeletonCount = _isFirstLoad ? 3 : _lastAudits.length;
         final skeletonList = List.generate(
-          4,
+          skeletonCount,
           (_) => AuditEntity(
             id: '',
             scheduleId: '',
@@ -258,7 +260,7 @@ class _AuditListViewState extends State<_AuditListView> {
             department: 'Department Name',
             date: DateTime.now(),
             description: '',
-            isPriority: false,
+            isPriority: false, // false agar warnanya netral/abu, bukan kuning
             isFinished: false,
           ),
         );

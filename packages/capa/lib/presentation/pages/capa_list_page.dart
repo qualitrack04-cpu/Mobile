@@ -32,6 +32,7 @@ class _CapaListView extends StatefulWidget {
 
 class _CapaListViewState extends State<_CapaListView> {
   List<Capa> _lastCapas = [];
+  bool _isFirstLoad = true;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +56,7 @@ class _CapaListViewState extends State<_CapaListView> {
               listener: (context, state) {
                 if (state is CapaLoaded) {
                   _lastCapas = state.capas;
+                  _isFirstLoad = false;
                 }
               },
               builder: (context, state) {
@@ -71,12 +73,14 @@ class _CapaListViewState extends State<_CapaListView> {
                 }
 
                 // Skeleton placeholder saat first load
+                // Gunakan jumlah data sebelumnya agar tidak misleading
+                final skeletonCount = _isFirstLoad ? 3 : _lastCapas.length;
                 final skeletonList = List.generate(
-                  4,
+                  skeletonCount,
                   (_) => Capa(
                     id: '',
                     findingId: '',
-                    findingCategory: 'MajorNC',
+                    findingCategory: 'OFI', // OFI menggunakan warna netral (abu/biru muda)
                     findingTitle: 'Loading Finding Title',
                     picId: '',
                     picName: 'Loading PIC Name',
@@ -85,7 +89,7 @@ class _CapaListViewState extends State<_CapaListView> {
                     preventiveAction: '',
                     deadline: DateTime.now(),
                     isClosed: false,
-                    status: 'Open',
+                    status: 'Pending Verification', // Status yang warnanya netral
                     createdAt: DateTime.now(),
                   ),
                 );
@@ -306,6 +310,17 @@ class _CapaCardState extends State<_CapaCard> {
   }
 
   Widget _buildStatusDropdown(BuildContext context) {
+    if (widget.capa.id.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text('Loading', style: TextStyle(color: Colors.transparent)),
+      );
+    }
+
     // ✅ warna sesuai status
     Color bgColor;
     Color textColor;
@@ -385,6 +400,7 @@ class _CapaCardState extends State<_CapaCard> {
   }
 
   Color _getBorderColor() {
+    if (widget.capa.id.isEmpty) return Colors.grey.shade300; // Skeleton
     switch (widget.capa.findingCategory) {
       case 'MajorNC':
         return Colors.red;

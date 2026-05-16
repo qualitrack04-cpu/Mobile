@@ -34,6 +34,7 @@ class _FindingListView extends StatefulWidget {
 
 class _FindingListViewState extends State<_FindingListView> {
   List<Finding> _lastFindings = [];
+  bool _isFirstLoad = true;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +59,7 @@ class _FindingListViewState extends State<_FindingListView> {
               listener: (context, state) {
                 if (state is FindingLoaded) {
                   _lastFindings = state.findings;
+                  _isFirstLoad = false;
                 }
               },
               builder: (context, state) {
@@ -74,11 +76,13 @@ class _FindingListViewState extends State<_FindingListView> {
                 }
 
                 // Skeleton placeholder saat first load
+                // Gunakan jumlah data sebelumnya agar tidak misleading. Jika kosong & bukan first load, count = 0
+                final skeletonCount = _isFirstLoad ? 3 : _lastFindings.length;
                 final skeletonList = List.generate(
-                  4,
+                  skeletonCount,
                   (_) => Finding(
                     id: '',
-                    category: FindingCategory.majorNC,
+                    category: FindingCategory.ofi, // OFI untuk warna netral
                     description: 'Loading Description Here',
                     clauseRef: '-',
                     foundAt: DateTime.now(),
@@ -343,6 +347,7 @@ class _FindingCard extends StatelessWidget {
   }
 
   Color _getCardBackgroundColor() {
+    if (finding.id.isEmpty) return Colors.grey.shade100; // Skeleton
     switch (finding.category) {
       case FindingCategory.majorNC:
         return const Color(0xFFFFF0F0);
@@ -354,6 +359,7 @@ class _FindingCard extends StatelessWidget {
   }
 
   Color _getBorderColor() {
+    if (finding.id.isEmpty) return Colors.grey.shade300; // Skeleton
     switch (finding.category) {
       case FindingCategory.majorNC:
         return Colors.red;
@@ -365,6 +371,16 @@ class _FindingCard extends StatelessWidget {
   }
 
   Widget _buildCategoryBadge() {
+    if (finding.id.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text('Loading', style: TextStyle(color: Colors.transparent)),
+      );
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

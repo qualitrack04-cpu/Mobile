@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.154.0.116:5144';
+  static const String baseUrl = 'https://backendqualitrack-production.up.railway.app'; // emulator Android
   // Untuk device fisik: ganti dengan IP lokal, misal 'http://192.168.1.x:5000'
   // Untuk production: ganti dengan URL server
 
