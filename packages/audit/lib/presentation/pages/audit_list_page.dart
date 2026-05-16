@@ -333,14 +333,14 @@ class _AuditListViewState extends State<_AuditListView> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        title: const Text('Hapus Audit?'),
+                        title: const Text('Delete Audit?'),
                         content: Text(
-                          'Audit "${audit.title}" akan dihapus secara permanen.',
+                          'Audit "${audit.title}" will be deleted permanently.',
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Batal'),
+                            child: const Text('Cancel'),
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -351,7 +351,7 @@ class _AuditListViewState extends State<_AuditListView> {
                               ),
                             ),
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Hapus'),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),
