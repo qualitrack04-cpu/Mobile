@@ -178,7 +178,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil dihapus'),
+                    Text('Audit successfully deleted'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -199,7 +199,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil dibuat'),
+                    Text('Audit successfully created'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -220,7 +220,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil diperbarui'),
+                    Text('Audit successfully updated'),
                   ],
                 ),
                 backgroundColor: AppColors.success,

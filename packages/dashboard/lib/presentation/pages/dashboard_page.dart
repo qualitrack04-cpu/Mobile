@@ -149,13 +149,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     const Icon(Icons.error_outline, size: 48, color: Colors.red),
                     const SizedBox(height: 12),
                     Text(
-                      'Gagal memuat data',
+                      'Failed to load data',
                       style: GoogleFonts.inter(fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: _refresh,
-                      child: const Text('Coba Lagi'),
+                      child: const Text('Try Again'),
                     ),
                   ],
                 ),

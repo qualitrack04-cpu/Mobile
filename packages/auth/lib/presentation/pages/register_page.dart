@@ -39,15 +39,15 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_fullNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Semua field wajib diisi');
+      setState(() => _errorMessage = 'All fields are required');
       return;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Password tidak sama');
+      setState(() => _errorMessage = 'Password not match');
       return;
     }
     if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'Password minimal 6 karakter');
+      setState(() => _errorMessage = 'Password min 6 characters');
       return;
     }
 
@@ -68,7 +68,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registrasi berhasil, silakan login')),
+        const SnackBar(content: Text('Register success, please login')),
       );
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));

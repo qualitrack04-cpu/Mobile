@@ -113,7 +113,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Gagal membuat sesi audit: ${e.toString().replaceAll('Exception:', '')}',
+              'Failed to create audit session: ${e.toString().replaceAll('Exception:', '')}',
             ),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
@@ -262,7 +262,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               children: [
                 Icon(Icons.error_outline, color: Colors.white, size: 18),
                 SizedBox(width: 10),
-                Text('Sesi audit belum siap. Coba lagi.'),
+                Text('Audit session not ready. Please try again.'),
               ],
             ),
             backgroundColor: AppColors.danger,
@@ -522,9 +522,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               return ChecklistCard(
                 checklist: ChecklistEntity(
                   id: 'skeleton-$index',
-                  title: 'Loading judul checklist item',
+                  title: 'Loading title checklist item',
                   description:
-                      'Deskripsi checklist sedang dimuat, harap tunggu sebentar.',
+                      'Loading checklist description, please wait.',
                   category: 'Loading',
                   isPassed:
                       null, // null = belum dijawab, tombol PASS/FAIL tampil normal
@@ -595,8 +595,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             _onSubmitChecklist();
           } else {
             final message = failWithoutFinding
-                ? 'Checklist yang FAIL harus memiliki finding.\nTambahkan finding terlebih dahulu.'
-                : 'Semua checklist harus dijawab terlebih dahulu.\n$_completedCount dari ${_checklists.length} selesai.';
+                ? 'Checklist that FAIL must have a finding.\nAdd finding first.'
+                : 'All checklists must be answered first.\n$_completedCount of ${_checklists.length} completed.';
             showDialog<void>(
               context: context,
               builder: (ctx) => AlertDialog(
@@ -611,7 +611,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Belum Bisa Submit',
+                      'Cannot Submit Yet',
                       style: GoogleFonts.inter(fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -631,7 +631,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                     ),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(
-                      'Mengerti',
+                      'Understand',
                       style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),

@@ -358,7 +358,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     ),
                   ),
                   SizedBox(width: 10),
-                  Text('Memuat daftar auditor...'),
+                  Text('Loading auditor list...'),
                 ],
               ),
             )
@@ -377,7 +377,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Daftar auditor belum tersedia',
+                      'Auditor list is not available',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.primaryLight,
@@ -398,7 +398,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'Muat Ulang',
+                        'Reload',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -416,7 +416,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 value: _selectedAuditorId,
                 isExpanded: true,
                 hint: Text(
-                  'Pilih auditor',
+                  'choose an auditor',
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled),
                 ),
                 items: _auditors.where((a) => a.role == 'Auditor').map((auditor) {

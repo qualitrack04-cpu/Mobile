@@ -104,7 +104,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
         setState(() => _deletingIds.remove(fileId));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gagal menghapus evidence. Coba lagi.'),
+            content: Text('Failed to delete evidence. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -154,7 +154,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Ambil Foto'),
+                title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -165,7 +165,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.photo_library, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickMultipleImages();
@@ -192,7 +192,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -213,7 +213,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -252,7 +252,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
           if (state is FindingUpdated) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Finding berhasil diupdate!'),
+                content: Text('Finding successfully updated!'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -497,7 +497,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 ),
               ),
               Text(
-                '${_existingEvidences.length + _evidenceImages.length} foto',
+                '${_existingEvidences.length + _evidenceImages.length} photo',
                 style: const TextStyle(fontSize: 11, color: Colors.black38),
               ),
             ],
@@ -796,14 +796,14 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void _onSubmit(BuildContext context) {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Title tidak boleh kosong!'),
+        content: Text('Title cannot be empty!'),
         backgroundColor: Colors.orange,
       ));
       return;
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Description tidak boleh kosong!'),
+        content: Text('Description cannot be empty!'),
         backgroundColor: Colors.orange,
       ));
       return;

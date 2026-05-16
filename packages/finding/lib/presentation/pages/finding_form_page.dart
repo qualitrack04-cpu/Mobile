@@ -112,7 +112,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Ambil Foto'),
+                title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -123,7 +123,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.photo_library, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickMultipleImages();
@@ -153,7 +153,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -177,7 +177,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -219,7 +219,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
           if (state is FindingCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Finding berhasil disimpan!'),
+                content: Text('Finding successfully created!'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -253,7 +253,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
-                        hint: 'Masukkan judul finding...',
+                        hint: 'Enter the finding title...',
                       ),
                       _buildDivider(),
                       _buildCategoryDropdown(),
@@ -441,7 +441,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                       letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} foto',
+              Text('${_evidenceImages.length} photo',
                   style: const TextStyle(fontSize: 11, color: Colors.black38)),
             ],
           ),
@@ -607,19 +607,19 @@ class _FindingFormPageState extends State<FindingFormPage> {
   void _onSubmit(BuildContext context) {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Title tidak boleh kosong!'),
+          content: Text('Title cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }
     if (_selectedDepartment == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Department harus dipilih!'),
+          content: Text('Department cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Description tidak boleh kosong!'),
+          content: Text('Description cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }

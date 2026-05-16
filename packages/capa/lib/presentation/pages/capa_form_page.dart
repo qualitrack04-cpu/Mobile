@@ -132,7 +132,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
           if (state is CapaCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('CAPA berhasil disimpan!'),
+                content: Text('CAPA successfully created!'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -188,7 +188,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
                             _buildTextField(
                               label: 'TITLE',
                               controller: _titleController,
-                              hint: 'My name is Amir',
+                              hint: 'Enter the capa title...',
                             ),
                             _buildDivider(),
                             _buildFindingDropdown(),
@@ -497,31 +497,31 @@ class _CapaFormPageState extends State<CapaFormPage> {
   void _onSubmit(BuildContext context) {
     if (_titleController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title minimal 5 karakter!'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Title minimum 5 characters!'), backgroundColor: Colors.orange),
       );
       return;
     }
     if (_selectedFindingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Finding harus dipilih!'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Findings must be selected!'), backgroundColor: Colors.orange),
       );
       return;
     }
     if (_actionController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Action minimal 5 karakter!'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Action minimum 5 characters!'), backgroundColor: Colors.orange),
       );
       return;
     }
     if (_selectedPicId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Person In Charge harus dipilih!'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Person In Charge must be selected!'), backgroundColor: Colors.orange),
       );
       return;
     }
     if (_selectedDeadline == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deadline tidak boleh kosong!'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Deadline cannot be empty!'), backgroundColor: Colors.orange),
       );
       return;
     }

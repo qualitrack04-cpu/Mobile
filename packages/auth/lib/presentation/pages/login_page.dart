@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     // Validasi field kosong
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Email dan password wajib diisi');
+      setState(() => _errorMessage = 'Email and password are required');
       return;
     }
 
@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email atau password salah');
+      setState(() => _errorMessage = 'Email or password is wrong');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
