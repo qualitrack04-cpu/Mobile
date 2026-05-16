@@ -103,8 +103,11 @@ class _LoginPageState extends State<LoginPage> {
 
                     const InputLabel('Work Email'),
                     TextField(
-                      controller: _emailController,          // TAMBAH
+                      controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      enableSuggestions: true,
+                      autofillHints: const [AutofillHints.email],
                       decoration: customInputDecoration(
                         hint: 'name@company.com',
                         icon: Icons.mail_outline,

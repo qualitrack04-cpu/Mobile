@@ -130,6 +130,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      enableSuggestions: true,
+                      autofillHints: const [AutofillHints.email],
                       decoration: customInputDecoration(
                         hint: 'name@company.com',
                         icon: Icons.mail_outline,
