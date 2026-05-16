@@ -30,11 +30,20 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$');
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> _onLogin() async {
     // Validasi field kosong
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'Email and password are required');
+      return;
+    }
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
       return;
     }
 

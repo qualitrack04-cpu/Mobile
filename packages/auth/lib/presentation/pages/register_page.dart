@@ -35,11 +35,20 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$');
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> _onRegister() async {
     if (_fullNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'All fields are required');
+      return;
+    }
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
       return;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
