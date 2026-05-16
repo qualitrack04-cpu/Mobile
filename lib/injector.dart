@@ -51,7 +51,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateFinding(repository: sl()));
   sl.registerLazySingleton(() => UpdateFinding(repository: sl())); // ✅ BARU
 
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => FindingBloc(
       repository: sl(),
       createFinding: sl(),
@@ -71,7 +71,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => CreateCapa(repository: sl()));
   sl.registerLazySingleton(() => CloseoutCapa(repository: sl()));
 
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => CapaBloc(
       getCapas: sl(),
       getCapaDetail: sl(),
@@ -105,7 +105,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SubmitChecklist(repository: sl()));
 
   // BLoC
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => AuditBloc(
       repository: sl(),
       getAudits: sl(),

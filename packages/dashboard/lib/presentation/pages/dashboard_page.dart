@@ -4,6 +4,14 @@ import 'package:core/app_colors.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:audit/presentation/bloc/audit_bloc.dart';
+import 'package:audit/presentation/bloc/audit_state.dart';
+import 'package:finding/presentation/bloc/finding_bloc.dart';
+import 'package:finding/presentation/bloc/finding_state.dart';
+import 'package:capa/presentation/bloc/capa_bloc.dart';
+import 'package:capa/presentation/bloc/capa_state.dart';
+import 'package:get_it/get_it.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,17 +23,22 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardService _dashboardService;
   late Future<DashboardSummary> _summaryFuture;
+  DashboardSummary? _lastSummary;
 
   @override
   void initState() {
     super.initState();
     _dashboardService = DashboardService(apiService: ApiService());
-    _summaryFuture = _dashboardService.getSummary();
+    _refresh();
   }
 
   void _refresh() {
+    if (!mounted) return;
     setState(() {
-      _summaryFuture = _dashboardService.getSummary();
+      _summaryFuture = _dashboardService.getSummary().then((summary) {
+        _lastSummary = summary;
+        return summary;
+      });
     });
   }
 
@@ -33,7 +46,30 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return Scaffold(
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AuditBloc, AuditState>(
+          bloc: GetIt.instance<AuditBloc>(),
+          listener: (context, state) {
+            if (state is AuditLoaded || state is AuditCreated || state is AuditDeleted || state is AuditMarkedFinished) {
+              _refresh();
+            }
+          },
+        ),
+        BlocListener<FindingBloc, FindingState>(
+          bloc: GetIt.instance<FindingBloc>(),
+          listener: (context, state) {
+            if (state is FindingLoaded) _refresh();
+          },
+        ),
+        BlocListener<CapaBloc, CapaState>(
+          bloc: GetIt.instance<CapaBloc>(),
+          listener: (context, state) {
+            if (state is CapaLoaded) _refresh();
+          },
+        ),
+      ],
+      child: Scaffold(
       backgroundColor: AppColors.background,
 
       appBar: AppBar(
@@ -96,7 +132,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: FutureBuilder<DashboardSummary>(
           future: _summaryFuture,
           builder: (context, snapshot) {
-            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+            final isLoading = snapshot.connectionState == ConnectionState.waiting && _lastSummary == null;
 
             // Error
             if (snapshot.hasError && !isLoading) {
@@ -120,8 +156,8 @@ class _DashboardPageState extends State<DashboardPage> {
               );
             }
 
-            // Data berhasil dimuat atau skeleton
-            final summary = snapshot.data ?? DashboardSummary(
+            // Data berhasil dimuat atau cache
+            final summary = snapshot.data ?? _lastSummary ?? DashboardSummary(
               totalAudit: 0,
               totalFinding: 0,
               totalCapa: 0,
@@ -148,7 +184,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   _SummaryCard(
                     count: summary.totalFinding.toString(),
-                    title: 'Finding',
+                    title: 'Findings',
                     icon: Icons.search,
                   ),
                   _SummaryCard(
@@ -162,7 +198,7 @@ class _DashboardPageState extends State<DashboardPage> {
           },
         ),
       ),
-    );
+    ));
   }
 }
 

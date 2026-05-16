@@ -16,8 +16,8 @@ class CapaListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.instance<CapaBloc>()..add(const LoadCapas()),
+    return BlocProvider.value(
+      value: GetIt.instance<CapaBloc>()..add(const LoadCapas()),
       child: const _CapaListView(),
     );
   }

@@ -18,8 +18,8 @@ class FindingListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.instance<FindingBloc>()..add(const LoadFindings()),
+    return BlocProvider.value(
+      value: GetIt.instance<FindingBloc>()..add(const LoadFindings()),
       child: const _FindingListView(),
     );
   }

@@ -15,8 +15,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  // ✅ IndexedStack: semua page tetap hidup saat pindah tab
-  // tidak perlu rebuild & reload data setiap kali balik ke tab
   final List<Widget> _pages = [
     const DashboardPage(),
     const AuditListPage(),
@@ -27,8 +25,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ IndexedStack menggantikan _pages[_currentIndex]
-      // Page tidak di-dispose saat pindah tab
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
@@ -36,7 +32,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       bottomNavigationBar: CustomBottomNavbar(
         currentIndex: _currentIndex,
-
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -45,4 +40,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-}
+}

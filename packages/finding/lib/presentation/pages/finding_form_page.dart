@@ -44,19 +44,26 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _descriptionController.text.trim().isNotEmpty &&
       _selectedDepartment != null;
 
-  final List<String> _departments = [
-    'Production',
-    'Warehouse',
-  ];
+  final Map<String, String> _departmentMap = {
+    'Production': 'Produksi',
+    'Warehouse': 'Warehouse',
+  };
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialDepartment != null && _departments.contains(widget.initialDepartment)) {
-      _selectedDepartment = widget.initialDepartment;
-    } else if (widget.initialDepartment != null) {
-      _departments.add(widget.initialDepartment!);
-      _selectedDepartment = widget.initialDepartment;
+    if (widget.initialDepartment != null) {
+      String? matchedKey = _departmentMap.entries
+          .where((e) => e.value == widget.initialDepartment)
+          .map((e) => e.key)
+          .firstOrNull;
+          
+      if (matchedKey != null) {
+        _selectedDepartment = matchedKey;
+      } else {
+        _departmentMap[widget.initialDepartment!] = widget.initialDepartment!;
+        _selectedDepartment = widget.initialDepartment;
+      }
     }
     _titleController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
@@ -199,7 +206,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Create Finding',
+          'Create Findings',
           style: GoogleFonts.inter(
             fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
             fontWeight: FontWeight.w700,
@@ -401,10 +408,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
               hint: const Text('Select Department',
                   style: TextStyle(color: Colors.black26, fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _departments.map((dept) {
+              items: _departmentMap.keys.map((deptKey) {
                 return DropdownMenuItem(
-                  value: dept,
-                  child: Text(dept,
+                  value: deptKey,
+                  child: Text(deptKey,
                       style: const TextStyle(fontSize: 15, color: Colors.black87)),
                 );
               }).toList(),
@@ -581,7 +588,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Submit Finding',
+                  Text('Submit Findings',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -619,7 +626,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
-            department: _selectedDepartment!,
+            department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
             auditorName: widget.auditorName,
             sessionId: widget.sessionId,           // ✅ TAMBAH
             checklistItemId: widget.checklistItemId, // ✅ TAMBAH

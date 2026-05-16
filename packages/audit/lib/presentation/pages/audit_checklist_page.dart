@@ -209,8 +209,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     final result = await Navigator.push<Finding>(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => GetIt.instance<FindingBloc>(),
+        builder: (_) => BlocProvider.value(
+          value: GetIt.instance<FindingBloc>(),
           child: FindingFormPage(
             initialDepartment: widget.audit.department,
             auditorName: widget.audit.auditorName,
@@ -240,8 +240,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     final result = await Navigator.push<Finding>(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => GetIt.instance<FindingBloc>(),
+        builder: (_) => BlocProvider.value(
+          value: GetIt.instance<FindingBloc>(),
           child: FindingEditPage(finding: checklist.finding!),
         ),
       ),

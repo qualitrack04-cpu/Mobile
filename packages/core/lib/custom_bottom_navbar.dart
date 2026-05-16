@@ -50,7 +50,7 @@ class CustomBottomNavbar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.search_outlined),
           activeIcon: Icon(Icons.search),
-          label: 'Finding',
+          label: 'Findings',
         ),
 
         BottomNavigationBarItem(

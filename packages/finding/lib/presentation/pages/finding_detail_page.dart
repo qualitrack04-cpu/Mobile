@@ -22,8 +22,8 @@ class FindingDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return BlocProvider(
-      create: (_) => GetIt.instance<FindingBloc>()
+    return BlocProvider.value(
+      value: GetIt.instance<FindingBloc>()
         ..add(LoadFindingDetail(id: findingId)),
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
@@ -35,7 +35,7 @@ class FindingDetailPage extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Finding Detail',
+            'Findings Detail',
             style: GoogleFonts.inter(
               fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
               fontWeight: FontWeight.w700,
@@ -213,7 +213,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                   _buildInfoRow(
                     icon: Icons.business_outlined,
                     label: 'DEPT',
-                    value: finding.department,
+                    value: finding.department == 'Produksi' ? 'Production' : finding.department,
                   ),
                   const SizedBox(height: 10),
                   _buildInfoRow(

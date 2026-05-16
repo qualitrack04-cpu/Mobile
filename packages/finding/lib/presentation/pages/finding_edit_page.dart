@@ -39,10 +39,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
   // ✅ Tracking fileId yang sedang dihapus (supaya bisa tampilkan loading per item)
   final Set<String> _deletingIds = {};
 
-  final List<String> _departments = [
-    'Production',
-    'Warehouse',
-  ];
+  final Map<String, String> _departmentMap = {
+    'Production': 'Produksi',
+    'Warehouse': 'Warehouse',
+  };
 
   @override
   void initState() {
@@ -54,11 +54,18 @@ class _FindingEditPageState extends State<FindingEditPage> {
         TextEditingController(text: widget.finding.description)
           ..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
-    _selectedDepartment = widget.finding.department;
 
-    if (_selectedDepartment != null &&
-        !_departments.contains(_selectedDepartment)) {
-      _departments.add(_selectedDepartment!);
+    String deptValue = widget.finding.department;
+    String? matchedKey = _departmentMap.entries
+        .where((e) => e.value == deptValue)
+        .map((e) => e.key)
+        .firstOrNull;
+    
+    if (matchedKey != null) {
+      _selectedDepartment = matchedKey;
+    } else {
+      _departmentMap[deptValue] = deptValue;
+      _selectedDepartment = deptValue;
     }
 
     // ✅ Load evidence ke state (bukan Future) supaya bisa di-update saat hapus
@@ -232,7 +239,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Edit Finding',
+          'Edit Findings',
           style: GoogleFonts.inter(
             fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
             fontWeight: FontWeight.w700,
@@ -415,11 +422,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 style: TextStyle(color: Colors.black26, fontSize: 14),
               ),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _departments.map((dept) {
+              items: _departmentMap.keys.map((deptKey) {
                 return DropdownMenuItem(
-                  value: dept,
+                  value: deptKey,
                   child: Text(
-                    dept,
+                    deptKey,
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   ),
                 );
@@ -735,7 +742,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     return _titleController.text != widget.finding.clauseRef ||
         _descriptionController.text != widget.finding.description ||
         _selectedCategory != widget.finding.category ||
-        _selectedDepartment != widget.finding.department ||
+        _selectedDepartment != widget.finding.department && _departmentMap[_selectedDepartment] != widget.finding.department ||
         _evidenceImages.isNotEmpty ||
         _existingEvidences.length != _originalEvidenceCount; // ← evidence dihapus
   }
@@ -768,7 +775,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Edit Finding',
+                    'Edit Findings',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -805,7 +812,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
-            department: _selectedDepartment!,
+            department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

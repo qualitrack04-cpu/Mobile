@@ -132,7 +132,7 @@ class ChecklistCard extends StatelessWidget {
                 color: AppColors.primaryLight,
               ),
               label: Text(
-                'ADD FINDING',
+                'ADD FINDINGS',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

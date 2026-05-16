@@ -275,7 +275,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'FINDING',
+            'FINDINGS',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,

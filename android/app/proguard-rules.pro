@@ -15,3 +15,6 @@
 
 # Model classes kamu (ganti dengan package name asli)
 -keep class com.yourapp.models.** { *; }
+
+# Fix R8 Missing classes for Play Core Split Install (Flutter deferred components)
+-dontwarn com.google.android.play.core.**

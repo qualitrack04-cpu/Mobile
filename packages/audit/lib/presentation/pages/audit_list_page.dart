@@ -19,8 +19,8 @@ class AuditListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.instance<AuditBloc>()..add(const LoadAudits()),
+    return BlocProvider.value(
+      value: GetIt.instance<AuditBloc>()..add(const LoadAudits()),
       child: const _AuditListView(),
     );
   }
