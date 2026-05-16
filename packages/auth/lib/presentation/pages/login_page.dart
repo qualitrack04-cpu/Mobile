@@ -65,7 +65,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      body: AutofillGroup(
+        child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
@@ -106,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
-                      enableSuggestions: true,
+                      enableSuggestions: false,
                       autofillHints: const [AutofillHints.email],
                       decoration: customInputDecoration(
                         hint: 'name@company.com',
@@ -167,6 +168,7 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
