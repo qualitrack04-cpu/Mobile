@@ -181,7 +181,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                         ),
                       ),
                       Text(
-                        '${_evidences.length} foto',
+                        '${_evidences.length} photo',
                         style: const TextStyle(
                             fontSize: 11, color: Colors.black38),
                       ),
@@ -252,7 +252,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: const Text(
-          'Belum ada foto evidence',
+          'No evidence photos yet',
           style: TextStyle(color: Colors.black38, fontSize: 13),
         ),
       );

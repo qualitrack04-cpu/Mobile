@@ -424,6 +424,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   Widget _buildEvidenceSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double itemSize = (screenWidth - 92) / 3;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -449,10 +452,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
             children: [
               // ✅ Tampilkan gambar asli dari device
               ..._evidenceImages.asMap().entries.map((entry) {
-                return _buildImageThumbnail(entry.value, entry.key);
+                return _buildImageThumbnail(entry.value, entry.key, itemSize);
               }),
               // Tombol tambah gambar
-              _buildAddImageButton(),
+              _buildAddImageButton(itemSize),
             ],
           ),
         ],
@@ -500,14 +503,14 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   // ✅ Thumbnail gambar nyata dengan tombol hapus
-  Widget _buildImageThumbnail(XFile image, int index) {
+  Widget _buildImageThumbnail(XFile image, int index, double size) {
     return Stack(
       children: [
         GestureDetector(
           onTap: () => _showImageDialog(context, image.path),
           child: Container(
-            width: 100,
-            height: 100,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
@@ -540,12 +543,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   // ✅ Tombol tambah gambar → buka dialog pilih sumber
-  Widget _buildAddImageButton() {
+  Widget _buildAddImageButton(double size) {
     return GestureDetector(
       onTap: _showImageSourceDialog,
       child: Container(
-        width: 100,
-        height: 100,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),

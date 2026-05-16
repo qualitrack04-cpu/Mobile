@@ -32,9 +32,12 @@ class _DashboardPageState extends State<DashboardPage> {
     _refresh();
   }
 
-  void _refresh() {
+  void _refresh({bool showSkeleton = false}) {
     if (!mounted) return;
     setState(() {
+      if (showSkeleton) {
+        _lastSummary = null;
+      }
       _summaryFuture = _dashboardService.getSummary().then((summary) {
         _lastSummary = summary;
         return summary;
@@ -128,7 +131,10 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: () async => _refresh(),
+        onRefresh: () async {
+          _refresh(showSkeleton: true);
+          await _summaryFuture;
+        },
         child: FutureBuilder<DashboardSummary>(
           future: _summaryFuture,
           builder: (context, snapshot) {

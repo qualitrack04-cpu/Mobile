@@ -476,6 +476,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
   }
 
   Widget _buildEvidenceSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double itemSize = (screenWidth - 92) / 3;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -528,8 +531,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
                             ? null
                             : () => _showNetworkImageDialog(context, url),
                         child: Container(
-                          width: 100,
-                          height: 100,
+                          width: itemSize,
+                          height: itemSize,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             color: Colors.grey[200],
@@ -595,9 +598,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
             runSpacing: 10,
             children: [
               ..._evidenceImages.asMap().entries.map((entry) {
-                return _buildNewImageThumbnail(entry.value, entry.key);
+                return _buildNewImageThumbnail(entry.value, entry.key, itemSize);
               }),
-              _buildAddImageButton(),
+              _buildAddImageButton(itemSize),
             ],
           ),
         ],
@@ -673,14 +676,14 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
-  Widget _buildNewImageThumbnail(XFile image, int index) {
+  Widget _buildNewImageThumbnail(XFile image, int index, double size) {
     return Stack(
       children: [
         GestureDetector(
           onTap: () => _showImageDialog(context, image.path),
           child: Container(
-            width: 100,
-            height: 100,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
@@ -711,12 +714,12 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
-  Widget _buildAddImageButton() {
+  Widget _buildAddImageButton(double size) {
     return GestureDetector(
       onTap: _showImageSourceDialog,
       child: Container(
-        width: 100,
-        height: 100,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
