@@ -31,7 +31,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$');
+    // Regex yang lebih 'lengkap' dengan membatasi Top Level Domain (TLD) yang valid/umum saja.
+    // Jika ada domain lain yang dibutuhkan, bisa ditambahkan di dalam kurung.
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$', caseSensitive: false);
     return emailRegex.hasMatch(email);
   }
 
