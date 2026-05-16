@@ -68,7 +68,11 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
 
       // Upload evidence photos if any
       for (final path in event.evidencePaths) {
-        await repository.uploadEvidence(finding.id, path);
+        try {
+          await repository.uploadEvidence(finding.id, path);
+        } catch (_) {
+          // Ignore individual upload errors to prevent failing the entire creation flow
+        }
       }
 
       emit(FindingCreated(finding: finding));
@@ -96,7 +100,11 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
 
       // Upload new evidence photos if any
       for (final path in event.evidencePaths) {
-        await repository.uploadEvidence(finding.id, path);
+        try {
+          await repository.uploadEvidence(finding.id, path);
+        } catch (_) {
+          // Ignore individual upload errors to prevent failing the entire update flow
+        }
       }
 
       emit(FindingUpdated(finding: finding));

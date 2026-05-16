@@ -250,6 +250,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
       body: BlocConsumer<FindingBloc, FindingState>(
         listener: (context, state) {
           if (state is FindingUpdated) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Finding successfully updated!'),
@@ -259,6 +260,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -477,7 +479,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   Widget _buildEvidenceSection() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final double itemSize = (screenWidth - 92) / 3;
+    final double itemSize = ((screenWidth - 93) / 3).floorToDouble();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -794,6 +796,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   }
 
   void _onSubmit(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Title cannot be empty!'),

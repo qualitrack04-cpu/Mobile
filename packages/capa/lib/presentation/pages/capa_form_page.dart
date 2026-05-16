@@ -130,6 +130,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
       body: BlocConsumer<CapaBloc, CapaState>(
         listener: (context, state) {
           if (state is CapaCreated) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('CAPA successfully created!'),
@@ -139,6 +140,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
             Navigator.pop(context, true);
           }
           if (state is CapaError) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -495,6 +497,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
   }
 
   void _onSubmit(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Title minimum 5 characters!'), backgroundColor: Colors.orange),
