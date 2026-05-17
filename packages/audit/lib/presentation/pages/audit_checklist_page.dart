@@ -410,7 +410,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.audit.department,
+            widget.audit.department == 'Produksi' ? 'Production' : widget.audit.department,
             style: GoogleFonts.inter(
               fontSize: 22,
               fontWeight: FontWeight.w700,
