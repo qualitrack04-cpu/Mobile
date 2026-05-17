@@ -100,6 +100,19 @@ class _FindingListViewState extends State<_FindingListView> {
 
                 return Stack(
                   children: [
+                    // Empty state centered exactly on the screen
+                    if (!isLoading && sortedFindings.isEmpty)
+                      const Center(
+                        child: Text(
+                          'No Finding is available',
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    
                     RefreshIndicator(
                       onRefresh: () async {
                         context.read<FindingBloc>().add(const LoadFindings());
@@ -108,23 +121,11 @@ class _FindingListViewState extends State<_FindingListView> {
                       child: Skeletonizer(
                         enabled: isLoading,
                         child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                           children: [
-                            if (!isLoading && sortedFindings.isEmpty)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 100),
-                                  child: Text(
-                                    'No Finding is available',
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              ...sortedFindings.map(
+                            if (isLoading || sortedFindings.isNotEmpty)
+                              ...displayList.map(
                                 (finding) => _FindingCard(finding: finding),
                               ),
                           ],

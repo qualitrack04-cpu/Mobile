@@ -98,6 +98,19 @@ class _CapaListViewState extends State<_CapaListView> {
 
                 return Stack(
                   children: [
+                    // Empty state centered exactly on the screen
+                    if (!isLoading && displayList.isEmpty)
+                      const Center(
+                        child: Text(
+                          'No CAPA is available',
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+
                     RefreshIndicator(
                       onRefresh: () async {
                         context.read<CapaBloc>().add(const LoadCapas());
@@ -106,22 +119,10 @@ class _CapaListViewState extends State<_CapaListView> {
                       child: Skeletonizer(
                         enabled: isLoading,
                         child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                           children: [
-                            if (!isLoading && displayList.isEmpty)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 100),
-                                  child: Text(
-                                    'No CAPA is available',
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
+                            if (isLoading || displayList.isNotEmpty)
                               ...displayList.map((capa) => _CapaCard(capa: capa)),
                           ],
                         ),
