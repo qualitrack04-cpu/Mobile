@@ -115,7 +115,7 @@ class _FindingListViewState extends State<_FindingListView> {
                                 child: Padding(
                                   padding: EdgeInsets.only(top: 100),
                                   child: Text(
-                                    'Belum ada finding',
+                                    'No Finding is available',
                                     style: TextStyle(
                                       color: Colors.black54,
                                       fontSize: 16,

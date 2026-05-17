@@ -113,7 +113,7 @@ class _CapaListViewState extends State<_CapaListView> {
                                 child: Padding(
                                   padding: EdgeInsets.only(top: 100),
                                   child: Text(
-                                    'Belum ada CAPA',
+                                    'No CAPA is available',
                                     style: TextStyle(
                                       color: Colors.black54,
                                       fontSize: 16,
