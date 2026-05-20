@@ -35,19 +35,30 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    // Regex yang lebih 'lengkap' dengan membatasi Top Level Domain (TLD) yang valid/umum saja.
+    // Jika ada domain lain yang dibutuhkan, bisa ditambahkan di dalam kurung.
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$', caseSensitive: false);
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> _onRegister() async {
     if (_fullNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Semua field wajib diisi');
+      setState(() => _errorMessage = 'All fields are required');
+      return;
+    }
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
       return;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Password tidak sama');
+      setState(() => _errorMessage = 'Password not match');
       return;
     }
     if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'Password minimal 6 karakter');
+      setState(() => _errorMessage = 'Password min 6 characters');
       return;
     }
 
@@ -68,7 +79,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registrasi berhasil, silakan login')),
+        const SnackBar(content: Text('Register success, please login')),
       );
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
@@ -80,7 +91,8 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      body: AutofillGroup(
+        child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
@@ -130,6 +142,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      autofillHints: const [AutofillHints.email],
                       decoration: customInputDecoration(
                         hint: 'name@company.com',
                         icon: Icons.mail_outline,
@@ -213,6 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -30,11 +30,9 @@ class ChecklistCard extends StatelessWidget {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
       padding: EdgeInsets.all(sw * 0.04),
-
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-
         border: Border.all(
           color: isFail
               ? AppColors.danger
@@ -43,7 +41,6 @@ class ChecklistCard extends StatelessWidget {
                   : AppColors.borderLight,
           width: isFail || isPass ? 2 : 1,
         ),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -52,7 +49,6 @@ class ChecklistCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -81,7 +77,6 @@ class ChecklistCard extends StatelessWidget {
             ),
           ),
         ),
-
         if (isFail && checklist.hasFinding)
           GestureDetector(
             onTap: onEditFinding,
@@ -119,14 +114,12 @@ class ChecklistCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // FIX: ADD FINDING baris sendiri, full width — tidak pernah desak tombol lain
         if (showAddFinding) ...[
           SizedBox(
             height: 42,
             child: OutlinedButton.icon(
               onPressed: onAddFinding,
               style: OutlinedButton.styleFrom(
-                // padding horizontal pakai sizedbox biar auto
                 side: const BorderSide(color: AppColors.primaryLight),
                 backgroundColor: AppColors.surface,
                 shape: RoundedRectangleBorder(
@@ -139,9 +132,8 @@ class ChecklistCard extends StatelessWidget {
                 color: AppColors.primaryLight,
               ),
               label: Text(
-                'ADD FINDING',
+                'ADD FINDINGS',
                 style: GoogleFonts.inter(
-                  // FIX: font size responsif, tidak overflow di layar kecil
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primaryLight,
@@ -151,8 +143,6 @@ class ChecklistCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-
-        // PASS & FAIL selalu satu baris, masing-masing Expanded = tidak pernah mepet
         Row(
           children: [
             Expanded(child: _buildPassButton(isPass, isFail)),
@@ -165,8 +155,6 @@ class ChecklistCard extends StatelessWidget {
   }
 
   Widget _buildPassButton(bool isPass, bool isFail) {
-    // PASS disable hanya kalau finding sudah disubmit (hasFinding == true),
-    // supaya user masih bisa ganti dari FAIL ke PASS selama finding belum diisi
     final bool passDisabled = checklist.hasFinding;
     return SizedBox(
       height: 42,
@@ -199,7 +187,7 @@ class ChecklistCard extends StatelessWidget {
           'PASS',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w700,
-            fontSize: 13, // FIX: sedikit lebih kecil, aman di semua layar
+            fontSize: 13,
           ),
         ),
       ),
@@ -213,8 +201,8 @@ class ChecklistCard extends StatelessWidget {
         onPressed: onFail,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          // FIX: hapus padding horizontal fixed
-          backgroundColor: isFail ? AppColors.dangerLight : const Color(0xFFF3F4F6),
+          backgroundColor:
+              isFail ? AppColors.dangerLight : const Color(0xFFF3F4F6),
           foregroundColor: isFail ? AppColors.danger : AppColors.textDisabled,
           side: BorderSide(
             color: isFail ? AppColors.danger : const Color(0xFFD1D5DB),
@@ -232,7 +220,7 @@ class ChecklistCard extends StatelessWidget {
           'FAIL',
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w700,
-            fontSize: 13, // FIX : sedikit lebih kecil, aman di semua layar
+            fontSize: 13,
           ),
         ),
       ),

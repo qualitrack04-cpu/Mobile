@@ -30,11 +30,22 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) {
+    // Regex yang lebih 'lengkap' dengan membatasi Top Level Domain (TLD) yang valid/umum saja.
+    // Jika ada domain lain yang dibutuhkan, bisa ditambahkan di dalam kurung.
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$', caseSensitive: false);
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> _onLogin() async {
     // Validasi field kosong
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Email dan password wajib diisi');
+      setState(() => _errorMessage = 'Email and password are required');
+      return;
+    }
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
       return;
     }
 
@@ -56,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email atau password salah');
+      setState(() => _errorMessage = 'Email or password is wrong');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -65,7 +76,8 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+      body: AutofillGroup(
+        child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
@@ -103,8 +115,11 @@ class _LoginPageState extends State<LoginPage> {
 
                     const InputLabel('Work Email'),
                     TextField(
-                      controller: _emailController,          // TAMBAH
+                      controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      autofillHints: const [AutofillHints.email],
                       decoration: customInputDecoration(
                         hint: 'name@company.com',
                         icon: Icons.mail_outline,
@@ -164,6 +179,7 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

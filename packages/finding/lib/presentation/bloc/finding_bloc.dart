@@ -8,16 +8,16 @@ import 'finding_state.dart';
 class FindingBloc extends Bloc<FindingEvent, FindingState> {
   final FindingRepository repository;
   final CreateFinding createFinding;
-  final UpdateFinding updateFinding; // ✅ BARU
+  final UpdateFinding updateFinding;
 
   FindingBloc({
     required this.repository,
     required this.createFinding,
-    required this.updateFinding, // ✅ BARU
+    required this.updateFinding,
   }) : super(FindingInitial()) {
     on<LoadFindings>(_onLoadFindings);
     on<CreateFindingEvent>(_onCreateFinding);
-    on<UpdateFindingEvent>(_onUpdateFinding); // ✅ BARU
+    on<UpdateFindingEvent>(_onUpdateFinding);
     on<LoadFindingDetail>(_onLoadFindingDetail);
   }
 
@@ -62,11 +62,17 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         clauseRef: event.clauseRef,
         department: event.department,
         auditorName: event.auditorName,
+        sessionId: event.sessionId,             // ✅ TAMBAH
+        checklistItemId: event.checklistItemId, // ✅ TAMBAH
       );
 
       // Upload evidence photos if any
       for (final path in event.evidencePaths) {
-        await repository.uploadEvidence(finding.id, path);
+        try {
+          await repository.uploadEvidence(finding.id, path);
+        } catch (_) {
+          // Ignore individual upload errors to prevent failing the entire creation flow
+        }
       }
 
       emit(FindingCreated(finding: finding));
@@ -78,7 +84,6 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
     }
   }
 
-  // ✅ BARU: handler untuk update finding
   Future<void> _onUpdateFinding(
     UpdateFindingEvent event,
     Emitter<FindingState> emit,
@@ -95,7 +100,11 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
 
       // Upload new evidence photos if any
       for (final path in event.evidencePaths) {
-        await repository.uploadEvidence(finding.id, path);
+        try {
+          await repository.uploadEvidence(finding.id, path);
+        } catch (_) {
+          // Ignore individual upload errors to prevent failing the entire update flow
+        }
       }
 
       emit(FindingUpdated(finding: finding));

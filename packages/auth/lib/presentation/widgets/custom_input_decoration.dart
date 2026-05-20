@@ -8,6 +8,10 @@ InputDecoration customInputDecoration({
 }) {
   return InputDecoration(
     hintText: hint,
+    hintStyle: const TextStyle(
+      color: Colors.black38,
+      fontSize: 14,
+    ),
 
     prefixIcon: Icon(
       icon,

@@ -13,12 +13,16 @@ class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
   final String? auditorName;
   final String? clauseRef;
+  final String? sessionId;          // ✅ TAMBAH
+  final String? checklistItemId;    // ✅ TAMBAH
 
   const FindingFormPage({
     super.key,
     this.initialDepartment,
     this.auditorName,
     this.clauseRef,
+    this.sessionId,          // ✅ TAMBAH
+    this.checklistItemId,    // ✅ TAMBAH
   });
 
   @override
@@ -40,19 +44,26 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _descriptionController.text.trim().isNotEmpty &&
       _selectedDepartment != null;
 
-  final List<String> _departments = [
-    'Production',
-    'Warehouse',
-  ];
+  final Map<String, String> _departmentMap = {
+    'Production': 'Produksi',
+    'Warehouse': 'Warehouse',
+  };
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialDepartment != null && _departments.contains(widget.initialDepartment)) {
-      _selectedDepartment = widget.initialDepartment;
-    } else if (widget.initialDepartment != null) {
-      _departments.add(widget.initialDepartment!);
-      _selectedDepartment = widget.initialDepartment;
+    if (widget.initialDepartment != null) {
+      String? matchedKey = _departmentMap.entries
+          .where((e) => e.value == widget.initialDepartment)
+          .map((e) => e.key)
+          .firstOrNull;
+          
+      if (matchedKey != null) {
+        _selectedDepartment = matchedKey;
+      } else {
+        _departmentMap[widget.initialDepartment!] = widget.initialDepartment!;
+        _selectedDepartment = widget.initialDepartment;
+      }
     }
     _titleController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
@@ -101,7 +112,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Ambil Foto'),
+                title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -112,7 +123,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                   backgroundColor: Color(0xFFEEF2F7),
                   child: Icon(Icons.photo_library, color: Color(0xFF0D2B55)),
                 ),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickMultipleImages();
@@ -142,7 +153,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -166,7 +177,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to pick image: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -195,7 +206,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Create Finding',
+          'Create Findings',
           style: GoogleFonts.inter(
             fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
             fontWeight: FontWeight.w700,
@@ -206,9 +217,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
       body: BlocConsumer<FindingBloc, FindingState>(
         listener: (context, state) {
           if (state is FindingCreated) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Finding berhasil disimpan!'),
+                content: Text('Finding successfully created!'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -217,6 +229,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -242,7 +255,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
-                        hint: 'Masukkan judul finding...',
+                        hint: 'Enter the finding title...',
                       ),
                       _buildDivider(),
                       _buildCategoryDropdown(),
@@ -397,10 +410,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
               hint: const Text('Select Department',
                   style: TextStyle(color: Colors.black26, fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _departments.map((dept) {
+              items: _departmentMap.keys.map((deptKey) {
                 return DropdownMenuItem(
-                  value: dept,
-                  child: Text(dept,
+                  value: deptKey,
+                  child: Text(deptKey,
                       style: const TextStyle(fontSize: 15, color: Colors.black87)),
                 );
               }).toList(),
@@ -413,6 +426,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   Widget _buildEvidenceSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double itemSize = ((screenWidth - 93) / 3).floorToDouble();
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -427,7 +443,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                       letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} foto',
+              Text('${_evidenceImages.length} photo',
                   style: const TextStyle(fontSize: 11, color: Colors.black38)),
             ],
           ),
@@ -438,10 +454,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
             children: [
               // ✅ Tampilkan gambar asli dari device
               ..._evidenceImages.asMap().entries.map((entry) {
-                return _buildImageThumbnail(entry.value, entry.key);
+                return _buildImageThumbnail(entry.value, entry.key, itemSize);
               }),
               // Tombol tambah gambar
-              _buildAddImageButton(),
+              _buildAddImageButton(itemSize),
             ],
           ),
         ],
@@ -489,14 +505,14 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   // ✅ Thumbnail gambar nyata dengan tombol hapus
-  Widget _buildImageThumbnail(XFile image, int index) {
+  Widget _buildImageThumbnail(XFile image, int index, double size) {
     return Stack(
       children: [
         GestureDetector(
           onTap: () => _showImageDialog(context, image.path),
           child: Container(
-            width: 100,
-            height: 100,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               image: DecorationImage(
@@ -529,12 +545,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   // ✅ Tombol tambah gambar → buka dialog pilih sumber
-  Widget _buildAddImageButton() {
+  Widget _buildAddImageButton(double size) {
     return GestureDetector(
       onTap: _showImageSourceDialog,
       child: Container(
-        width: 100,
-        height: 100,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
@@ -577,7 +593,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             : const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Submit Finding',
+                  Text('Submit Findings',
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -591,21 +607,22 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   void _onSubmit(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Title tidak boleh kosong!'),
+          content: Text('Title cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }
     if (_selectedDepartment == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Department harus dipilih!'),
+          content: Text('Department cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Description tidak boleh kosong!'),
+          content: Text('Description cannot be empty!'),
           backgroundColor: Colors.orange));
       return;
     }
@@ -615,8 +632,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
             category: _selectedCategory,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
-            department: _selectedDepartment!,
+            department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
             auditorName: widget.auditorName,
+            sessionId: widget.sessionId,           // ✅ TAMBAH
+            checklistItemId: widget.checklistItemId, // ✅ TAMBAH
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

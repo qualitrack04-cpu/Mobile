@@ -74,7 +74,9 @@ class AuditCard extends StatelessWidget {
   Widget _buildDateSection(bool isFinished, bool isPriority, double sw) {
     Color sectionColor;
 
-    if (isFinished) {
+    if (audit.id.isEmpty) {
+      sectionColor = Colors.grey.shade300; // Skeleton color
+    } else if (isFinished) {
       sectionColor = AppColors.primaryMuted;
     } else if (isPriority) {
       sectionColor = AppColors.primaryLight;
@@ -159,7 +161,7 @@ class AuditCard extends StatelessWidget {
           ),
         ),
 
-        if (!isFinished)
+        if (!isFinished && audit.id.isNotEmpty)
           GestureDetector(
             onTap: onDelete,
 
@@ -258,6 +260,10 @@ class AuditCard extends StatelessWidget {
           ),
         ),
       );
+    }
+
+    if (audit.id.isEmpty) {
+      return const SizedBox(height: 46); // Sembunyikan tombol saat skeleton loading
     }
 
     return Row(

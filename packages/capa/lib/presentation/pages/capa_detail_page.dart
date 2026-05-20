@@ -17,8 +17,8 @@ class CapaDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return BlocProvider(
-      create: (_) => GetIt.instance<CapaBloc>()..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
+    return BlocProvider.value(
+      value: GetIt.instance<CapaBloc>()..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
@@ -120,7 +120,7 @@ class CapaDetailPage extends StatelessWidget {
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
             _buildSection(
-              label: 'FINDING',
+              label: 'FINDINGS',
               value: capa.findingTitle.isNotEmpty ? capa.findingTitle : capa.rootCause,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),

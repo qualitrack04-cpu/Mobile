@@ -19,8 +19,8 @@ class AuditListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetIt.instance<AuditBloc>()..add(const LoadAudits()),
+    return BlocProvider.value(
+      value: GetIt.instance<AuditBloc>()..add(const LoadAudits()),
       child: const _AuditListView(),
     );
   }
@@ -178,7 +178,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil dihapus'),
+                    Text('Audit successfully deleted'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -199,7 +199,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil dibuat'),
+                    Text('Audit successfully created'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -220,7 +220,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
                     SizedBox(width: 10),
-                    Text('Audit berhasil diperbarui'),
+                    Text('Audit successfully updated'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -247,8 +247,10 @@ class _AuditListViewState extends State<_AuditListView> {
         final audits = state is AuditLoaded ? state.audits : _lastAudits;
 
         // Skeleton placeholder saat first load
+        // Gunakan jumlah data sebelumnya agar tidak misleading. Jika kosong & bukan first load, count = 0
+        final skeletonCount = _isFirstLoad ? 3 : _lastAudits.length;
         final skeletonList = List.generate(
-          4,
+          skeletonCount,
           (_) => AuditEntity(
             id: '',
             scheduleId: '',
@@ -258,7 +260,7 @@ class _AuditListViewState extends State<_AuditListView> {
             department: 'Department Name',
             date: DateTime.now(),
             description: '',
-            isPriority: false,
+            isPriority: false, // false agar warnanya netral/abu, bukan kuning
             isFinished: false,
           ),
         );
@@ -333,14 +335,14 @@ class _AuditListViewState extends State<_AuditListView> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        title: const Text('Hapus Audit?'),
+                        title: const Text('Delete Audit?'),
                         content: Text(
-                          'Audit "${audit.title}" akan dihapus secara permanen.',
+                          'Audit "${audit.title}" will be deleted permanently.',
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Batal'),
+                            child: const Text('Cancel'),
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -351,7 +353,7 @@ class _AuditListViewState extends State<_AuditListView> {
                               ),
                             ),
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Hapus'),
+                            child: const Text('Delete'),
                           ),
                         ],
                       ),

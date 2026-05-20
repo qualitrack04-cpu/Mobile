@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:audit/presentation/pages/audit_list_page.dart'; // comment dulu - ada bug
+import 'package:audit/presentation/pages/audit_list_page.dart';
 import 'package:core/core.dart';
 import 'package:capa/presentation/pages/capa_list_page.dart';
 import 'package:finding/presentation/pages/finding_list_page.dart';
@@ -17,7 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<Widget> _pages = [
     const DashboardPage(),
-    const Scaffold(body: Center(child: Text('Audits Coming Soon'))), // placeholder
+    const AuditListPage(),
     const FindingListPage(),
     const CapaListPage(),
   ];

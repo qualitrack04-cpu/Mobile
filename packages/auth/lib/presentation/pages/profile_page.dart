@@ -34,8 +34,16 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  String _formatRole(String role) {
+    if (role.isEmpty) return '-';
+    // Add space before capital letters (e.g. "QualityManager" -> "Quality Manager")
+    return role.replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}').trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: AppColors.background,
 
@@ -54,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Text(
           'Profile',
           style: GoogleFonts.inter(
-            fontSize: 18,
+            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
             fontWeight: FontWeight.w700,
             color: AppColors.primary,
           ),
@@ -148,7 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 4),
 
           Text(
-            _role.isEmpty ? '-' : _role.toUpperCase(),
+            _formatRole(_role).toUpperCase(),
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -180,7 +188,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
           _buildInfoField(
             label: 'Role',
-            value: _role.isEmpty ? '-' : _role,
+            value: _formatRole(_role),
           ),
         ],
       ),
