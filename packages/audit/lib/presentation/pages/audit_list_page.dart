@@ -64,7 +64,11 @@ class _AuditListViewState extends State<_AuditListView> {
     }).toList();
 
     final filtered = _isPrioritySelected
-        ? visibleAudits.where((e) => e.isPriority).toList()
+        ? visibleAudits.where((e) {
+            final todayDate = DateTime(now.year, now.month, now.day);
+            final bool isOverdue = !e.isFinished && e.date.isBefore(todayDate);
+            return e.isPriority || isOverdue;
+          }).toList()
         : List<AuditEntity>.from(visibleAudits);
 
     filtered.sort((a, b) {
