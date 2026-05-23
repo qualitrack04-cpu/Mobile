@@ -12,6 +12,7 @@ class AuditModel extends AuditEntity {
     required super.description,
     required super.isPriority,
     required super.isFinished,
+    super.completedAt,
   });
 
   factory AuditModel.fromJson(Map<String, dynamic> json) {
@@ -48,6 +49,10 @@ class AuditModel extends AuditEntity {
     // ✅ scheduleId digunakan untuk membuat sesi audit
     final scheduleId = firstSchedule['id'] as String? ?? json['id'] as String;
 
+    // ✅ Get completedAt dari schedule pertama
+    final completedAtStr = firstSchedule['completedAt'] as String?;
+    final completedAt = completedAtStr != null ? DateTime.tryParse(completedAtStr) : null;
+
     return AuditModel(
       id: json['id'] as String, // ✅ Kembali gunakan ID Plan agar fitur Edit/Delete berfungsi
       scheduleId: scheduleId,   // ✅ Simpan ID Schedule terpisah
@@ -63,6 +68,7 @@ class AuditModel extends AuditEntity {
       description: json['description'] as String? ?? '',
       isPriority: isPriority,
       isFinished: isFinished,
+      completedAt: completedAt,
     );
   }
 
@@ -91,6 +97,7 @@ class AuditModel extends AuditEntity {
       description: entity.description,
       isPriority: entity.isPriority,
       isFinished: entity.isFinished,
+      completedAt: entity.completedAt,
     );
   }
 }
