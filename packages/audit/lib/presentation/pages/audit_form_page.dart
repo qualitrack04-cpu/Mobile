@@ -588,12 +588,17 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   Widget _buildDatePicker() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDate = (_selectedDate != null && _selectedDate!.isBefore(today))
+        ? _selectedDate!
+        : today;
     return InkWell(
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
-          initialDate: _selectedDate ?? DateTime.now(),
-          firstDate: DateTime.now(),
+          initialDate: _selectedDate ?? today,
+          firstDate: firstDate,
           lastDate: DateTime(2030),
           builder: (context, child) {
             return Theme(
