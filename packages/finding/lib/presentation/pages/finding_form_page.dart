@@ -47,6 +47,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control': 'QC',
+    'Packaging': 'Packaging'
   };
 
   @override

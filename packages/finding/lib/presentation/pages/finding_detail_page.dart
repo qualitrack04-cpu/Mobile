@@ -213,7 +213,7 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                   _buildInfoRow(
                     icon: Icons.business_outlined,
                     label: 'DEPT',
-                    value: finding.department == 'Produksi' ? 'Production' : finding.department,
+                    value: finding.department == 'Produksi' ? 'Production' : (finding.department == 'QC' ? 'Quality Control' : finding.department),
                   ),
                   const SizedBox(height: 10),
                   _buildInfoRow(

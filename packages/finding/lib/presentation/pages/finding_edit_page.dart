@@ -42,6 +42,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control': 'QC',
+    'Packaging': 'Packaging'
   };
 
   @override
