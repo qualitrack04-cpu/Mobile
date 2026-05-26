@@ -30,10 +30,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final Map<String, String> _departments = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control' : 'QC',
+    'Packaging' : 'Packaging'
   };
 
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
+  static const String _gmp = 'GMP';
 
   String? _selectedDepartment;
   DateTime? _selectedDate;
@@ -98,7 +101,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
-        (t) => t == _iso9001 || t == _iso14001,
+        (t) => t == _iso9001 || t == _iso14001 || t == _gmp,
         orElse: () => '',
       );
 
@@ -532,6 +535,18 @@ class _AuditFormPageState extends State<AuditFormPage> {
               _formNotifier.value++;
             }),
             title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primaryLight,
+          ),
+          RadioListTile<String>(
+            value: _gmp,
+            groupValue: _selectedIso,
+            onChanged: (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
+            title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryLight,
