@@ -1,0 +1,203 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:audit/domain/usecases/get_audits.dart';
+import 'package:audit/domain/usecases/create_audit.dart';
+import 'package:audit/domain/usecases/update_audit.dart';
+import 'package:audit/domain/usecases/mark_audit_finished.dart';
+import 'package:audit/domain/usecases/get_checklist.dart';
+import 'package:audit/domain/usecases/get_auditors.dart';
+import 'package:audit/domain/usecases/submit_checklist.dart';
+import 'package:audit/domain/repositories/audit_repository.dart';
+import 'audit_event.dart';
+import 'audit_state.dart';
+
+/// Strip prefix "Exception: " yang berlapis agar pesan error bersih di UI.
+String _extractMessage(Object e) {
+  String msg = e.toString();
+  while (msg.startsWith('Exception: ')) {
+    msg = msg.substring('Exception: '.length);
+  }
+  return msg.isNotEmpty ? msg : 'Terjadi kesalahan. Coba lagi.';
+}
+
+class AuditBloc extends Bloc<AuditEvent, AuditState> {
+  final AuditRepository repository;
+  final GetAudits getAudits;
+  final CreateAudit createAudit;
+  final UpdateAudit updateAudit;
+  final MarkAuditFinished markAuditFinished;
+  final GetChecklist getChecklist;
+  final GetAuditors getAuditors;
+  final SubmitChecklist submitChecklist;
+
+  AuditBloc({
+    required this.repository,
+    required this.getAudits,
+    required this.createAudit,
+    required this.updateAudit,
+    required this.markAuditFinished,
+    required this.getChecklist,
+    required this.getAuditors,
+    required this.submitChecklist,
+  }) : super(AuditInitial()) {
+    on<LoadAudits>(_onLoadAudits);
+    on<CreateAuditEvent>(_onCreateAudit);
+    on<UpdateAuditEvent>(_onUpdateAudit);
+    on<MarkAuditFinishedEvent>(_onMarkAuditFinished);
+    on<DeleteAuditEvent>(_onDeleteAudit);
+    on<LoadChecklist>(_onLoadChecklist);
+    on<LoadAuditors>(_onLoadAuditors_);
+    on<SubmitChecklistEvent>(_onSubmitChecklist);
+  }
+
+  Future<void> _onLoadAudits(
+    LoadAudits event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  Future<void> _onCreateAudit(
+    CreateAuditEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      final audit = await createAudit(
+        title: event.title,
+        auditorName: event.auditorName,
+        isoTemplates: event.isoTemplates,
+        department: event.department,
+        date: event.date,
+        description: event.description,
+        isPriority: event.isPriority,
+      );
+      emit(AuditCreated(audit: audit));
+
+      // Reload list setelah create
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  Future<void> _onUpdateAudit(
+    UpdateAuditEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      final audit = await updateAudit(
+        audit: event.audit,
+        title: event.title,
+        auditorName: event.auditorName,
+        isoTemplates: event.isoTemplates,
+        department: event.department,
+        date: event.date,
+        description: event.description,
+        isPriority: event.isPriority,
+      );
+      emit(AuditUpdated(audit: audit));
+
+      // Reload list setelah update
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  Future<void> _onMarkAuditFinished(
+    MarkAuditFinishedEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      final audit = await markAuditFinished(
+        audit: event.audit,
+        isFinished: event.isFinished,
+      );
+      emit(AuditMarkedFinished(audit: audit));
+
+      // Reload list setelah status berubah
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  Future<void> _onDeleteAudit(
+    DeleteAuditEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      await repository.deleteAudit(event.audit);
+      emit(AuditDeleted());
+
+      // Reload list setelah delete
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  Future<void> _onLoadChecklist(
+    LoadChecklist event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      final checklists = await getChecklist(
+        isoTemplate: event.isoTemplate,
+        department: event.department,
+      );
+      emit(ChecklistLoaded(checklists: checklists));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  // Sengaja tidak emit AuditLoading agar list audit tidak ikut reset
+  Future<void> _onLoadAuditors_(
+    LoadAuditors event,
+    Emitter<AuditState> emit,
+  ) async {
+    try {
+      final auditors = await getAuditors();
+      emit(AuditorsLoaded(auditors: auditors));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+
+  // ✅ BARU: Submit semua jawaban ke backend dan selesaikan sesi
+  Future<void> _onSubmitChecklist(
+    SubmitChecklistEvent event,
+    Emitter<AuditState> emit,
+  ) async {
+    emit(AuditLoading());
+    try {
+      await submitChecklist(
+        sessionId: event.sessionId,
+        checklists: event.checklists,
+      );
+      // Gunakan audit.copyWith agar card di list langsung isFinished = true
+      emit(AuditMarkedFinished(audit: event.audit.copyWith(isFinished: true)));
+
+      // Reload list agar status di list page ikut terupdate
+      final audits = await getAudits();
+      emit(AuditLoaded(audits: audits));
+    } catch (e) {
+      emit(AuditError(message: _extractMessage(e)));
+    }
+  }
+}
