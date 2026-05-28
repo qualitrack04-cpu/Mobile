@@ -14,15 +14,27 @@ class RoleDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      initialValue: selectedRole,
+      value: selectedRole,
       decoration: customInputDecoration(
         hint: '',
         icon: Icons.person_outline,
       ),
       items: const [
         DropdownMenuItem(
-          value: 'QualityManager', // value = format backend
+          value: 'Admin',
+          child: Text('Admin'),
+        ),
+        DropdownMenuItem(
+          value: 'QualityManager',
           child: Text('Quality Manager'),
+        ),
+        DropdownMenuItem(
+          value: 'AuditorInternal',
+          child: Text('Auditor Internal'),
+        ),
+        DropdownMenuItem(
+          value: 'Auditee',
+          child: Text('Auditee'),
         ),
       ],
       onChanged: onChanged,
