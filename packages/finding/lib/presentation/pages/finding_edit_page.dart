@@ -14,8 +14,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class FindingEditPage extends StatefulWidget {
   final Finding finding;
+  final bool lockFields;
 
-  const FindingEditPage({super.key, required this.finding});
+  const FindingEditPage({
+    super.key,
+    required this.finding,
+    this.lockFields = false,
+  });
 
   @override
   State<FindingEditPage> createState() => _FindingEditPageState();
@@ -24,6 +29,7 @@ class FindingEditPage extends StatefulWidget {
 class _FindingEditPageState extends State<FindingEditPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _reporterController;
   String? _selectedDepartment;
   late FindingCategory _selectedCategory;
 
@@ -54,6 +60,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
           ..addListener(() => setState(() {}));
     _descriptionController =
         TextEditingController(text: widget.finding.description)
+          ..addListener(() => setState(() {}));
+    _reporterController =
+        TextEditingController(text: widget.finding.reporter)
           ..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
 
@@ -118,6 +127,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _reporterController.dispose();
     super.dispose();
   }
 
@@ -291,9 +301,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
                         hint: 'Masukkan judul finding...',
                       ),
                       _buildDivider(),
+                      _buildReporterField(),
+                      _buildDivider(),
                       _buildCategoryDropdown(),
                       _buildDivider(),
-                      _buildDepartmentDropdown(),
+                      _buildDepartmentField(),
                       _buildDivider(),
                       _buildTextField(
                         label: 'DESCRIPTION',
@@ -320,6 +332,88 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   Widget _buildDivider() =>
       const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
+
+  /// Reporter — read-only jika lockFields=true (dari audit checklist)
+  Widget _buildReporterField() {
+    if (widget.lockFields) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'REPORTER',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _reporterController.text,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                ),
+                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return _buildTextField(
+      label: 'REPORTER',
+      controller: _reporterController,
+      hint: 'Masukkan nama reporter...',
+    );
+  }
+
+  /// Department — read-only jika lockFields=true (dari audit checklist)
+  Widget _buildDepartmentField() {
+    if (widget.lockFields) {
+      final displayDept = _departmentMap.entries
+          .firstWhere(
+            (e) => e.key == _selectedDepartment,
+            orElse: () => MapEntry(_selectedDepartment ?? '', _selectedDepartment ?? ''),
+          )
+          .key;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'DEPARTMENT',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    displayDept,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                ),
+                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return _buildDepartmentDropdown();
+  }
 
   Widget _buildTextField({
     required String label,
@@ -748,6 +842,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   bool get _isDirty {
     return _titleController.text != widget.finding.clauseRef ||
         _descriptionController.text != widget.finding.description ||
+        _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
         _selectedDepartment != widget.finding.department && _departmentMap[_selectedDepartment] != widget.finding.department ||
         _evidenceImages.isNotEmpty ||
@@ -821,6 +916,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
+            reporter: _reporterController.text,
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

@@ -88,6 +88,7 @@ class _FindingListViewState extends State<_FindingListView> {
                     foundAt: DateTime.now(),
                     status: FindingStatus.open,
                     department: 'Department Name',
+                    reporter: '',
                   ),
                 );
 
