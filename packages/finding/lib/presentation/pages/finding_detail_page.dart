@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:finding/domain/entities/finding.dart';
-import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
@@ -201,24 +200,21 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
-                  if (finding.auditorName != null &&
-                      finding.auditorName!.isNotEmpty) ...[
-                    _buildInfoRow(
-                      icon: Icons.person_outline,
-                      label: 'AUDITOR',
-                      value: finding.auditorName!,
-                    ),
-                    const SizedBox(height: 10),
-                  ],
+                  _buildInfoRow(
+                    icon: Icons.person_outline,
+                    label: 'Reporter',
+                    value: finding.reporter,
+                  ),
+                  const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.business_outlined,
-                    label: 'DEPT',
+                    label: 'Dept',
                     value: finding.department == 'Produksi' ? 'Production' : (finding.department == 'QC' ? 'Quality Control' : finding.department),
                   ),
                   const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.calendar_today_outlined,
-                    label: 'DATE',
+                    label: 'Date',
                     value:
                         '${finding.foundAt.toLocal().day} ${_getMonth(finding.foundAt.toLocal().month)} ${finding.foundAt.toLocal().year}',
                   ),
