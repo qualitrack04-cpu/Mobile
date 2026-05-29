@@ -152,7 +152,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               ),
               description: f['description'] as String? ?? '',
               clauseRef: f['clauseRef'] as String? ?? '',
-              auditorName: f['auditorName'] as String?,
+              reporter: f['reporter'] as String? ?? '',
               foundAt:
                   DateTime.tryParse(f['foundAt'] as String? ?? '') ??
                   DateTime.now(),
@@ -242,7 +242,10 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
           value: GetIt.instance<FindingBloc>(),
-          child: FindingEditPage(finding: checklist.finding!),
+          child: FindingEditPage(
+            finding: checklist.finding!,
+            lockFields: true,
+          ),
         ),
       ),
     );
