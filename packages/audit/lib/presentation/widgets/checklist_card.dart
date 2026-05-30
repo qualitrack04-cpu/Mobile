@@ -262,16 +262,19 @@ class ChecklistCard extends StatelessWidget {
   }
 
   Widget _buildFailButton(bool isFail) {
+    final bool failDisabled = checklist.hasEvidence;
     return SizedBox(
       height: 46,
       width: 72, // Diperkecil sedikit agar responsif
       child: ElevatedButton(
-        onPressed: onFail,
+        onPressed: failDisabled ? null : onFail,
         style: ElevatedButton.styleFrom(
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           elevation: 0,
           backgroundColor: isFail ? AppColors.dangerLight : AppColors.surface,
           foregroundColor: isFail ? AppColors.danger : AppColors.textDisabled,
+          disabledBackgroundColor: isFail ? AppColors.dangerLight : AppColors.surface,
+          disabledForegroundColor: isFail ? AppColors.danger : AppColors.textDisabled,
           side: BorderSide(
             color: isFail ? AppColors.danger : AppColors.borderLight,
           ),
