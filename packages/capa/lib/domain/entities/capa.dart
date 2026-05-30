@@ -14,6 +14,7 @@ class Capa extends Equatable {
   final bool isClosed;
   final DateTime createdAt;
   final String status;
+  final DateTime? closedAt; // ← tambah ini
 
   const Capa({
     required this.id,
@@ -29,6 +30,7 @@ class Capa extends Equatable {
     required this.isClosed,
     required this.createdAt,
     required this.status,
+    this.closedAt, // ← tambah ini
   });
 
   @override
@@ -46,5 +48,6 @@ class Capa extends Equatable {
         isClosed,
         createdAt,
         status,
+        closedAt, // ← tambah ini
       ];
 }

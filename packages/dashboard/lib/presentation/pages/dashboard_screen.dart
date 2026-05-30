@@ -29,7 +29,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         index: _currentIndex,
         children: _pages,
       ),
-
       bottomNavigationBar: CustomBottomNavbar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -40,4 +39,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-}
+}
