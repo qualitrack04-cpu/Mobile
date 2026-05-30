@@ -31,22 +31,24 @@ class FindingFormPage extends StatefulWidget {
 
 class _FindingFormPageState extends State<FindingFormPage> {
   final _titleController = TextEditingController();
+  final _reporterController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedDepartment;
   FindingCategory _selectedCategory = FindingCategory.majorNC;
-
-  // ✅ Simpan path gambar asli dari device
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
   bool get _isFormValid =>
       _titleController.text.trim().isNotEmpty &&
+      _reporterController.text.trim().isNotEmpty &&
       _descriptionController.text.trim().isNotEmpty &&
       _selectedDepartment != null;
 
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control': 'QC',
+    'Packaging': 'Packaging'
   };
 
   @override
@@ -65,7 +67,12 @@ class _FindingFormPageState extends State<FindingFormPage> {
         _selectedDepartment = widget.initialDepartment;
       }
     }
+    // Selalu isi reporter dengan auditorName jika tersedia
+    if (widget.auditorName != null && widget.auditorName!.isNotEmpty) {
+      _reporterController.text = widget.auditorName!;
+    }
     _titleController.addListener(() => setState(() {}));
+    _reporterController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
   }
 
@@ -73,6 +80,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _reporterController.dispose();
     super.dispose();
   }
 
@@ -257,6 +265,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                         controller: _titleController,
                         hint: 'Enter the finding title...',
                       ),
+                      _buildReporterField(),
                       _buildDivider(),
                       _buildCategoryDropdown(),
                       _buildDivider(),
@@ -286,6 +295,51 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   Widget _buildDivider() =>
       const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
+
+  /// Jika dipanggil dari audit checklist (auditorName tersedia),
+  /// tampilkan reporter sebagai read-only terkunci.
+  /// Jika dari halaman standalone, tampilkan sebagai field yang bisa diedit.
+  Widget _buildReporterField() {
+    final isLocked = widget.auditorName != null && widget.auditorName!.isNotEmpty;
+
+    if (isLocked) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'REPORTER',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _reporterController.text,
+                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  ),
+                ),
+                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return _buildTextField(
+      label: 'REPORTER',
+      controller: _reporterController,
+      hint: 'Enter the reporter name...',
+    );
+  }
 
   Widget _buildTextField({
     required String label,
@@ -633,7 +687,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
-            auditorName: widget.auditorName,
+            reporter: _reporterController.text,
             sessionId: widget.sessionId,           // ✅ TAMBAH
             checklistItemId: widget.checklistItemId, // ✅ TAMBAH
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),

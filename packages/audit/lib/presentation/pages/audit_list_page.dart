@@ -54,10 +54,22 @@ class _AuditListViewState extends State<_AuditListView> {
   List<AuditEntity> _lastAudits = [];
   bool _isFirstLoad = true;
 
-  List<AuditEntity> _applyFilter(List<AuditEntity> audits, bool isPriority) {
-    final filtered = isPriority
-        ? audits.where((e) => e.isPriority).toList()
-        : List<AuditEntity>.from(audits);
+  List<AuditEntity> _applyFilter(List<AuditEntity> audits) {
+    final now =  DateTime.now();
+
+    final visibleAudits = audits.where((e) {
+      if (!e.isFinished) return true;
+      if (e.completedAt == null) return true;
+      return now.difference(e.completedAt!).inHours <= 24;
+    }).toList();
+
+    final filtered = _isPrioritySelected
+        ? visibleAudits.where((e) {
+            final todayDate = DateTime(now.year, now.month, now.day);
+            final bool isOverdue = !e.isFinished && e.date.isBefore(todayDate);
+            return e.isPriority || isOverdue;
+          }).toList()
+        : List<AuditEntity>.from(visibleAudits);
 
     filtered.sort((a, b) {
       if (a.isFinished == b.isFinished) return 0;
@@ -265,7 +277,7 @@ class _AuditListViewState extends State<_AuditListView> {
           ),
         );
 
-        final displayList = isLoading ? skeletonList : _applyFilter(audits, isPriority);
+        final displayList = isLoading ? skeletonList : _applyFilter(audits);
 
         // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai loading
         // dan benar-benar kosong

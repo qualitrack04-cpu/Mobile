@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
 import 'package:audit/presentation/bloc/audit_state.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
+import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
@@ -68,7 +69,10 @@ class _DashboardPageState extends State<DashboardPage> {
         BlocListener<CapaBloc, CapaState>(
           bloc: GetIt.instance<CapaBloc>(),
           listener: (context, state) {
-            if (state is CapaLoaded) _refresh();
+            if (state is CapaLoaded) {
+              _refresh();
+              GetIt.instance<FindingBloc>().add(const LoadFindings());
+            }
           },
         ),
       ],

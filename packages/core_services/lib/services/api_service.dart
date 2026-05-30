@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://be.qualitrack.labs.it.pens.ac.id'; 
-  // Untuk device fisik: ganti dengan IP lokal, misal 'http://192.168.1.x:5000'
-  // Untuk production: ganti dengan URL server
+  static const String baseUrl = 'https://backendqualitrack-production.up.railway.app'; 
+  // Untuk railway : 'https://backendqualitrack-production.up.railway.app'
+  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 
   late final Dio _dio;
 
