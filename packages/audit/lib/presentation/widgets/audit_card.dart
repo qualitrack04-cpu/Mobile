@@ -30,7 +30,7 @@ class AuditCard extends StatelessWidget {
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
-
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
@@ -91,6 +91,9 @@ class AuditCard extends StatelessWidget {
       sectionColor = const Color(0xFF7D8494);
     }
 
+    // Hitung radius dalam agar lengkungannya pas dan tidak ada celah putih
+    final double innerRadius = isOverdue ? 16.5 : 18.0;
+
     return Container(
       // ✅ Hapus width & height hardcoded, pakai constraints minimum saja
       constraints: const BoxConstraints(minWidth: 72),
@@ -98,9 +101,9 @@ class AuditCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: sectionColor,
 
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(18),
-          bottomLeft: Radius.circular(18),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(innerRadius),
+          bottomLeft: Radius.circular(innerRadius),
         ),
       ),
 
