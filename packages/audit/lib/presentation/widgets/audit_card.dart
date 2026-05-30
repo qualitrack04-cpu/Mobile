@@ -23,7 +23,10 @@ class AuditCard extends StatelessWidget {
     final bool isFinished = audit.isFinished;
     final bool isPriority = audit.isPriority;
     final double sw = MediaQuery.of(context).size.width;
-    final double hMargin = sw * 0.05; // ~18px di 360px, ~21px di 420px
+    final double hMargin = sw * 0.05;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final bool isOverdue = !isFinished && audit.date.isBefore(todayDate);
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
@@ -31,6 +34,9 @@ class AuditCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
+        border: isOverdue
+            ? Border.all(color: AppColors.danger, width: 1.5)
+            : null,
 
         boxShadow: [
           BoxShadow(
@@ -41,12 +47,11 @@ class AuditCard extends StatelessWidget {
         ],
       ),
 
-      // ✅ IntrinsicHeight: tinggi card mengikuti konten, tidak hardcoded
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildDateSection(isFinished, isPriority, sw),
+            _buildDateSection(isFinished, isPriority, sw, isOverdue),
 
             Expanded(
               child: Padding(
@@ -56,7 +61,7 @@ class AuditCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-                    _buildTitleRow(isFinished),
+                    _buildTitleRow(isFinished, isOverdue),
                     const SizedBox(height: 14),
                     _buildMetaRow(isFinished),
                     const SizedBox(height: 18),
@@ -71,13 +76,15 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection(bool isFinished, bool isPriority, double sw) {
+  Widget _buildDateSection(bool isFinished, bool isPriority, double sw, bool isOverdue) {
     Color sectionColor;
 
     if (audit.id.isEmpty) {
       sectionColor = Colors.grey.shade300; // Skeleton color
     } else if (isFinished) {
       sectionColor = AppColors.primaryMuted;
+    } else if (isOverdue) {
+      sectionColor = AppColors.danger;
     } else if (isPriority) {
       sectionColor = AppColors.primaryLight;
     } else {
@@ -142,37 +149,60 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleRow(bool isFinished) {
+  Widget _buildTitleRow(bool isFinished, bool isOverdue) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-
       children: [
         Expanded(
-          child: Text(
-            audit.title,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isFinished
-                  ? const Color(0xFF7A93AA)
-                  : AppColors.primary,
-              height: 1.2,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isOverdue) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF2F2), // Latar pink muda (Red 50)
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFBD5D5), // Border pink (Red 100)
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'Overdue',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFC81E1E), // Teks merah tua (Red 700)
+                    ),
+                  ),
+                ),
+              ],
+              Text(
+                audit.title,
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: isFinished
+                      ? const Color(0xFF7A93AA)
+                      : AppColors.primary,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
 
         if (!isFinished && audit.id.isNotEmpty)
           GestureDetector(
             onTap: onDelete,
-
             child: Container(
               padding: const EdgeInsets.all(6),
-
               decoration: BoxDecoration(
                 color: AppColors.dangerLight,
                 borderRadius: BorderRadius.circular(8),
               ),
-
               child: const Icon(
                 Icons.delete_outline,
                 color: AppColors.danger,
