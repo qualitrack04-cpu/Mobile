@@ -24,6 +24,7 @@ dependencies:
   google_fonts: ^8.1.0
   core_services:
     path: ../core_services
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

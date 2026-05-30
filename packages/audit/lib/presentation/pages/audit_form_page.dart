@@ -30,10 +30,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final Map<String, String> _departments = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control' : 'QC',
+    'Packaging' : 'Packaging'
   };
 
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
+  static const String _gmp = 'GMP';
 
   String? _selectedDepartment;
   DateTime? _selectedDate;
@@ -98,7 +101,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
-        (t) => t == _iso9001 || t == _iso14001,
+        (t) => t == _iso9001 || t == _iso14001 || t == _gmp,
         orElse: () => '',
       );
 
@@ -536,6 +539,18 @@ class _AuditFormPageState extends State<AuditFormPage> {
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryLight,
           ),
+          RadioListTile<String>(
+            value: _gmp,
+            groupValue: _selectedIso,
+            onChanged: (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
+            title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primaryLight,
+          ),
         ],
       ),
     );
@@ -588,12 +603,17 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   Widget _buildDatePicker() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDate = (_selectedDate != null && _selectedDate!.isBefore(today))
+        ? _selectedDate!
+        : today;
     return InkWell(
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
-          initialDate: _selectedDate ?? DateTime.now(),
-          firstDate: DateTime.now(),
+          initialDate: _selectedDate ?? today,
+          firstDate: firstDate,
           lastDate: DateTime(2030),
           builder: (context, child) {
             return Theme(

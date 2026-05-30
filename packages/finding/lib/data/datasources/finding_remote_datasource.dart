@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FindingRemoteDatasource {
   final ApiService apiService;
@@ -65,9 +66,94 @@ class FindingRemoteDatasource {
     );
 
     final List<dynamic> data = response.data as List<dynamic>;
-    return data
+    final findings = data
         .map((json) => FindingModel.fromJson(json as Map<String, dynamic>))
         .toList();
+
+    try {
+      final capaResponse = await apiService.client.get('/api/Capa');
+      final capaData = capaResponse.data as List<dynamic>;
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+
+      // Map findingId -> Capa
+      final capaMap = <String, Map<String, dynamic>>{};
+      for (final capa in capaData) {
+        final fId = capa['findingId'] as String?;
+        if (fId != null) {
+          capaMap[fId] = capa as Map<String, dynamic>;
+        }
+      }
+
+      final toRemove = <String>{};
+
+      for (final finding in findings) {
+        DateTime? closedTime;
+
+        // 1. Cek CAPA terkait
+        final capa = capaMap[finding.id];
+        if (capa != null) {
+          final statusRaw = capa['status'];
+          const statusIntMap = {0: 'Open', 1: 'In Progress', 2: 'Pending Verification', 3: 'Closed'};
+          const statusStrMap = {
+            'Open': 'Open',
+            'InProgress': 'In Progress',
+            'PendingVerification': 'Pending Verification',
+            'Closed': 'Closed',
+          };
+          final statusStr = statusRaw is int
+              ? (statusIntMap[statusRaw] ?? 'Open')
+              : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
+
+          if (statusStr == 'Closed') {
+            // Cek closeOut.verifiedAt
+            final closeOut = capa['closeOut'] as Map<String, dynamic>?;
+            final verifiedAtStr = closeOut?['verifiedAt'] as String?;
+            if (verifiedAtStr != null && verifiedAtStr.isNotEmpty) {
+              closedTime = DateTime.tryParse(verifiedAtStr);
+            }
+
+            // Jika tidak ada closeOut timestamp di backend, gunakan local timestamp di SharedPreferences
+            if (closedTime == null) {
+              final prefsKey = 'capa_closed_time_${capa['id']}';
+              final localTimeStr = prefs.getString(prefsKey);
+              if (localTimeStr != null) {
+                closedTime = DateTime.tryParse(localTimeStr);
+              } else {
+                closedTime = now;
+                await prefs.setString(prefsKey, now.toIso8601String());
+              }
+            }
+          }
+        }
+
+        // 2. Jika tidak ada CAPA tapi status finding sendiri adalah Closed
+        if (closedTime == null && finding.status == FindingStatus.closed) {
+          final prefsKey = 'finding_closed_time_${finding.id}';
+          final localTimeStr = prefs.getString(prefsKey);
+          if (localTimeStr != null) {
+            closedTime = DateTime.tryParse(localTimeStr);
+          } else {
+            closedTime = now;
+            await prefs.setString(prefsKey, now.toIso8601String());
+          }
+        }
+
+        // 3. Jika terdeteksi closedTime dan sudah lewat 24 jam, tandai untuk dihapus
+        if (closedTime != null) {
+          final diff = now.difference(closedTime);
+          if (diff.inHours >= 24) {
+            toRemove.add(finding.id);
+          }
+        }
+      }
+
+      findings.removeWhere((f) => toRemove.contains(f.id));
+    } catch (e) {
+      print('Error filtering findings with 24h delay: $e');
+    }
+
+    return findings;
   }
 
   Future<FindingModel> getFindingDetail(String id) async {
@@ -80,7 +166,7 @@ class FindingRemoteDatasource {
     required String description,
     required String clauseRef,
     required String department,
-    String? auditorName,
+    required String reporter,
     String? sessionId,
     String? checklistItemId,
   }) async {
@@ -94,7 +180,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'auditorName': auditorName ?? '',
+        'reporter': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -106,6 +192,7 @@ class FindingRemoteDatasource {
     required String description,
     required String clauseRef,
     required String department,
+    required String reporter,
   }) async {
     final response = await apiService.client.put(
       '/api/Finding/$id',
@@ -115,6 +202,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
+        'reporter': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
