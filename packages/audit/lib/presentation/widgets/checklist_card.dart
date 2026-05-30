@@ -1,8 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
-
 import '../../domain/entities/checklist_entity.dart';
+import 'package:dotted_border/dotted_border.dart';
+
 
 class ChecklistCard extends StatelessWidget {
   final ChecklistEntity checklist;
@@ -10,6 +12,8 @@ class ChecklistCard extends StatelessWidget {
   final VoidCallback? onFail;
   final VoidCallback? onAddFinding;
   final VoidCallback? onEditFinding;
+  final void Function(bool fromCamera)? onUploadEvidence;
+  final VoidCallback? onEditEvidence;
 
   const ChecklistCard({
     super.key,
@@ -18,6 +22,8 @@ class ChecklistCard extends StatelessWidget {
     this.onFail,
     this.onAddFinding,
     this.onEditFinding,
+    this.onUploadEvidence,
+    this.onEditEvidence,
   });
 
   @override
@@ -37,7 +43,7 @@ class ChecklistCard extends StatelessWidget {
           color: isFail
               ? AppColors.danger
               : isPass
-                  ? AppColors.success
+                  ? AppColors.borderLight
                   : AppColors.borderLight,
           width: isFail || isPass ? 2 : 1,
         ),
@@ -56,7 +62,7 @@ class ChecklistCard extends StatelessWidget {
           const SizedBox(height: 10),
           _buildDescription(),
           const SizedBox(height: 15),
-          _buildButtons(isPass, isFail),
+          _buildButtons(context, isPass, isFail),
         ],
       ),
     );
@@ -77,22 +83,6 @@ class ChecklistCard extends StatelessWidget {
             ),
           ),
         ),
-        if (isFail && checklist.hasFinding)
-          GestureDetector(
-            onTap: onEditFinding,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.dangerLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.edit_outlined,
-                color: AppColors.danger,
-                size: 20,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -108,85 +98,162 @@ class ChecklistCard extends StatelessWidget {
     );
   }
 
-  Widget _buildButtons(bool isPass, bool isFail) {
-    final showAddFinding = isFail && !checklist.hasFinding;
-
+  Widget _buildButtons(BuildContext context, bool isPass, bool isFail) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showAddFinding) ...[
-          SizedBox(
-            height: 42,
-            child: OutlinedButton.icon(
-              onPressed: onAddFinding,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primaryLight),
-                backgroundColor: AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(
-                Icons.add,
-                size: 18,
-                color: AppColors.primaryLight,
-              ),
-              label: Text(
-                'ADD FINDINGS',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryLight,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
+        const Divider(color: AppColors.borderLight, thickness: 1, height: 24),
         Row(
           children: [
-            Expanded(child: _buildPassButton(isPass, isFail)),
-            const SizedBox(width: 10),
-            Expanded(child: _buildFailButton(isFail)),
+            // Bagian Kiri: Tombol Add Finding / Add Evidence
+            // Dibungkus Expanded + Align agar bisa mengecil jika layar sempit (responsif),
+            // tapi tidak memaksa tombol menjadi melebar full (sebesar isinya saja)
+            // Ini otomatis mendorong tombol Fail/Pass ke ujung kanan!
+            if (isFail || isPass)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: isFail
+                      ? _buildAddFindingButton()
+                      : _buildAddEvidenceButton(context),
+                ),
+              )
+            else
+              const Spacer(), // Mengisi ruang kosong jika belum ada yang dipilih
+
+            if (isFail || isPass) const SizedBox(width: 12),
+
+            // Bagian Kanan: Tombol Fail dan Pass
+            _buildFailButton(isFail),
+            const SizedBox(width: 8),
+            _buildPassButton(isPass),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildPassButton(bool isPass, bool isFail) {
-    final bool passDisabled = checklist.hasFinding;
-    return SizedBox(
-      height: 42,
-      child: ElevatedButton.icon(
-        onPressed: passDisabled ? null : onPass,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: isPass
-              ? AppColors.successLight
-              : const Color(0xFFF3F4F6),
-          foregroundColor: isPass ? AppColors.success : AppColors.textDisabled,
-          disabledBackgroundColor: isPass
-              ? AppColors.successLight
-              : const Color(0xFFF3F4F6),
-          disabledForegroundColor:
-              isPass ? AppColors.success : AppColors.textDisabled,
-          side: BorderSide(
-            color: isPass ? AppColors.success : const Color(0xFFD1D5DB),
-          ),
+  Widget _buildAddFindingButton() {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 155),
+      child: SizedBox(
+        height: 46,
+        width: double.infinity, // Responsif: mengisi ruang tersedia, maksimal 155
+        child: OutlinedButton.icon(
+        onPressed: checklist.hasFinding ? onEditFinding : onAddFinding,
+        style: OutlinedButton.styleFrom(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: const BorderSide(color: AppColors.primaryLight),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8), // Mengikuti gambar
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
         ),
         icon: Icon(
-          Icons.check_circle,
+          checklist.hasFinding ? Icons.edit_outlined : Icons.add,
           size: 16,
-          color: isPass ? AppColors.success : AppColors.textDisabled,
+          color: AppColors.primaryLight,
         ),
-        label: Text(
-          'PASS',
+        label: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            checklist.hasFinding ? 'Edit Findings' : 'Add Findings',
+            maxLines: 1,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryLight,
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildAddEvidenceButton(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 155),
+      child: SizedBox(
+        height: 46,
+        width: double.infinity, // Responsif: mengisi ruang tersedia, maksimal 155
+        child: DottedBorder(
+          options: const RoundedRectDottedBorderOptions(
+            radius: Radius.circular(8),
+            color: AppColors.textDisabled,
+            strokeWidth: 1.5,
+            dashPattern: [6.0, 4.0],
+            padding: EdgeInsets.zero,
+          ),
+          child: SizedBox(
+            height: double.infinity,
+            width: double.infinity,
+          child: TextButton.icon(
+          onPressed: () {
+            if (checklist.hasEvidence) {
+              onEditEvidence?.call();
+            } else {
+              _showImagePicker(context);
+            }
+          },
+          style: TextButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+          ),
+          icon: Icon(
+            checklist.hasEvidence ? Icons.edit_outlined : Icons.camera_alt,
+            size: 16,
+            color: AppColors.textDisabled,
+          ),
+          label: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              checklist.hasEvidence ? 'Edit Evidence' : 'Upload Evidence',
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDisabled,
+              ),
+            ),
+          ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildPassButton(bool isPass) {
+    final bool passDisabled = checklist.hasFinding;
+    return SizedBox(
+      height: 46,
+      width: 72, // Diperkecil sedikit agar responsif
+      child: ElevatedButton(
+        onPressed: passDisabled ? null : onPass,
+        style: ElevatedButton.styleFrom(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          elevation: 0,
+          backgroundColor: isPass ? AppColors.successLight : AppColors.surface,
+          foregroundColor: isPass ? AppColors.success : AppColors.textDisabled,
+          disabledBackgroundColor: isPass ? AppColors.successLight : AppColors.surface,
+          disabledForegroundColor: isPass ? AppColors.success : AppColors.textDisabled,
+          side: BorderSide(
+            color: isPass ? AppColors.success : AppColors.borderLight,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text(
+          'Pass',
           style: GoogleFonts.inter(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
         ),
@@ -196,34 +263,202 @@ class ChecklistCard extends StatelessWidget {
 
   Widget _buildFailButton(bool isFail) {
     return SizedBox(
-      height: 42,
-      child: ElevatedButton.icon(
+      height: 46,
+      width: 72, // Diperkecil sedikit agar responsif
+      child: ElevatedButton(
         onPressed: onFail,
         style: ElevatedButton.styleFrom(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           elevation: 0,
-          backgroundColor:
-              isFail ? AppColors.dangerLight : const Color(0xFFF3F4F6),
+          backgroundColor: isFail ? AppColors.dangerLight : AppColors.surface,
           foregroundColor: isFail ? AppColors.danger : AppColors.textDisabled,
           side: BorderSide(
-            color: isFail ? AppColors.danger : const Color(0xFFD1D5DB),
+            color: isFail ? AppColors.danger : AppColors.borderLight,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
+          padding: EdgeInsets.zero,
         ),
-        icon: Icon(
-          Icons.cancel,
-          size: 16,
-          color: isFail ? AppColors.danger : AppColors.textDisabled,
-        ),
-        label: Text(
-          'FAIL',
+        child: Text(
+          'Fail',
           style: GoogleFonts.inter(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
         ),
       ),
+    );
+  }
+
+  void _showImagePicker(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Dialog(
+            backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Drag Handle (sebagai aksen desain)
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Title
+                Text(
+                  'Upload Evidence',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Select Image Box
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showCameraGalleryPicker(context); // Tampilkan pilihan kamera/galeri
+                  },
+                  child: DottedBorder(
+                    options: RoundedRectDottedBorderOptions(
+                      radius: const Radius.circular(8),
+                      color: const Color(0xFFB0C4DE), // Warna garis putus-putus kebiruan
+                      strokeWidth: 1.5,
+                      dashPattern: const [6.0, 4.0],
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F7FA), // Background biru sangat muda
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2E8F0), // Background icon abu-biru
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.add_photo_alternate,
+                              color: AppColors.primary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Select Image',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Cancel Button
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textDisabled,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
+      },
+    );
+  }
+
+  void _showCameraGalleryPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  'Select Image Source',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                  title: Text(
+                    'Kamera',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onUploadEvidence?.call(true); // Trigger kamera
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                  title: Text(
+                    'Galeri',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onUploadEvidence?.call(false); // Trigger galeri
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

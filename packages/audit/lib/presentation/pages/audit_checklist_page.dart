@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/domain/entities/finding.dart';
@@ -253,6 +257,230 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     if (result != null) {
       setState(() => checklist.finding = result);
     }
+  }
+
+  Future<void> _pickEvidence(ChecklistEntity checklist, bool fromCamera) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        if (!mounted) return;
+        await _showImagePreviewDialog(checklist, image.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showImagePreviewDialog(ChecklistEntity checklist, String imagePath) async {
+    return showDialog(
+      context: context,
+      barrierColor: Colors.black12,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Dialog(
+            backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Title
+                Text(
+                  'Upload Evidence',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Image Preview with Trash Icon
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(imagePath),
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context); // Tutup preview jika mau hapus
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFEAEA), // Merah muda
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Color(0xFFD32F2F), // Merah tua
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Upload Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup popup preview
+                      setState(() {
+                        checklist.evidencePath = imagePath;
+                        checklist.hasEvidence = true;
+                      });
+                      _showSuccessPopup();
+                    },
+                    icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
+                    label: Text(
+                      'Upload',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF004481), // Warna biru tua seperti di gambar
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Cancel Button
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textDisabled,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
+      },
+    );
+  }
+
+  void _showSuccessPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black12,
+      builder: (BuildContext dialogContext) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (dialogContext.mounted) {
+            Navigator.pop(dialogContext);
+          }
+        });
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Dialog(
+            elevation: 8,
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Evidence Uploaded',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF2E7D32),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditEvidenceDialog(ChecklistEntity checklist) async {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black12,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return _EditEvidenceDialog(
+          checklist: checklist,
+          onUpload: (newPath) {
+            setState(() {
+              checklist.evidencePath = newPath;
+              checklist.hasEvidence = true;
+            });
+            _showSuccessPopup();
+          },
+          onRemove: () {
+            setState(() {
+              checklist.evidencePath = null;
+              checklist.hasEvidence = false;
+            });
+          },
+        );
+      },
+    );
   }
 
   Future<void> _onSubmitChecklist() async {
@@ -569,6 +797,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             },
             onAddFinding: () => _openAddFindingForm(checklist),
             onEditFinding: () => _openEditFindingForm(checklist),
+            onUploadEvidence: (fromCamera) => _pickEvidence(checklist, fromCamera),
+            onEditEvidence: () => _showEditEvidenceDialog(checklist),
           );
         },
       ),
@@ -674,6 +904,334 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           ),
         );
       },
+    );
+  }
+}
+
+class _EditEvidenceDialog extends StatefulWidget {
+  final ChecklistEntity checklist;
+  final Function(String) onUpload;
+  final VoidCallback onRemove;
+
+  const _EditEvidenceDialog({
+    Key? key,
+    required this.checklist,
+    required this.onUpload,
+    required this.onRemove,
+  }) : super(key: key);
+
+  @override
+  State<_EditEvidenceDialog> createState() => _EditEvidenceDialogState();
+}
+
+class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
+  String? localImagePath;
+  bool isNewImage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    localImagePath = widget.checklist.evidencePath;
+  }
+
+  Future<void> _pickNewImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: source, imageQuality: 80);
+    if (image != null) {
+      setState(() {
+        localImagePath = image.path;
+        isNewImage = true;
+      });
+    }
+  }
+
+  void _showImageSourceBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  'Pilih Sumber Gambar',
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                  title: Text('Kamera', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickNewImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                  title: Text('Galeri', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickNewImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmRemove() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black12,
+      builder: (ctx) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Remove Evidence?',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            content: Text(
+              'Are you sure you want to permanently remove this evidence?',
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textDisabled, fontWeight: FontWeight.w500)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx); // Tutup dialog konfirmasi
+                  widget.onRemove(); // Hapus di parent secara permanen
+                  setState(() {
+                    localImagePath = null;
+                    isNewImage = false;
+                  });
+                },
+                child: Text('Remove', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag Handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Title
+              Text(
+                'Edit Evidence',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // UI State 1: Existing Evidence
+              if (localImagePath != null && !isNewImage) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    File(localImagePath!),
+                    width: double.infinity,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: _confirmRemove,
+                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                    label: Text(
+                      'Remove Evidence',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.danger),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ] 
+              // UI State 2: Select New Image (Empty)
+              else if (localImagePath == null) ...[
+                GestureDetector(
+                  onTap: _showImageSourceBottomSheet,
+                  child: DottedBorder(
+                    options: const RoundedRectDottedBorderOptions(
+                      radius: Radius.circular(8),
+                      color: Color(0xFFC4D2DE),
+                      strokeWidth: 1.5,
+                      dashPattern: [6.0, 4.0],
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F7F9), // Warna latar biru sangat muda
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2EAF1), // Biru pudar untuk icon box
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.image_outlined,
+                              color: Color(0xFF004481),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Select Image',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF004481),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+              // UI State 3: Preview New Image for Upload
+              else if (localImagePath != null && isNewImage) ...[
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        File(localImagePath!),
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            localImagePath = null;
+                            isNewImage = false;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFEAEA),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(Icons.delete_outline, color: Color(0xFFD32F2F), size: 18),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog edit terlebih dahulu
+                      widget.onUpload(localImagePath!); // Baru panggil aksi upload di parent
+                    },
+                    icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
+                    label: Text(
+                      'Upload',
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF004481),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+              // Cancel Button
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textDisabled,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
