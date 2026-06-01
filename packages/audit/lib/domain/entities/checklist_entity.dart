@@ -7,8 +7,10 @@ class ChecklistEntity {
   final String category;
   bool? isPassed;
   bool hasFinding;
+  bool hasEvidence;
 
   Finding? finding;
+  String? evidencePath;
 
   ChecklistEntity({
     required this.id,
@@ -17,6 +19,8 @@ class ChecklistEntity {
     required this.category,
     required this.isPassed,
     required this.hasFinding,
+    this.hasEvidence = false,
     this.finding,
+    this.evidencePath,
   });
 }

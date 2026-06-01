@@ -34,161 +34,168 @@ class _CapaListViewState extends State<_CapaListView> {
   List<Capa> _lastCapas = [];
   bool _isFirstLoad = true;
 
+  List<Capa> _filterCapas(List<Capa> capas) {
+  final now = DateTime.now();
+  return capas.where((capa) {
+    if (capa.status == 'Closed' && capa.closedAt != null) {
+      final diff = now.difference(capa.closedAt!);
+      return diff.inHours < 24;
+    }
+    return true;
+  }).toList();
+}
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: AppBar(
-              backgroundColor: AppColors.surface,
-              elevation: 0,
-              title: Text(
-                'CAPA',
-                style: GoogleFonts.inter(
-                  fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        title: Text(
+          'CAPA',
+          style: GoogleFonts.inter(
+            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+      body: BlocConsumer<CapaBloc, CapaState>(
+        listener: (context, state) {
+          if (state is CapaLoaded) {
+            _lastCapas = state.capas;
+            _isFirstLoad = false;
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is CapaLoading || state is CapaInitial;
+          final capas = state is CapaLoaded ? state.capas : _lastCapas;
+
+          if (state is CapaError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
               ),
-            ),
-            body: BlocConsumer<CapaBloc, CapaState>(
-              listener: (context, state) {
-                if (state is CapaLoaded) {
-                  _lastCapas = state.capas;
-                  _isFirstLoad = false;
-                }
-              },
-              builder: (context, state) {
-                final isLoading = state is CapaLoading || state is CapaInitial;
-                final capas = state is CapaLoaded ? state.capas : _lastCapas;
+            );
+          }
 
-                if (state is CapaError) {
-                  return Center(
-                    child: Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
-                // Skeleton placeholder saat first load
-                // Gunakan jumlah data sebelumnya agar tidak misleading
-                final skeletonCount = _isFirstLoad ? 3 : _lastCapas.length;
-                final skeletonList = List.generate(
-                  skeletonCount,
-                  (_) => Capa(
-                    id: '',
-                    findingId: '',
-                    findingCategory: 'OFI', // OFI menggunakan warna netral (abu/biru muda)
-                    findingTitle: 'Loading Finding Title',
-                    picId: '',
-                    picName: 'Loading PIC Name',
-                    rootCause: 'Loading Root Cause',
-                    correctiveAction: 'Loading Corrective Action Here',
-                    preventiveAction: '',
-                    deadline: DateTime.now(),
-                    isClosed: false,
-                    status: 'Pending Verification', // Status yang warnanya netral
-                    createdAt: DateTime.now(),
-                  ),
-                );
-
-                final displayList = isLoading ? skeletonList : capas;
-
-                return Stack(
-                  children: [
-                    // Empty state centered exactly on the screen
-                    if (!isLoading && displayList.isEmpty)
-                      const Center(
-                        child: Text(
-                          'No CAPA is available',
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-
-                    RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<CapaBloc>().add(const LoadCapas());
-                        await Future.delayed(const Duration(milliseconds: 800));
-                      },
-                      child: Skeletonizer(
-                        enabled: isLoading,
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                          children: [
-                            if (isLoading || displayList.isNotEmpty)
-                              ...displayList.map((capa) => _CapaCard(capa: capa)),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // FAB
-                      // FAB
-                      Positioned(
-                        bottom: 16,
-                        right: 16,
-                        child: Builder(
-                          builder: (context) {
-                            final screenWidth =
-                                MediaQuery.of(context).size.width;
-
-                            // ukuran FAB dinamis seperti AuditListPage
-                            final fabSize = (screenWidth * 0.18).clamp(
-                              64.0,
-                              88.0,
-                            );
-
-                            return SizedBox(
-                              width: fabSize,
-                              height: fabSize,
-                              child: FloatingActionButton(
-                                backgroundColor: AppColors.primaryLight,
-                                elevation: 4,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    fabSize * 0.25,
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final bloc = context.read<CapaBloc>();
-
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => BlocProvider.value(
-                                            value: bloc,
-                                            child: const CapaFormPage(),
-                                          ),
-                                    ),
-                                  );
-
-                                  if (result == true && context.mounted) {
-                                    bloc.add(const LoadCapas());
-                                  }
-                                },
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: fabSize * 0.45,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-              },
+          // Skeleton placeholder saat first load
+          // Gunakan jumlah data sebelumnya agar tidak misleading
+          final skeletonCount = _isFirstLoad ? 3 : _lastCapas.length;
+          final skeletonList = List.generate(
+            skeletonCount,
+            (_) => Capa(
+              id: '',
+              findingId: '',
+              findingCategory:
+                  'OFI', // OFI menggunakan warna netral (abu/biru muda)
+              findingTitle: 'Loading Finding Title',
+              picId: '',
+              picName: 'Loading PIC Name',
+              rootCause: 'Loading Root Cause',
+              correctiveAction: 'Loading Corrective Action Here',
+              preventiveAction: '',
+              deadline: DateTime.now(),
+              isClosed: false,
+              status: 'Pending Verification', // Status yang warnanya netral
+              createdAt: DateTime.now(),
             ),
           );
+
+          final filteredCapas = _filterCapas(capas);
+          final displayList = isLoading ? skeletonList : filteredCapas;
+
+          return Stack(
+            children: [
+              // Empty state centered exactly on the screen
+              if (!isLoading && displayList.isEmpty)
+                const Center(
+                  child: Text(
+                    'No CAPA is available',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
+              RefreshIndicator(
+                onRefresh: () async {
+                  context.read<CapaBloc>().add(const LoadCapas());
+                  await Future.delayed(const Duration(milliseconds: 800));
+                },
+                child: Skeletonizer(
+                  enabled: isLoading,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                    children: [
+                      if (isLoading || displayList.isNotEmpty)
+                        ...displayList.map((capa) => _CapaCard(capa: capa)),
+                    ],
+                  ),
+                ),
+              ),
+
+              // FAB
+              // FAB
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Builder(
+                  builder: (context) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+
+                    // ukuran FAB dinamis seperti AuditListPage
+                    final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+
+                    return SizedBox(
+                      width: fabSize,
+                      height: fabSize,
+                      child: FloatingActionButton(
+                        backgroundColor: AppColors.primaryLight,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(fabSize * 0.25),
+                        ),
+                        onPressed: () async {
+                          final bloc = context.read<CapaBloc>();
+
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => BlocProvider.value(
+                                    value: bloc,
+                                    child: const CapaFormPage(),
+                                  ),
+                            ),
+                          );
+
+                          if (result == true && context.mounted) {
+                            bloc.add(const LoadCapas());
+                          }
+                        },
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: fabSize * 0.45,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -204,7 +211,12 @@ class _CapaCardState extends State<_CapaCard> {
   late String _currentStatus;
 
   // ✅ opsi dropdown status
-  static const List<String> _statusOptions = ['Open', 'In Progress', 'Pending Verification', 'Closed'];
+  static const List<String> _statusOptions = [
+    'Open',
+    'In Progress',
+    'Pending Verification',
+    'Closed',
+  ];
 
   @override
   void initState() {
@@ -247,7 +259,10 @@ class _CapaCardState extends State<_CapaCard> {
                       const SizedBox(height: 4),
                       Text(
                         '${_getMonth(widget.capa.createdAt.month)} ${widget.capa.createdAt.day}, ${widget.capa.createdAt.year}',
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ),
@@ -272,7 +287,9 @@ class _CapaCardState extends State<_CapaCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.capa.picName.isNotEmpty ? widget.capa.picName : widget.capa.picId.toUpperCase(),
+                  widget.capa.picName.isNotEmpty
+                      ? widget.capa.picName
+                      : widget.capa.picId.toUpperCase(),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -298,7 +315,11 @@ class _CapaCardState extends State<_CapaCard> {
                           fontSize: 13,
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: Color(0xFF0D2B55), size: 18),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF0D2B55),
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -318,7 +339,10 @@ class _CapaCardState extends State<_CapaCard> {
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Text('Loading', style: TextStyle(color: Colors.transparent)),
+        child: const Text(
+          'Loading',
+          style: TextStyle(color: Colors.transparent),
+        ),
       );
     }
 
@@ -371,28 +395,23 @@ class _CapaCardState extends State<_CapaCard> {
           ),
           dropdownColor: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          items: _statusOptions.map((status) {
-            return DropdownMenuItem<String>(
-              value: status,
-              child: Text(
-                status,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                ),
-              ),
-            );
-          }).toList(),
+          items:
+              _statusOptions.map((status) {
+                return DropdownMenuItem<String>(
+                  value: status,
+                  child: Text(
+                    status,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  ),
+                );
+              }).toList(),
           onChanged: (newStatus) {
             if (newStatus == null) return;
             setState(() => _currentStatus = newStatus);
 
             // ✅ kirim event ke bloc
             context.read<CapaBloc>().add(
-              UpdateCapaStatusEvent(
-                id: widget.capa.id,
-                status: newStatus,
-              ),
+              UpdateCapaStatusEvent(id: widget.capa.id, status: newStatus),
             );
           },
         ),
@@ -418,8 +437,18 @@ class _CapaCardState extends State<_CapaCard> {
 
   String _getMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }
