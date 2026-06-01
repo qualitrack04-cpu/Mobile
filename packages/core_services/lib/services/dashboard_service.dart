@@ -1,6 +1,132 @@
 import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class AuditSummary{
+  final int activeAudit;
+  final int totalCapa;
+  final int capaOpen;
+  final int capaOverdue;
+
+  AuditSummary({
+    required this.activeAudit,
+    required this.totalCapa,
+    required this.capaOpen,
+    required this.capaOverdue,
+  });
+
+  factory AuditSummary.fromJson(Map<String, dynamic> json){
+    return AuditSummary(
+      activeAudit: json['activeAudit'] ?? 0,
+      totalCapa: json['totalCapa'] ?? 0,
+      capaOpen: json['capaOpen'] ?? 0,
+      capaOverdue: json['capaOverdue'] ?? 0,
+    );
+  }
+}
+
+class ComplianceScore{
+  final String department;
+  final double score;
+  final int totalAudit;
+  final int totalResponses;
+  final int conformResponses;
+
+  ComplianceScore({
+    required this.department,
+    required this.score,
+    required this.totalAudit,
+    required this.totalResponses,
+    required this.conformResponses,
+  });
+
+  factory ComplianceScore.fromJson(Map<String, dynamic> json){
+    return ComplianceScore(
+      department: json['department'] ?? '',
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
+      totalAudit: json['totalAudit'] ?? 0,
+      totalResponses: json['totalResponses'] ?? 0,
+      conformResponses: json['conformResponses'] ?? 0,
+    );
+  }
+}
+
+class ComplianceScoreResponse{
+  final double overallScore;
+  final List<ComplianceScore> data;
+
+  ComplianceScoreResponse({
+    required this.overallScore,
+    required this.data
+  });
+
+  factory ComplianceScoreResponse.fromJson(Map<String, dynamic> json){
+    final list = json['data'] as List? ?? [];
+
+    return ComplianceScoreResponse(
+      overallScore: (json['overallScore'] as num?)?.toDouble() ?? 0.0,
+      data: list.map((e)=>ComplianceScore.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+}
+
+// Level 3: detail satu departemen dalam jadwal
+class ScheduleDepartment {
+  final String department;
+  final String scheduleId;
+  final String planTitle;
+  final String standard;
+
+  ScheduleDepartment({
+    required this.department,
+    required this.scheduleId,
+    required this.planTitle,
+    required this.standard,
+  });
+
+  factory ScheduleDepartment.fromJson(Map<String, dynamic> json) {
+    return ScheduleDepartment(
+      department: json['department'] ?? '',
+      scheduleId: json['scheduleId'] ?? '',
+      planTitle: json['planTitle'] ?? '',
+      standard: json['standard'] ?? '',
+    );
+  }
+}
+
+// Level 2: jadwal untuk satu hari tertentu
+class AuditScheduleDay {
+  final int day;
+  final List<ScheduleDepartment> departments;
+
+  AuditScheduleDay({required this.day, required this.departments});
+
+  factory AuditScheduleDay.fromJson(Map<String, dynamic> json) {
+    final list = json['departments'] as List? ?? [];
+    return AuditScheduleDay(
+      day: json['day'] ?? 0,
+      departments: list.map((e) => ScheduleDepartment.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+}
+
+// Level 1: wrapper keseluruhan response dari API
+class AuditScheduleResponse {
+  final int month;
+  final int year;
+  final List<AuditScheduleDay> data;
+
+  AuditScheduleResponse({required this.month, required this.year, required this.data});
+
+  factory AuditScheduleResponse.fromJson(Map<String, dynamic> json) {
+    final list = json['data'] as List? ?? [];
+    return AuditScheduleResponse(
+      month: json['month'] ?? 0,
+      year: json['year'] ?? 0,
+      data: list.map((e) => AuditScheduleDay.fromJson(e as Map<String, dynamic>)).toList(),
+    );
+  }
+}
+
 class DashboardSummary {
   final int totalAudit;
   final int totalFinding;
@@ -17,6 +143,41 @@ class DashboardService {
   final ApiService apiService;
 
   DashboardService({required this.apiService});
+  // Fungsi 1: Ambil Audit Summary
+Future<AuditSummary> getAuditSummary() async {
+  try {
+    final res = await apiService.client.get('/api/Dashboard/summaryAudit');
+    return AuditSummary.fromJson(res.data as Map<String, dynamic>);
+  } catch (e) {
+    print('Error getAuditSummary: $e');
+    return AuditSummary(activeAudit: 0, totalCapa: 0, capaOpen: 0, capaOverdue: 0);
+  }
+}
+
+// Fungsi 2: Ambil Compliance Score
+Future<ComplianceScoreResponse> getComplianceScores() async {
+  try {
+    final res = await apiService.client.get('/api/Dashboard/compliance-score');
+    return ComplianceScoreResponse.fromJson(res.data as Map<String, dynamic>);
+  } catch (e) {
+    print('Error getComplianceScores: $e');
+    return ComplianceScoreResponse(overallScore: 0, data: []);
+  }
+}
+
+// Fungsi 3: Ambil Jadwal Audit per Bulan
+Future<AuditScheduleResponse> getAuditSchedule({required int month, required int year}) async {
+  try {
+    final res = await apiService.client.get(
+      '/api/Dashboard/audit-schedule',
+      queryParameters: {'month': month, 'year': year},
+    );
+    return AuditScheduleResponse.fromJson(res.data as Map<String, dynamic>);
+  } catch (e) {
+    print('Error getAuditSchedule: $e');
+    return AuditScheduleResponse(month: month, year: year, data: []);
+  }
+}
 
   Future<DashboardSummary> getSummary() async {
     // Panggil 3 endpoint sekaligus (paralel, lebih cepat)
