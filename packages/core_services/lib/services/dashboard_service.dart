@@ -146,7 +146,7 @@ class DashboardService {
   // Fungsi 1: Ambil Audit Summary
 Future<AuditSummary> getAuditSummary() async {
   try {
-    final res = await apiService.client.get('/api/Dashboard/summaryAudit');
+    final res = await apiService.client.get('/api/Dashboard/summary');
     return AuditSummary.fromJson(res.data as Map<String, dynamic>);
   } catch (e) {
     print('Error getAuditSummary: $e');
