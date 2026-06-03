@@ -119,7 +119,7 @@ class ChecklistRemoteDatasource {
 
   // GET /api/AuditResponse/by-session/{sessionId}
   // Ambil jawaban yang sudah tersimpan untuk sesi ini
-  Future<Map<String, bool>> getExistingResponses(String sessionId) async {
+  Future<Map<String, Map<String, dynamic>>> getExistingResponses(String sessionId) async {
     try {
       final response = await apiService.client.get(
         '/api/AuditResponse/by-session/$sessionId',
@@ -129,7 +129,7 @@ class ChecklistRemoteDatasource {
       // Kembalikan Map<checklistItemId, isPassed>
       return {
         for (final r in data)
-          (r['checklistItemId'] as String): (r['isPassed'] as bool? ?? false),
+          (r['checklistItemId'] as String): { 'isPassed': r['isPassed'] as bool? ?? false, 'responseId': r['id'] as String?},
       };
     } catch (e) {
       return {}; // Kalau gagal, anggap belum ada progress
@@ -181,6 +181,41 @@ class ChecklistRemoteDatasource {
       );
     } catch (_) {
       // Silent fail — jangan crash
+    }
+  }
+    Future<String?> uploadAuditEvidence(String responseId, String filePath) async {
+    try {
+      String fileName = filePath.split('/').last;
+      FormData formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      final response = await apiService.client.post(
+        '/api/Upload/audit-response/$responseId',
+        data: formData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['url'] as String?; // Kembalikan URL gambar
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> getAuditEvidence(String responseId) async {
+    try {
+      final response = await apiService.client.get(
+        '/api/Upload/audit-response/$responseId',
+      );
+      final data = response.data as List<dynamic>;
+      if (data.isNotEmpty) {
+        return data.first['url'] as String?; // Ambil URL gambar pertama
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 }

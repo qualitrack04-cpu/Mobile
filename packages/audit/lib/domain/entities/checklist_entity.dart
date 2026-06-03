@@ -11,6 +11,7 @@ class ChecklistEntity {
 
   Finding? finding;
   String? evidencePath;
+  String? responseId;
 
   ChecklistEntity({
     required this.id,
@@ -22,5 +23,6 @@ class ChecklistEntity {
     this.hasEvidence = false,
     this.finding,
     this.evidencePath,
+    this.responseId,
   });
 }
