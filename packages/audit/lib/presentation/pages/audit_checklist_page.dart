@@ -23,7 +23,9 @@ import '../../domain/entities/checklist_entity.dart';
 import '../bloc/audit_bloc.dart';
 import '../bloc/audit_event.dart';
 import '../bloc/audit_state.dart';
+import '../widgets/audit_summary_dialog.dart';
 import '../widgets/checklist_card.dart';
+import 'audit_report_preview_page.dart';
 
 class AuditChecklistPage extends StatelessWidget {
   final AuditEntity audit;
@@ -50,6 +52,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
   String? _sessionId;
   bool _progressLoaded = false;
   bool _isInitializing = true;
+  String _existingSummary = '';
 
   @override
   void initState() {
@@ -74,6 +77,25 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       final savedSessionId = prefs.getString(_sessionKey);
       if (savedSessionId != null) {
         setState(() => _sessionId = savedSessionId);
+
+        // CEK APAKAH STATUSNYA PREVIEW
+        final state = prefs.getString('${_sessionKey}_state');
+        if (state == 'PREVIEW') {
+          // Jika aplikasi sempat tertutup setelah Save tapi sebelum PDF, 
+          // langsung buka halaman Preview tanpa me-load checklist lagi
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AuditReportPreviewPage(
+                  audit: widget.audit,
+                  sessionId: savedSessionId,
+                ),
+              ),
+            );
+          }
+          return;
+        }
 
         if (_checklists.isNotEmpty && !_progressLoaded) {
           _progressLoaded = true;
@@ -134,13 +156,19 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       final results = await Future.wait([
         datasource.getExistingResponses(sessionId),
         datasource.getExistingFindings(sessionId),
+        datasource.getAuditSummary(sessionId), // Ambil audit summary
       ]);
 
       final responses = results[0] as Map<String, Map<String, dynamic>>;
       final findings = results[1] as Map<String, Map<String, dynamic>>;
+      final summaryStr = results[2] as String?;
 
       if (!mounted) return;
       setState(() {
+        if (summaryStr != null) {
+          _existingSummary = summaryStr;
+        }
+
         for (final checklist in _checklists) {
           if (responses.containsKey(checklist.id)) {
             checklist.isPassed = responses[checklist.id]!['isPassed'] as bool;
@@ -310,7 +338,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     return showDialog(
       context: context,
       barrierColor: Colors.black12,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
           child: Dialog(
@@ -398,11 +426,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                       }
 
                       // Tutup preview & Tampilkan Loading
-                      Navigator.pop(context); 
+                      Navigator.pop(dialogContext); 
                       showDialog(
                         context: context,
                         barrierDismissible: false,
-                        builder: (context) => const Center(child: CircularProgressIndicator()),
+                        builder: (loadingCtx) => const Center(child: CircularProgressIndicator()),
                       );
 
                       // Proses Upload API
@@ -527,6 +555,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             _showSuccessPopup();
           },
           onRemove: () {
+            // Panggil API untuk menghapus foto secara permanen dari server
+            if (checklist.responseId != null) {
+              final datasource = GetIt.instance<ChecklistRemoteDatasource>();
+              datasource.deleteAuditEvidence(checklist.responseId!);
+            }
             setState(() {
               checklist.evidencePath = null;
               checklist.hasEvidence = false;
@@ -537,40 +570,85 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     );
   }
 
-  Future<void> _onSubmitChecklist() async {
+    Future<void> _onSubmitChecklist() async {
     if (_sessionId == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 18),
-                SizedBox(width: 10),
-                Text('Audit session not ready. Please try again.'),
-              ],
-            ),
-            backgroundColor: AppColors.danger,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            margin: const EdgeInsets.all(12),
-          ),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Audit session not ready. Please try again.')),
+      );
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_sessionKey);
+    // --- MULAI PERUBAHAN DI SINI ---
+    // Munculkan Bottom Sheet Audit Summary
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // PENTING: Agar pop-up bisa terdorong naik saat keyboard HP muncul
+      backgroundColor: Colors.transparent, // Transparan agar sudut melengkung pop-up terlihat
+      builder: (ctx) {
+        return AuditSummaryDialog(
+          initialSummary: _existingSummary,
+          onSave: (summaryText) async {
+            // Tampilkan loading sebentar (opsional tapi disarankan)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Menyimpan hasil audit...')),
+            );
 
-    context.read<AuditBloc>().add(
-      SubmitChecklistEvent(
-        sessionId: _sessionId!,
-        checklists: _checklists,
-        audit: widget.audit,
-      ),
+            try {
+              // 1. Simpan Audit Summary ke Backend
+              _existingSummary = summaryText; // Simpan secara lokal
+              final apiService = GetIt.instance<ApiService>();
+              final dataSource = ChecklistRemoteDatasource(apiService: apiService);
+              await dataSource.submitAuditSummary(
+                sessionId: _sessionId!,
+                content: summaryText,
+              );
+
+              // 2. Lanjutkan proses submit checklist seperti biasa
+              final prefs = await SharedPreferences.getInstance();
+              
+              // JANGAN hapus session key di sini, karena belum digenerate PDF-nya
+              // await prefs.remove(_sessionKey);
+
+              // Tandai state lokal bahwa aplikasi sudah masuk tahap PREVIEW
+              await prefs.setString('${_sessionKey}_state', 'PREVIEW');
+
+              if (mounted) {
+                // Submit hasil jawaban ke backend tanpa mengubah status audit menjadi finish
+                final datasource = GetIt.instance<ChecklistRemoteDatasource>();
+                await datasource.submitChecklistResponses(
+                  sessionId: _sessionId!, 
+                  checklists: _checklists,
+                );
+                
+                // Menutup pop-up (dialog) terlebih dahulu
+                Navigator.pop(context);
+                
+                // Buka halaman Audit Report Preview dan tutup halaman Checklist
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AuditReportPreviewPage(
+                      audit: widget.audit,
+                      sessionId: _sessionId!,
+                    ),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Gagal menyimpan: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+        );
+      },
     );
+    // --- AKHIR PERUBAHAN ---
   }
 
   @override

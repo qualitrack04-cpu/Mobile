@@ -50,6 +50,76 @@ class ChecklistRemoteDatasource {
     }
   }
 
+  // POST /api/AuditSession/{sessionId}/summary
+  Future<void> submitAuditSummary({
+    required String sessionId,
+    required String content,
+  }) async {
+    try {
+      await apiService.client.post(
+        '/api/AuditSession/$sessionId/summary',
+        data: {'content': content},
+      );
+    } catch (e) {
+      // Abaikan jika summary sudah pernah disubmit
+    }
+  }
+
+  // GET /api/AuditSession/{sessionId}/summary
+  Future<String?> getAuditSummary(String sessionId) async {
+    try {
+      final response = await apiService.client.get('/api/AuditSession/$sessionId/summary');
+      return response.data['data']['content'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // GET /api/AuditResponse/by-session/{sessionId}
+  Future<List<Map<String, dynamic>>> getChecklistResponses(String sessionId) async {
+    try {
+      final response = await apiService.client.get('/api/AuditResponse/by-session/$sessionId');
+      final dataList = response.data['data'] as List<dynamic>;
+      return dataList.cast<Map<String, dynamic>>();
+    } catch (e) {
+      throw Exception('Gagal mengambil respons checklist: $e');
+    }
+  }
+
+  // GET /api/Upload/audit-response/{responseId}
+  Future<List<String>> getEvidencesForResponse(String responseId) async {
+    try {
+      final response = await apiService.client.get('/api/Upload/audit-response/$responseId');
+      final dataList = response.data as List<dynamic>;
+      return dataList.map((e) => e['url'] as String).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<String>> getEvidencesForFinding(String findingId) async {
+    try {
+      final response = await apiService.client.get(
+        '/api/Upload/finding/$findingId',
+      );
+      final data = response.data as List<dynamic>;
+      return data.map((e) => e['url'] as String).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // GET /api/Finding/by-session/{sessionId}
+  Future<List<Map<String, dynamic>>> getFindingsBySession(String sessionId) async {
+    try {
+      final response = await apiService.client.get('/api/Finding/by-session/$sessionId');
+      final dataList = response.data['data'] as List<dynamic>;
+      return dataList.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
+  }
+
   // POST /api/AuditSession
   // Buat sesi audit baru, kembalikan sessionId (String guid)
   Future<String> createAuditSession({
@@ -101,14 +171,16 @@ class ChecklistRemoteDatasource {
         data: {'sessionId': sessionId, 'responses': responses},
       );
 
-      // Step 2: Tandai sesi selesai
-      await apiService.client.patch('/api/AuditSession/$sessionId/complete');
+      // (Dihapus: Step 2: Tandai sesi selesai) -> Pindah ke saat Create PDF
     } catch (e) {
       if (e is DioException && e.response != null) {
         final data = e.response?.data;
         if (data is Map) {
-          // Coba ekstrak pesan dari BadRequest biasa atau dari Validation Problem Details
-          final msg = data['message'] ?? data['title'] ?? data.toString();
+          final msg = data['message']?.toString() ?? data['title']?.toString() ?? data.toString();
+          // Jika backend menolak karena session sudah selesai, abaikan error ini (lanjutkan ke Preview)
+          if (msg.toLowerCase().contains('sudah selesai')) {
+            return;
+          }
           throw Exception(msg);
         }
         throw Exception(data.toString());
@@ -116,6 +188,17 @@ class ChecklistRemoteDatasource {
       throw Exception('Gagal menyimpan hasil checklist: $e');
     }
   }
+
+
+  // Fungsi baru khusus untuk menandai audit selesai (setelah PDF digenerate)
+  Future<void> markSessionComplete(String sessionId) async {
+    try {
+      await apiService.client.patch('/api/AuditSession/$sessionId/complete');
+    } catch (e) {
+      throw Exception('Gagal menandai sesi selesai: $e');
+    }
+  }
+
 
   // GET /api/AuditResponse/by-session/{sessionId}
   // Ambil jawaban yang sudah tersimpan untuk sesi ini
@@ -183,8 +266,11 @@ class ChecklistRemoteDatasource {
       // Silent fail — jangan crash
     }
   }
-    Future<String?> uploadAuditEvidence(String responseId, String filePath) async {
+  Future<String?> uploadAuditEvidence(String responseId, String filePath) async {
     try {
+      // CEGAH PENUMPUKAN: Hapus evidence lama di backend sebelum upload yang baru
+      await deleteAuditEvidence(responseId);
+
       String fileName = filePath.split('/').last;
       FormData formData = FormData.fromMap({
         "file": await MultipartFile.fromFile(filePath, filename: fileName),
@@ -216,6 +302,26 @@ class ChecklistRemoteDatasource {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<void> deleteAuditEvidence(String responseId) async {
+    try {
+      // 1. Ambil daftar semua evidence yang tersangkut di responseId ini
+      final response = await apiService.client.get(
+        '/api/Upload/audit-response/$responseId',
+      );
+      final data = response.data as List<dynamic>;
+      
+      // 2. Hapus semuanya satu per satu dari database backend
+      for (var item in data) {
+        final fileId = item['id'];
+        if (fileId != null) {
+          await apiService.client.delete('/api/Upload/$fileId');
+        }
+      }
+    } catch (e) {
+      // Silent fail
     }
   }
 }

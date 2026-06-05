@@ -139,10 +139,42 @@ class DashboardSummary {
   });
 }
 
+class CompletedAuditReport {
+  final String sessionId;
+  final String department;
+  final String planTitle;
+
+  CompletedAuditReport({
+    required this.sessionId,
+    required this.department,
+    required this.planTitle,
+  });
+
+  factory CompletedAuditReport.fromJson(Map<String, dynamic> json) {
+    return CompletedAuditReport(
+      sessionId: json['sessionId'] ?? '',
+      department: json['department'] ?? '',
+      planTitle: json['planTitle'] ?? '',
+    );
+  }
+}
+
 class DashboardService {
   final ApiService apiService;
 
   DashboardService({required this.apiService});
+
+  // Fungsi 4: Ambil Laporan Audit Selesai
+  Future<List<CompletedAuditReport>> getCompletedReports() async {
+    try {
+      final res = await apiService.client.get('/api/AuditSession/completed');
+      final list = res.data['data'] as List? ?? [];
+      return list.map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      print('Error getCompletedReports: $e');
+      return [];
+    }
+  }
   // Fungsi 1: Ambil Audit Summary
 Future<AuditSummary> getAuditSummary() async {
   try {
