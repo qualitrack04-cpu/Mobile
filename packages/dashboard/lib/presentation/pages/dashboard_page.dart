@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
@@ -5,6 +6,9 @@ import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,15 +20,17 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardService _dashboardService;
 
-  // 3 future untuk 3 API berbeda
+  // 4 future untuk 4 API berbeda
   late Future<AuditSummary> _summaryFuture;
   late Future<ComplianceScoreResponse> _scoreFuture;
   late Future<AuditScheduleResponse> _scheduleFuture;
+  late Future<List<CompletedAuditReport>> _reportsFuture;
 
   // Cache data terakhir supaya tidak blank saat refresh
   AuditSummary? _lastSummary;
   ComplianceScoreResponse? _lastScore;
   AuditScheduleResponse? _lastSchedule;
+  List<CompletedAuditReport>? _lastReports;
 
   // Untuk navigasi bulan di kalender
   DateTime _calendarMonth = DateTime.now();
@@ -81,6 +87,10 @@ class _DashboardPageState extends State<DashboardPage> {
             _lastSchedule = data;
             return data;
           });
+      _reportsFuture = _dashboardService.getCompletedReports().then((data) {
+        _lastReports = data;
+        return data;
+      });
     });
   }
 
@@ -147,7 +157,7 @@ class _DashboardPageState extends State<DashboardPage> {
       body: RefreshIndicator(
         onRefresh: () async {
           _refresh();
-          await Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture]);
+          await Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]);
         },
         child: _buildBody(screenWidth),
       ),
@@ -156,7 +166,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBody(double screenWidth) {
     return FutureBuilder<List<dynamic>>(
-      future: Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture]),
+      future: Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]),
       builder: (context, snapshot) {
         final isLoading =
             snapshot.connectionState == ConnectionState.waiting &&
@@ -179,6 +189,7 @@ class _DashboardPageState extends State<DashboardPage> {
               year: _calendarMonth.year,
               data: [],
             );
+        final reports = _lastReports ?? [];
 
         return Skeletonizer(
           enabled: isLoading,
@@ -205,12 +216,235 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildSectionTitle('COMPLIANCE SCORE'),
               const SizedBox(height: 12),
               _buildComplianceScore(score, screenWidth),
+              const SizedBox(height: 24),
+
+              // 5. Audit Report
+              _buildSectionTitle('AUDIT REPORT'),
+              const SizedBox(height: 12),
+              _buildAuditReportList(reports, screenWidth),
               const SizedBox(height: 32),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildAuditReportList(List<CompletedAuditReport> reports, double screenWidth) {
+    if (reports.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            'No completed audit reports yet.',
+            style: GoogleFonts.inter(color: AppColors.textDisabled),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 240, 
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: reports.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          final report = reports[index];
+          return _buildReportCard(report, screenWidth);
+        },
+      ),
+    );
+  }
+
+  Widget _buildReportCard(CompletedAuditReport report, double screenWidth) {
+    return Container(
+      width: 180,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Bagian atas (dummy pdf thumbnail)
+              Container(
+                height: 100,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8F9FA), // Light Gray/White
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reporting\nStructure',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          color: Colors.black87,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'White Paper',
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Bagian bawah (Text + Button)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 26, 16, 16), // top 26 agar tidak nabrak icon tengah
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        report.planTitle,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF00104A), // Navy color
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 38,
+                        child: ElevatedButton(
+                          onPressed: () => _downloadAndOpenPdf(report.sessionId),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00104A), // Dark navy
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: Text(
+                            'View Report',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Ikon PDF di tengah-tengah pemisah
+          Positioned(
+            top: 80, // Setengah di atas (100-20), setengah di bawah
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4FA), // Light blue background
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white, width: 2), // Biar ada border putih
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf,
+                  color: Color(0xFF00104A), // Navy color
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+          // Tombol Download di ujung kanan atas
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: () => _downloadAndOpenPdf(report.sessionId),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00104A),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.download,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadAndOpenPdf(String sessionId) async {
+    // Tampilkan loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _dashboardService.apiService.client.get(
+        '/api/Pdf/audit-report/$sessionId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/audit-report-$sessionId.pdf');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.pop(context); // Tutup loading
+        await OpenFilex.open(file.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Tutup loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open PDF: $e')),
+        );
+      }
+    }
   }
 
   // Helper: judul section seperti "SCHEDULE", "AUDIT SUMMARY"

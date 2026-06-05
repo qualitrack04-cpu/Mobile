@@ -25,6 +25,9 @@ dependencies:
   core_services:
     path: ../core_services
   shared_preferences: ^2.3.0
+  dio: ^5.9.2
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:
