@@ -18,7 +18,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isObscured = true;
@@ -28,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -140,16 +138,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Username
-                      const InputLabel('Username'),
-                      TextField(
-                        controller: _usernameController,
-                        decoration: customInputDecoration(
-                          hint: 'Nailong bin Amir',
-                          icon: Icons.person_outline,
-                        ),
-                      ),
 
                       // Work Email
                       const InputLabel('Work Email'),

@@ -144,7 +144,7 @@ class ChecklistCard extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           side: const BorderSide(color: AppColors.primaryLight),
-          backgroundColor: AppColors.surface,
+          backgroundColor: checklist.hasFinding ? AppColors.surface : AppColors.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8), // Mengikuti gambar
           ),
@@ -153,7 +153,7 @@ class ChecklistCard extends StatelessWidget {
         icon: Icon(
           checklist.hasFinding ? Icons.edit_outlined : Icons.add,
           size: 16,
-          color: AppColors.primaryLight,
+          color: checklist.hasFinding ? AppColors.primary : AppColors.surface,
         ),
         label: FittedBox(
           fit: BoxFit.scaleDown,
@@ -163,7 +163,7 @@ class ChecklistCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.primaryLight,
+              color: checklist.hasFinding ? AppColors.primary : AppColors.surface,
             ),
           ),
         ),
