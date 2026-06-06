@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
@@ -22,14 +23,37 @@ class OtpPage extends StatefulWidget {
 
 class _OtpPageState extends State<OtpPage> {
   final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+      List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes =
-      List.generate(6, (_) => FocusNode());
+      List.generate(4, (_) => FocusNode());
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Countdown timer
+  int _secondsRemaining = 59;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() => _secondsRemaining = 59);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining == 0) {
+        timer.cancel();
+      } else {
+        setState(() => _secondsRemaining--);
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     for (var c in _controllers) c.dispose();
     for (var f in _focusNodes) f.dispose();
     super.dispose();
@@ -39,8 +63,8 @@ class _OtpPageState extends State<OtpPage> {
       _controllers.map((c) => c.text).join();
 
   Future<void> _onVerify() async {
-    if (_otpCode.length < 6) {
-      setState(() => _errorMessage = 'Masukkan 6 digit OTP');
+    if (_otpCode.length < 4) {
+      setState(() => _errorMessage = 'Masukkan 4 digit OTP');
       return;
     }
 
@@ -94,6 +118,8 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _onResendOtp() async {
+    if (_secondsRemaining > 0) return;
+
     try {
       final authService = GetIt.instance<AuthService>();
       if (widget.isForgotPassword) {
@@ -101,6 +127,7 @@ class _OtpPageState extends State<OtpPage> {
       } else {
         await authService.resendOtp(email: widget.email);
       }
+      _startTimer();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,66 +150,118 @@ class _OtpPageState extends State<OtpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: const Row(
+            children: [
+              SizedBox(width: 8),
+              Icon(Icons.arrow_back_ios, size: 16, color: Colors.black87),
+              Text(
+                'Back',
+                style: TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        leadingWidth: 80,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
             children: [
-              const Icon(Icons.shield, size: 45, color: AppColors.primary),
+              // Logo
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.shield,
+                  size: 28,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
               const Text(
                 'QualiTrack',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primary,
                 ),
               ),
               const Text(
                 'Precision Quality & Audit Management',
-                style: TextStyle(fontSize: 12, color: AppColors.primary),
+                style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               Container(
                 padding: const EdgeInsets.all(25),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 20,
                       offset: Offset(0, 10),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Enter OTP',
+                    // Judul
+                    Text(
+                      'Enter Verification Code',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'OTP sent to ${widget.email}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
+                    const SizedBox(height: 10),
+
+                    // Deskripsi
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                          height: 1.5,
+                        ),
+                        children: [
+                          const TextSpan(
+                            text:
+                                'We have sent a 4-digit verification code to your registered work email\n',
+                          ),
+                          TextSpan(
+                            text: widget.email,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // 6 digit OTP input
+                    // 4 digit OTP
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(6, (index) {
+                      children: List.generate(4, (index) {
                         return SizedBox(
-                          width: 45,
+                          width: 65,
+                          height: 65,
                           child: TextField(
                             controller: _controllers[index],
                             focusNode: _focusNodes[index],
@@ -190,7 +269,7 @@ class _OtpPageState extends State<OtpPage> {
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary,
                             ),
@@ -199,13 +278,13 @@ class _OtpPageState extends State<OtpPage> {
                               filled: true,
                               fillColor: Colors.grey[100],
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide(
                                   color: Colors.grey[300]!,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
                                   color: AppColors.primary,
                                   width: 2,
@@ -213,7 +292,7 @@ class _OtpPageState extends State<OtpPage> {
                               ),
                             ),
                             onChanged: (value) {
-                              if (value.isNotEmpty && index < 5) {
+                              if (value.isNotEmpty && index < 3) {
                                 _focusNodes[index + 1].requestFocus();
                               } else if (value.isEmpty && index > 0) {
                                 _focusNodes[index - 1].requestFocus();
@@ -235,31 +314,63 @@ class _OtpPageState extends State<OtpPage> {
                       ),
                     ],
 
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 16),
+
+                    // Countdown timer
+                    Text(
+                      _secondsRemaining > 0
+                          ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
+                          : 'Resend code',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _secondsRemaining > 0
+                            ? Colors.grey
+                            : AppColors.primary,
+                        fontWeight: _secondsRemaining > 0
+                            ? FontWeight.normal
+                            : FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
 
                     _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : ActionButton(
-                            label: 'VERIFY OTP',
+                            label: 'VERIFY & PROCEED',
                             onPressed: _onVerify,
                           ),
-
-                    const SizedBox(height: 16),
-
-                    Center(
-                      child: TextButton(
-                        onPressed: _onResendOtp,
-                        child: const Text(
-                          'Resend OTP',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Having trouble?
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Having trouble? ',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Contact Support',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

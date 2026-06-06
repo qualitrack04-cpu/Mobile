@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
-import 'package:core_services/core_services.dart'; // TAMBAH
+import 'package:core_services/core_services.dart';
 import 'package:dashboard/presentation/pages/dashboard_screen.dart';
-import 'package:get_it/get_it.dart'; // TAMBAH
-
+import 'package:get_it/get_it.dart';
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/action_button.dart';
+import '../widgets/role_dropdown.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 
@@ -18,11 +18,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController(); // TAMBAH
-  final _passwordController = TextEditingController(); // TAMBAH
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isObscured = true;
-  bool _isLoading = false; // TAMBAH
-  String? _errorMessage; // TAMBAH
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _selectedRole = 'QualityManager';
 
   @override
   void dispose() {
@@ -32,8 +33,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isValidEmail(String email) {
-    // Regex yang lebih 'lengkap' dengan membatasi Top Level Domain (TLD) yang valid/umum saja.
-    // Jika ada domain lain yang dibutuhkan, bisa ditambahkan di dalam kurung.
     final emailRegex = RegExp(
       r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$',
       caseSensitive: false,
@@ -42,7 +41,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onLogin() async {
-    // Validasi field kosong
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'Email and password are required');
@@ -86,7 +84,21 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
               children: [
-                const Icon(Icons.shield, size: 45, color: AppColors.primary),
+                // Logo
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.shield,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 const Text(
                   'QualiTrack',
                   style: TextStyle(
@@ -97,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const Text(
                   'Precision Quality & Audit Management',
-                  style: TextStyle(fontSize: 12, color: AppColors.primary),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 40),
 
@@ -125,7 +137,9 @@ class _LoginPageState extends State<LoginPage> {
                           color: AppColors.primary,
                         ),
                       ),
+                      const SizedBox(height: 16),
 
+                      // Work Email
                       const InputLabel('Work Email'),
                       TextField(
                         controller: _emailController,
@@ -139,9 +153,43 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const InputLabel('Password'),
+                      // Password + Forget Password link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Password',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordPage(),
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Forget Password?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       TextField(
-                        controller: _passwordController, // TAMBAH
+                        controller: _passwordController,
                         obscureText: _isObscured,
                         decoration: customInputDecoration(
                           hint: '••••••••',
@@ -153,14 +201,20 @@ class _LoginPageState extends State<LoginPage> {
                                   : Icons.visibility_off_outlined,
                               size: 20,
                             ),
-                            onPressed:
-                                () =>
-                                    setState(() => _isObscured = !_isObscured),
+                            onPressed: () =>
+                                setState(() => _isObscured = !_isObscured),
                           ),
                         ),
                       ),
 
-                      // TAMBAH: tampilkan error kalau ada
+                      // Role
+                      const InputLabel('Role'),
+                      RoleDropdown(
+                        selectedRole: _selectedRole,
+                        onChanged: (val) =>
+                            setState(() => _selectedRole = val),
+                      ),
+
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 8),
                         Text(
@@ -174,31 +228,13 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 25),
 
-                      // TAMBAH: loading indicator atau tombol
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ActionButton(
-                            label: 'SIGN IN',
-                            onPressed: _onLogin, // UBAH
-                          ),
+                              label: 'SIGN IN',
+                              onPressed: _onLogin,
+                            ),
                     ],
-                  ),
-                ),
-
-                TextButton(
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ForgotPasswordPage(),
-                        ),
-                      ),
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
 
@@ -208,11 +244,10 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(color: Colors.grey),
                 ),
                 TextButton(
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterPage()),
-                      ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterPage()),
+                  ),
                   child: const Text(
                     'SIGN UP',
                     style: TextStyle(
