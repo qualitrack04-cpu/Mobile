@@ -407,8 +407,24 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       
       // 3. Simpan ke local storage
       final bytes = response.data;
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/audit-report-${widget.sessionId}.pdf');
+      
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!await dir.exists()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+      
+      File file = File('${dir!.path}/audit-report-${widget.sessionId}.pdf');
+      int counter = 1;
+      while (await file.exists()) {
+        file = File('${dir.path}/audit-report-${widget.sessionId} ($counter).pdf');
+        counter++;
+      }
+
       await file.writeAsBytes(bytes);
 
       // 4. TANDAI SESI SELESAI SECARA PERMANEN KARENA PDF SUDAH DIGENERATE

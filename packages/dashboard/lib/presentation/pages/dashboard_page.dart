@@ -429,8 +429,24 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 
       final bytes = response.data;
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/audit-report-$sessionId.pdf');
+      
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!await dir.exists()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+      
+      File file = File('${dir!.path}/audit-report-$sessionId.pdf');
+      int counter = 1;
+      while (await file.exists()) {
+        file = File('${dir.path}/audit-report-$sessionId ($counter).pdf');
+        counter++;
+      }
+
       await file.writeAsBytes(bytes);
 
       if (mounted) {

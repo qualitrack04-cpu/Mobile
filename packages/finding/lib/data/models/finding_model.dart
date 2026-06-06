@@ -25,7 +25,7 @@ class FindingModel extends Finding {
       foundAt: DateTime.parse(json['foundAt'] as String),
       status: FindingStatus.fromString(json['status'] as String),
       department: json['department'] as String,
-      reporter: json['reporter'] as String? ?? '',
+      reporter: json['reporterName'] as String? ?? '',
     );
   }
 
@@ -36,7 +36,7 @@ class FindingModel extends Finding {
       'description': description,
       'clauseRef': clauseRef,
       'department': department,
-      'reporter': reporter,
+      'reporterName': reporter,
     };
   }
 }

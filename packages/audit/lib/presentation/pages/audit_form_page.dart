@@ -95,9 +95,15 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _descriptionController.text = audit.description;
       _selectedAuditorName = audit.auditorName;
       _selectedDepartment = _departments.entries
-          .where((e) => e.value == audit.department)
+          .where((e) => e.value == audit.department || e.key == audit.department)
           .map((e) => e.key)
           .firstOrNull;
+
+      // Fallback: Jika tidak cocok dengan map, tambahkan ke map agar dropdown tidak null
+      if (_selectedDepartment == null && audit.department.isNotEmpty) {
+        _departments[audit.department] = audit.department;
+        _selectedDepartment = audit.department;
+      }
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
