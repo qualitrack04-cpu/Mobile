@@ -180,7 +180,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'reporter': reporter,
+        'reporterName': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -202,7 +202,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'reporter': reporter,
+        'reporterName': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
