@@ -1,7 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/services/auth_service.dart';
+import 'package:core_services/services/dashboard_service.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -280,37 +285,16 @@ class _DashboardPageState extends State<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Bagian atas (dummy pdf thumbnail)
+              // Bagian atas (actual pdf thumbnail)
               Container(
                 height: 100,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA), // Light Gray/White
+                  color: Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Reporting\nStructure',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'White Paper',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: PdfThumbnailWidget(sessionId: report.sessionId),
                 ),
               ),
               // Bagian bawah (Text + Button)
@@ -1097,5 +1081,90 @@ class _DashboardPageState extends State<DashboardPage> {
       'December',
     ];
     return months[month - 1];
+  }
+}
+
+class PdfThumbnailWidget extends StatefulWidget {
+  final String sessionId;
+  const PdfThumbnailWidget({super.key, required this.sessionId});
+
+  @override
+  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
+}
+
+class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
+  PdfDocument? _pdfDoc;
+  PdfPageImage? _pageImage;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdfThumbnail();
+  }
+
+  Future<void> _loadPdfThumbnail() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final document = await PdfDocument.openData(response.data);
+      final page = await document.getPage(1);
+      
+      // Render page at a small thumbnail resolution to save memory
+      final pageImage = await page.render(
+        width: page.width / 3,
+        height: page.height / 3,
+        format: PdfPageImageFormat.jpeg,
+      );
+
+      if (mounted) {
+        setState(() {
+          _pdfDoc = document;
+          _pageImage = pageImage;
+          _isLoading = false;
+        });
+      }
+
+      await page.close();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfDoc?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)));
+    }
+    if (_hasError || _pageImage == null) {
+      return const Center(
+        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
+      );
+    }
+    return Container(
+      color: Colors.white,
+      child: Image.memory(
+        _pageImage!.bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        alignment: Alignment.topCenter,
+      ),
+    );
   }
 }
