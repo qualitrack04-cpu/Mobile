@@ -3,11 +3,19 @@ import 'package:core/app_colors.dart';
 import 'package:auth/presentation/pages/login_page.dart';
 import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:core_services/core_services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'injector.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.init(); // ✅ initialize injector
+  
+  // Initialize notification service
+  await NotificationService().init();
+
+  // Request notification permissions
+  await Permission.notification.request();
   
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');

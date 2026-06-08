@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:dio/dio.dart';
 
 import 'package:core_services/services/api_service.dart';
+import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -100,13 +101,26 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F3659)),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AuditChecklistPage(audit: widget.audit),
-              ),
-            );
+          onPressed: () async {
+            // Tandai bahwa user sengaja kembali ke checklist,
+            // sehingga checklist tidak auto-redirect ke preview lagi.
+            // Tapi PREVIEW state TETAP ada agar jika dibuka dari audit list
+            // masih bisa dilanjutkan dari halaman preview.
+            final prefs = await SharedPreferences.getInstance();
+            final sessionKey = 'audit_session_${widget.audit.scheduleId}';
+            await prefs.setBool('${sessionKey}_skip_redirect', true);
+
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: GetIt.instance<AuditBloc>(),
+                    child: AuditChecklistPage(audit: widget.audit),
+                  ),
+                ),
+              );
+            }
           },
         ),
         title: Text(
@@ -390,24 +404,57 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     );
   }
 
-  Future<void> _downloadAndHandlePdf({required bool viewOnly}) async {
+
+  /// View: unduh ke temp dir lalu langsung buka di PDF reader HP
+  /// Tidak menandai audit sebagai selesai — hanya untuk melihat isi PDF
+  Future<void> _viewPdf() async {
     try {
       final apiService = GetIt.I<ApiService>();
-      
-      // 1. Tampilkan loading
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Generating PDF...'), duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Opening PDF...'), duration: Duration(seconds: 2)),
       );
 
-      // 2. Unduh PDF via API
       final response = await apiService.client.get(
         '/api/Pdf/audit-report/${widget.sessionId}',
         options: Options(responseType: ResponseType.bytes),
       );
-      
-      // 3. Simpan ke local storage
+
       final bytes = response.data;
-      
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/audit-report-${widget.sessionId}.pdf');
+      await file.writeAsBytes(bytes);
+
+      // View saja — JANGAN tandai selesai
+      // Audit hanya dianggap selesai saat user menekan Download
+      if (mounted) {
+        await OpenFilex.open(file.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open PDF: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  /// Download: simpan ke folder Download HP + tampil notifikasi
+  Future<void> _downloadAndSavePdf() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Downloading PDF...'), duration: Duration(seconds: 2)),
+      );
+
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+
       Directory? dir;
       if (Platform.isAndroid) {
         dir = Directory('/storage/emulated/0/Download');
@@ -417,7 +464,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
-      
+
       File file = File('${dir!.path}/audit-report-${widget.sessionId}.pdf');
       int counter = 1;
       while (await file.exists()) {
@@ -427,46 +474,42 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
 
       await file.writeAsBytes(bytes);
 
-      // 4. TANDAI SESI SELESAI SECARA PERMANEN KARENA PDF SUDAH DIGENERATE
+      // Tandai sesi selesai
       try {
         final datasource = GetIt.instance<ChecklistRemoteDatasource>();
         await datasource.markSessionComplete(widget.sessionId);
-        
-        // Hapus session key agar audit ini tidak bisa dilanjutkan/direview lagi
         final prefs = await SharedPreferences.getInstance();
         final sessionKey = 'audit_session_${widget.audit.scheduleId}';
         await prefs.remove(sessionKey);
         await prefs.remove('${sessionKey}_state');
-        
-        // Tandai audit finished di Bloc agar List terupdate
         if (mounted) {
           context.read<AuditBloc>().add(
-            MarkAuditFinishedEvent(audit: widget.audit, isFinished: true)
+            MarkAuditFinishedEvent(audit: widget.audit, isFinished: true),
           );
         }
-      } catch (e) {
-        // Abaikan error jika gagal tandai selesai, minimal PDF sudah terdownload
-      }
+      } catch (_) {}
 
       if (mounted) {
-        if (viewOnly) {
-          // Buka dengan aplikasi eksternal
-          OpenFilex.open(file.path);
-        } else {
-          // Hanya notifikasi sukses download
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('PDF downloaded to ${file.path}')),
-          );
-        }
+        await NotificationService().showDownloadNotification(
+          id: widget.sessionId.hashCode,
+          title: 'Download Complete',
+          body: 'audit-report-${widget.sessionId}.pdf has been downloaded',
+          filePath: file.path,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF saved to ${file.path}')),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Failed to download PDF: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
+
 
   Widget _buildStickyButton() {
     return Container(
@@ -487,10 +530,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
             barrierDismissible: false,
             builder: (_) => PdfSuccessDialog(
               onView: () {
-                _downloadAndHandlePdf(viewOnly: true);
+                _viewPdf();
               },
               onDownload: () {
-                _downloadAndHandlePdf(viewOnly: false);
+                _downloadAndSavePdf();
               },
             ),
           );

@@ -335,7 +335,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: double.infinity,
                         height: 38,
                         child: ElevatedButton(
-                          onPressed: () => _downloadAndOpenPdf(report.sessionId),
+                          onPressed: () => _viewPdf(report.sessionId),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00104A), // Dark navy
                             shape: RoundedRectangleBorder(
@@ -393,7 +393,7 @@ class _DashboardPageState extends State<DashboardPage> {
             top: 12,
             right: 12,
             child: GestureDetector(
-              onTap: () => _downloadAndOpenPdf(report.sessionId),
+              onTap: () => _downloadAndSavePdf(report.sessionId),
               child: Container(
                 width: 32,
                 height: 32,
@@ -414,8 +414,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _downloadAndOpenPdf(String sessionId) async {
-    // Tampilkan loading dialog
+  /// Buka PDF langsung di reader HP (tanpa simpan ke Download)
+  Future<void> _viewPdf(String sessionId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -429,7 +429,41 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 
       final bytes = response.data;
-      
+      // Simpan ke direktori temporary (bukan Download)
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/audit-report-$sessionId.pdf');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.pop(context);
+        await OpenFilex.open(file.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open PDF: $e')),
+        );
+      }
+    }
+  }
+
+  /// Download PDF → simpan ke folder Download HP → tampil notifikasi
+  Future<void> _downloadAndSavePdf(String sessionId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _dashboardService.apiService.client.get(
+        '/api/Pdf/audit-report/$sessionId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+
       Directory? dir;
       if (Platform.isAndroid) {
         dir = Directory('/storage/emulated/0/Download');
@@ -439,7 +473,7 @@ class _DashboardPageState extends State<DashboardPage> {
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
-      
+
       File file = File('${dir!.path}/audit-report-$sessionId.pdf');
       int counter = 1;
       while (await file.exists()) {
@@ -450,14 +484,25 @@ class _DashboardPageState extends State<DashboardPage> {
       await file.writeAsBytes(bytes);
 
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
-        await OpenFilex.open(file.path);
+        Navigator.pop(context);
+
+        // Tampil notifikasi sistem Android
+        await NotificationService().showDownloadNotification(
+          id: sessionId.hashCode,
+          title: 'Download Complete',
+          body: 'audit-report-$sessionId.pdf has been downloaded',
+          filePath: file.path,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('File saved to ${file.path}')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e')),
+          SnackBar(content: Text('Failed to download PDF: $e')),
         );
       }
     }
