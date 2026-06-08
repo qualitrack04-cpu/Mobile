@@ -584,6 +584,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
             context: context,
             barrierDismissible: false,
             builder: (_) => PdfSuccessDialog(
+              sessionId: widget.sessionId,
               onView: () {
                 _viewPdf();
               },

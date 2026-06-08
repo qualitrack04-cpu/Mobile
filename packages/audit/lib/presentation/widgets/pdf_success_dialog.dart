@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:pdfx/pdfx.dart';
+import 'package:get_it/get_it.dart';
+import 'package:core/app_colors.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:dio/dio.dart';
 
 class PdfSuccessDialog extends StatelessWidget {
   final VoidCallback onView;
   final VoidCallback onDownload;
   final String reportTitle;
+  final String sessionId;
 
   const PdfSuccessDialog({
     super.key,
     required this.onView,
     required this.onDownload,
+    required this.sessionId,
     this.reportTitle = 'Monthly Compliance Report',
   });
 
@@ -158,57 +165,14 @@ class PdfSuccessDialog extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 160,
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F8FF),
+                color: const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE0E8F5)),
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.shield_outlined, size: 16, color: Colors.blue),
-                        const SizedBox(width: 4),
-                        Text('QualiTrack',
-                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    child: Text(
-                      'Audit\nReport',
-                      style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F3659),
-                          height: 1.2),
-                    ),
-                  ),
-                  Positioned(
-                    right: -20,
-                    bottom: -20,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                    ),
-                  ),
-                  Positioned(
-                    right: -20,
-                    top: 20,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: const BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
-                    ),
-                  ),
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: PdfThumbnailWidget(sessionId: sessionId),
               ),
             ),
             const SizedBox(height: 24),
@@ -248,6 +212,97 @@ class PdfSuccessDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PdfThumbnailWidget extends StatefulWidget {
+  final String sessionId;
+  const PdfThumbnailWidget({super.key, required this.sessionId});
+
+  @override
+  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
+}
+
+class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
+  PdfDocument? _pdfDoc;
+  PdfPageImage? _pageImage;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdfThumbnail();
+  }
+
+  Future<void> _loadPdfThumbnail() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final document = await PdfDocument.openData(response.data);
+      final page = await document.getPage(1);
+      
+      // Render page at a small thumbnail resolution to save memory
+      final pageImage = await page.render(
+        width: page.width / 3,
+        height: page.height / 3,
+        format: PdfPageImageFormat.jpeg,
+      );
+
+      if (mounted) {
+        setState(() {
+          _pdfDoc = document;
+          _pageImage = pageImage;
+          _isLoading = false;
+        });
+      }
+
+      await page.close();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfDoc?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: SizedBox(
+          width: 24, 
+          height: 24, 
+          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)
+        )
+      );
+    }
+    if (_hasError || _pageImage == null) {
+      return const Center(
+        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
+      );
+    }
+    return Container(
+      color: Colors.white,
+      child: Image.memory(
+        _pageImage!.bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        alignment: Alignment.topCenter,
       ),
     );
   }
