@@ -10,6 +10,7 @@ import 'package:core_services/services/api_service.dart';
 import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../../data/datasources/checklist_remote_datasource.dart';
@@ -101,27 +102,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F3659)),
-          onPressed: () async {
-            // Tandai bahwa user sengaja kembali ke checklist,
-            // sehingga checklist tidak auto-redirect ke preview lagi.
-            // Tapi PREVIEW state TETAP ada agar jika dibuka dari audit list
-            // masih bisa dilanjutkan dari halaman preview.
-            final prefs = await SharedPreferences.getInstance();
-            final sessionKey = 'audit_session_${widget.audit.scheduleId}';
-            await prefs.setBool('${sessionKey}_skip_redirect', true);
-
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: GetIt.instance<AuditBloc>(),
-                    child: AuditChecklistPage(audit: widget.audit),
-                  ),
-                ),
-              );
-            }
-          },
+          onPressed: () => _showExitConfirmation(),
         ),
         title: Text(
           'Audit Report Preview',
@@ -407,6 +388,80 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
 
   /// View: unduh ke temp dir lalu langsung buka di PDF reader HP
   /// Tidak menandai audit sebagai selesai — hanya untuk melihat isi PDF
+  /// Tampilkan dialog konfirmasi sebelum keluar dari halaman preview
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Leave Audit Report Preview?',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F3659),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'You have not generated the PDF yet. Go to Dashboard or stay on this page to create your PDF report.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true)
+                        .pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003B5C),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Go to Dashboard',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF003B5C)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Stay Here',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF003B5C))),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _viewPdf() async {
     try {
       final apiService = GetIt.I<ApiService>();
@@ -425,9 +480,9 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       final file = File('${tempDir.path}/audit-report-${widget.sessionId}.pdf');
       await file.writeAsBytes(bytes);
 
-      // View saja — JANGAN tandai selesai
-      // Audit hanya dianggap selesai saat user menekan Download
+      // View saja — JANGAN tandai selesai. Audit selesai hanya saat Download.
       if (mounted) {
+        Navigator.pop(context); // Tutup PdfSuccessDialog
         await OpenFilex.open(file.path);
       }
     } catch (e) {
