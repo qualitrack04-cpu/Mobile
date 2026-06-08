@@ -670,10 +670,17 @@ class _DashboardPageState extends State<DashboardPage> {
     final List<ComplianceScore> displayScores = standardDepts.map((deptName) {
       // Cari apakah ada data dari API untuk departemen ini
       final apiDataList = scoreResponse.data.where((d) {
-        // Toleransi kalau dari backend namanya "Produksi"
+        // Normalisasi nama dari backend ke nama tampilan:
+        // 'Produksi' atau 'Production' → Production
+        // 'QC' atau 'Quality Control' → Quality Control
         if (deptName == 'Production') {
           return d.department.toLowerCase() == 'production' || 
                  d.department.toLowerCase() == 'produksi';
+        }
+        if (deptName == 'Quality Control') {
+          return d.department == 'QC' || 
+                 d.department.toLowerCase() == 'quality control' ||
+                 d.department.toLowerCase() == 'quality manager';
         }
         return d.department.toLowerCase() == deptName.toLowerCase();
       }).toList();
@@ -701,17 +708,21 @@ class _DashboardPageState extends State<DashboardPage> {
         itemBuilder: (context, index) {
           final item = displayScores[index];
           
-          // Memastikan warnanya tidak tertukar walau API nulisnya "Produksi"
-          final isProduction = item.department.toLowerCase() == 'produksi' || item.department == 'Production';
-          final color = isProduction 
-              ? colors['Production']! 
-              : (colors[item.department] ?? AppColors.primaryLight);
+          // Normalisasi nama departemen dari backend ke nama tampilan
+          String displayDept = item.department;
+          if (item.department.toLowerCase() == 'produksi' || item.department.toLowerCase() == 'production') {
+            displayDept = 'Production';
+          } else if (item.department == 'QC' || item.department.toLowerCase() == 'quality control' || item.department.toLowerCase() == 'quality manager') {
+            displayDept = 'Quality Control';
+          }
+
+          final color = colors[displayDept] ?? AppColors.primaryLight;
           
           return SizedBox(
-            width: cardWidth, // Lebar kotaknya responsif
+            width: cardWidth,
             child: _complianceCard(
               ComplianceScore(
-                department: isProduction ? 'Production' : item.department,
+                department: displayDept,
                 score: item.score,
                 totalAudit: item.totalAudit,
                 totalResponses: item.totalResponses,
@@ -1002,12 +1013,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: scheduleDay.departments.take(3).map((dept) {
-                            // Cek jika namanya "Produksi", samakan dengan "Production"
-                            final isProduction = dept.department.toLowerCase() == 'produksi' || dept.department == 'Production';
-                            final color = isProduction
-                                ? deptColors['Production']!
-                                : (deptColors[dept.department] ?? AppColors.primaryLight);
+                            children: scheduleDay.departments.take(3).map((dept) {
+                              // Normalisasi nama departemen dari backend
+                              String normalizedDept = dept.department;
+                              if (dept.department.toLowerCase() == 'produksi' || dept.department.toLowerCase() == 'production') {
+                                normalizedDept = 'Production';
+                              } else if (dept.department == 'QC' || dept.department.toLowerCase() == 'quality control' || dept.department.toLowerCase() == 'quality manager') {
+                                normalizedDept = 'Quality Control';
+                              }
+                              final color = deptColors[normalizedDept] ?? AppColors.primaryLight;
                             return Container(
                               margin: const EdgeInsets.symmetric(horizontal: 1.5),
                               width: 4,
