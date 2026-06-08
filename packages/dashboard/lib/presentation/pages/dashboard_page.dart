@@ -1,7 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/services/auth_service.dart';
+import 'package:core_services/services/dashboard_service.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -280,37 +285,16 @@ class _DashboardPageState extends State<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Bagian atas (dummy pdf thumbnail)
+              // Bagian atas (actual pdf thumbnail)
               Container(
                 height: 100,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA), // Light Gray/White
+                  color: Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Reporting\nStructure',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'White Paper',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: PdfThumbnailWidget(sessionId: report.sessionId),
                 ),
               ),
               // Bagian bawah (Text + Button)
@@ -335,7 +319,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: double.infinity,
                         height: 38,
                         child: ElevatedButton(
-                          onPressed: () => _downloadAndOpenPdf(report.sessionId),
+                          onPressed: () => _viewPdf(report.sessionId),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00104A), // Dark navy
                             shape: RoundedRectangleBorder(
@@ -393,7 +377,7 @@ class _DashboardPageState extends State<DashboardPage> {
             top: 12,
             right: 12,
             child: GestureDetector(
-              onTap: () => _downloadAndOpenPdf(report.sessionId),
+              onTap: () => _downloadAndSavePdf(report.sessionId),
               child: Container(
                 width: 32,
                 height: 32,
@@ -414,8 +398,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _downloadAndOpenPdf(String sessionId) async {
-    // Tampilkan loading dialog
+  /// Buka PDF langsung di reader HP (tanpa simpan ke Download)
+  Future<void> _viewPdf(String sessionId) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -429,7 +413,41 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 
       final bytes = response.data;
-      
+      // Simpan ke direktori temporary (bukan Download)
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/audit-report-$sessionId.pdf');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.pop(context);
+        await OpenFilex.open(file.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open PDF: $e')),
+        );
+      }
+    }
+  }
+
+  /// Download PDF → simpan ke folder Download HP → tampil notifikasi
+  Future<void> _downloadAndSavePdf(String sessionId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _dashboardService.apiService.client.get(
+        '/api/Pdf/audit-report/$sessionId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+
       Directory? dir;
       if (Platform.isAndroid) {
         dir = Directory('/storage/emulated/0/Download');
@@ -439,7 +457,7 @@ class _DashboardPageState extends State<DashboardPage> {
       } else {
         dir = await getApplicationDocumentsDirectory();
       }
-      
+
       File file = File('${dir!.path}/audit-report-$sessionId.pdf');
       int counter = 1;
       while (await file.exists()) {
@@ -450,14 +468,25 @@ class _DashboardPageState extends State<DashboardPage> {
       await file.writeAsBytes(bytes);
 
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
-        await OpenFilex.open(file.path);
+        Navigator.pop(context);
+
+        // Tampil notifikasi sistem Android
+        await NotificationService().showDownloadNotification(
+          id: sessionId.hashCode,
+          title: 'Download Complete',
+          body: 'audit-report-$sessionId.pdf has been downloaded',
+          filePath: file.path,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('File saved to ${file.path}')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e')),
+          SnackBar(content: Text('Failed to download PDF: $e')),
         );
       }
     }
@@ -625,10 +654,17 @@ class _DashboardPageState extends State<DashboardPage> {
     final List<ComplianceScore> displayScores = standardDepts.map((deptName) {
       // Cari apakah ada data dari API untuk departemen ini
       final apiDataList = scoreResponse.data.where((d) {
-        // Toleransi kalau dari backend namanya "Produksi"
+        // Normalisasi nama dari backend ke nama tampilan:
+        // 'Produksi' atau 'Production' → Production
+        // 'QC' atau 'Quality Control' → Quality Control
         if (deptName == 'Production') {
           return d.department.toLowerCase() == 'production' || 
                  d.department.toLowerCase() == 'produksi';
+        }
+        if (deptName == 'Quality Control') {
+          return d.department == 'QC' || 
+                 d.department.toLowerCase() == 'quality control' ||
+                 d.department.toLowerCase() == 'quality manager';
         }
         return d.department.toLowerCase() == deptName.toLowerCase();
       }).toList();
@@ -656,17 +692,21 @@ class _DashboardPageState extends State<DashboardPage> {
         itemBuilder: (context, index) {
           final item = displayScores[index];
           
-          // Memastikan warnanya tidak tertukar walau API nulisnya "Produksi"
-          final isProduction = item.department.toLowerCase() == 'produksi' || item.department == 'Production';
-          final color = isProduction 
-              ? colors['Production']! 
-              : (colors[item.department] ?? AppColors.primaryLight);
+          // Normalisasi nama departemen dari backend ke nama tampilan
+          String displayDept = item.department;
+          if (item.department.toLowerCase() == 'produksi' || item.department.toLowerCase() == 'production') {
+            displayDept = 'Production';
+          } else if (item.department == 'QC' || item.department.toLowerCase() == 'quality control' || item.department.toLowerCase() == 'quality manager') {
+            displayDept = 'Quality Control';
+          }
+
+          final color = colors[displayDept] ?? AppColors.primaryLight;
           
           return SizedBox(
-            width: cardWidth, // Lebar kotaknya responsif
+            width: cardWidth,
             child: _complianceCard(
               ComplianceScore(
-                department: isProduction ? 'Production' : item.department,
+                department: displayDept,
                 score: item.score,
                 totalAudit: item.totalAudit,
                 totalResponses: item.totalResponses,
@@ -957,12 +997,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: scheduleDay.departments.take(3).map((dept) {
-                            // Cek jika namanya "Produksi", samakan dengan "Production"
-                            final isProduction = dept.department.toLowerCase() == 'produksi' || dept.department == 'Production';
-                            final color = isProduction
-                                ? deptColors['Production']!
-                                : (deptColors[dept.department] ?? AppColors.primaryLight);
+                            children: scheduleDay.departments.take(3).map((dept) {
+                              // Normalisasi nama departemen dari backend
+                              String normalizedDept = dept.department;
+                              if (dept.department.toLowerCase() == 'produksi' || dept.department.toLowerCase() == 'production') {
+                                normalizedDept = 'Production';
+                              } else if (dept.department == 'QC' || dept.department.toLowerCase() == 'quality control' || dept.department.toLowerCase() == 'quality manager') {
+                                normalizedDept = 'Quality Control';
+                              }
+                              final color = deptColors[normalizedDept] ?? AppColors.primaryLight;
                             return Container(
                               margin: const EdgeInsets.symmetric(horizontal: 1.5),
                               width: 4,
@@ -1038,5 +1081,90 @@ class _DashboardPageState extends State<DashboardPage> {
       'December',
     ];
     return months[month - 1];
+  }
+}
+
+class PdfThumbnailWidget extends StatefulWidget {
+  final String sessionId;
+  const PdfThumbnailWidget({super.key, required this.sessionId});
+
+  @override
+  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
+}
+
+class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
+  PdfDocument? _pdfDoc;
+  PdfPageImage? _pageImage;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdfThumbnail();
+  }
+
+  Future<void> _loadPdfThumbnail() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      final document = await PdfDocument.openData(response.data);
+      final page = await document.getPage(1);
+      
+      // Render page at a small thumbnail resolution to save memory
+      final pageImage = await page.render(
+        width: page.width / 3,
+        height: page.height / 3,
+        format: PdfPageImageFormat.jpeg,
+      );
+
+      if (mounted) {
+        setState(() {
+          _pdfDoc = document;
+          _pageImage = pageImage;
+          _isLoading = false;
+        });
+      }
+
+      await page.close();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfDoc?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)));
+    }
+    if (_hasError || _pageImage == null) {
+      return const Center(
+        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
+      );
+    }
+    return Container(
+      color: Colors.white,
+      child: Image.memory(
+        _pageImage!.bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        alignment: Alignment.topCenter,
+      ),
+    );
   }
 }
