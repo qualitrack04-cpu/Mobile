@@ -1,19 +1,23 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String name;
   final String email;
   final String role;
+  final String photoPath;
 
   const EditProfilePage({
     super.key,
     required this.name,
     required this.email,
     required this.role,
+    required this.photoPath,
   });
 
   @override
@@ -31,6 +35,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _isObscuredConfirm = true;
   bool _isLoading = false;
   String? _errorMessage;
+  File? _selectedPhoto;
 
   @override
   void initState() {
@@ -57,6 +62,62 @@ class _EditProfilePageState extends State<EditProfilePage> {
           (Match m) => ' ${m[1]}',
         )
         .trim();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: Text('Camera', style: GoogleFonts.inter()),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final picked = await picker.pickImage(
+                  source: ImageSource.camera,
+                  imageQuality: 80,
+                );
+                if (picked != null) {
+                  setState(() => _selectedPhoto = File(picked.path));
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text('Gallery', style: GoogleFonts.inter()),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 80,
+                );
+                if (picked != null) {
+                  setState(() => _selectedPhoto = File(picked.path));
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onSaveChanges() {
@@ -90,7 +151,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Container(
               width: 40,
               height: 4,
@@ -100,7 +160,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-
             Text(
               'Are you sure you want to save the changes to your profile? This action will update your account information.',
               textAlign: TextAlign.center,
@@ -111,8 +170,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Save button
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -127,8 +184,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.edit_outlined,
-                    color: Colors.white, size: 18),
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
                 label: Text(
                   'Save',
                   style: GoogleFonts.inter(
@@ -140,8 +200,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Cancel button
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
@@ -161,15 +219,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _saveChanges() async {
     setState(() => _isLoading = true);
-
     try {
-      // TODO: implement update profile API call
-      // Untuk sekarang update local storage saja
       final authService = GetIt.instance<AuthService>();
       await authService.updateProfile(
         name: _usernameController.text.trim(),
         email: _emailController.text.trim(),
       );
+
+      if (_selectedPhoto != null) {
+        await authService.updateProfilePhoto(_selectedPhoto!.path);
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,6 +243,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  ImageProvider? _getPhotoProvider() {
+    if (_selectedPhoto != null) return FileImage(_selectedPhoto!);
+    if (widget.photoPath.isNotEmpty) return FileImage(File(widget.photoPath));
+    return null;
   }
 
   @override
@@ -234,30 +299,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       CircleAvatar(
                         radius: 48,
                         backgroundColor: AppColors.borderLight,
-                        child: Icon(
-                          Icons.person,
-                          size: 52,
-                          color: AppColors.primaryMuted,
-                        ),
+                        backgroundImage: _getPhotoProvider(),
+                        child: _getPhotoProvider() == null
+                            ? Icon(
+                                Icons.person,
+                                size: 52,
+                                color: AppColors.primaryMuted,
+                              )
+                            : null,
                       ),
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.surface,
-                              width: 2,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.surface,
+                                width: 2,
+                              ),
                             ),
-                          ),
-                          child: const Icon(
-                            Icons.edit,
-                            size: 14,
-                            color: Colors.white,
+                            child: const Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -343,7 +414,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
             const SizedBox(height: 24),
 
-            // Save button
             Align(
               alignment: Alignment.centerRight,
               child: _isLoading

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
@@ -17,6 +18,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _name = '';
   String _email = '';
   String _role = '';
+  String _photoPath = '';
   bool _isLoading = true;
   bool _showMenu = false;
 
@@ -33,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _name = user['name'] ?? '';
       _email = user['email'] ?? '';
       _role = user['role'] ?? '';
+      _photoPath = user['photo'] ?? '';
       _isLoading = false;
     });
   }
@@ -119,7 +122,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       child: Column(
                         children: [
-                          // Edit Profile
                           InkWell(
                             onTap: () {
                               setState(() => _showMenu = false);
@@ -130,6 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     name: _name,
                                     email: _email,
                                     role: _role,
+                                    photoPath: _photoPath,
                                   ),
                                 ),
                               ).then((_) => _loadUserData());
@@ -161,7 +164,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                           const Divider(height: 1),
 
-                          // Log Out
                           InkWell(
                             onTap: () {
                               setState(() => _showMenu = false);
@@ -210,18 +212,19 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: AppColors.borderLight,
-                child: Icon(
-                  Icons.person,
-                  size: 52,
-                  color: AppColors.primaryMuted,
-                ),
-              ),
-            ],
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: AppColors.borderLight,
+            backgroundImage: _photoPath.isNotEmpty
+                ? FileImage(File(_photoPath))
+                : null,
+            child: _photoPath.isEmpty
+                ? Icon(
+                    Icons.person,
+                    size: 52,
+                    color: AppColors.primaryMuted,
+                  )
+                : null,
           ),
           const SizedBox(height: 14),
           Text(
@@ -256,11 +259,20 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoField(label: 'Username', value: _name.isEmpty ? '-' : _name),
+          _buildInfoField(
+            label: 'Username',
+            value: _name.isEmpty ? '-' : _name,
+          ),
           Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(label: 'Email', value: _email.isEmpty ? '-' : _email),
+          _buildInfoField(
+            label: 'Email',
+            value: _email.isEmpty ? '-' : _email,
+          ),
           Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(label: 'Role', value: _formatRole(_role)),
+          _buildInfoField(
+            label: 'Role',
+            value: _formatRole(_role),
+          ),
         ],
       ),
     );
@@ -283,7 +295,10 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(10),
@@ -306,7 +321,9 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: Text(
           'Log Out',
           style: GoogleFonts.inter(

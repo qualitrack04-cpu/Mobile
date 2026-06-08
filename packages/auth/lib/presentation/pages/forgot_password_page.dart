@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
 import 'package:get_it/get_it.dart';
-import '../widgets/action_button.dart';
-import 'otp_page.dart';
+import '../widgets/custom_input_decoration.dart';
+import '../widgets/input_label.dart';
 import 'login_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -15,12 +15,18 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isObscuredNew = true;
+  bool _isObscuredConfirm = true;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -32,13 +38,26 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return emailRegex.hasMatch(email);
   }
 
-  Future<void> _onRequestOtp() async {
-    if (_emailController.text.trim().isEmpty) {
-      setState(() => _errorMessage = 'Email wajib diisi');
+  Future<void> _onResetPassword() async {
+    final email = _emailController.text.trim();
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    // Validasi
+    if (email.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      setState(() => _errorMessage = 'Semua field wajib diisi');
       return;
     }
-    if (!_isValidEmail(_emailController.text.trim())) {
+    if (!_isValidEmail(email)) {
       setState(() => _errorMessage = 'Email tidak valid');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setState(() => _errorMessage = 'Password minimal 6 karakter');
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      setState(() => _errorMessage = 'Password tidak sama');
       return;
     }
 
@@ -49,23 +68,88 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     try {
       final authService = GetIt.instance<AuthService>();
-      await authService.requestForgotPasswordOtp(
-        email: _emailController.text.trim(),
+      await authService.forgotPassword(
+        email: email,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
       );
 
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (_) => OtpPage(
-                email: _emailController.text.trim(),
-                isForgotPassword: true,
+
+      // Tampilkan dialog sukses lalu kembali ke login
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.green,
+                  size: 32,
+                ),
               ),
+              const SizedBox(height: 16),
+              const Text(
+                'Password Reset!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Password kamu berhasil direset. Silakan login dengan password baru.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginPage(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Login Sekarang',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email tidak ditemukan');
+      setState(() => _errorMessage = 'Gagal reset password, pastikan email terdaftar');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -74,179 +158,249 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Row(
-            children: [
-              SizedBox(width: 8),
-              Icon(Icons.arrow_back_ios, size: 16, color: Colors.black87),
-              Text(
-                'Back',
-                style: TextStyle(color: Colors.black87, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-        leadingWidth: 80,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: Column(
-            children: [
-              // Logo
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
+      backgroundColor: const Color(0xFFEEF2F7),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Back button ────────────────────────────────────
+            Align(
+              alignment: Alignment.topLeft,
+              child: TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back,
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
+                  size: 18,
                 ),
-                child: const Icon(Icons.shield, size: 28, color: Colors.white),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'QualiTrack',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                label: const Text(
+                  'Back',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                  ),
                 ),
               ),
-              const Text(
-                'Precision Quality & Audit Management',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 30),
+            ),
 
-              Container(
-                padding: const EdgeInsets.all(25),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 40,
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Judul
-                    Text(
-                      'Forgot Password?',
+                    // ── Logo di luar card ──────────────────────
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.shield,
+                        size: 26,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'QualiTrack',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 12),
-
-                    // Deskripsi
                     const Text(
-                      'Enter your registered work email below. We will send you a OTP Code to reset your password.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                        height: 1.5,
-                      ),
+                      'Precision Quality & Audit Management',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    const SizedBox(height: 24),
 
-                    // Email field tanpa label
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        hintText: 'name@company.com',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        prefixIcon: const Icon(
-                          Icons.mail_outline,
-                          color: Colors.grey,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
+                    const SizedBox(height: 40),
+
+                    // ── Card ──────────────────────────────────
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
                           ),
-                        ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Judul
+                          const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Subtitle
+                          const Text(
+                            'Enter your email and new password to reset your account password.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Email field
+                          const InputLabel('Work Email'),
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            decoration: customInputDecoration(
+                              hint: 'name@company.com',
+                              icon: Icons.mail_outline,
+                            ),
+                          ),
+
+                          // New Password
+                          const InputLabel('New Password'),
+                          TextField(
+                            controller: _newPasswordController,
+                            obscureText: _isObscuredNew,
+                            decoration: customInputDecoration(
+                              hint: '••••••••',
+                              icon: Icons.lock_outline,
+                              suffix: IconButton(
+                                icon: Icon(
+                                  _isObscuredNew
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  size: 20,
+                                ),
+                                onPressed: () => setState(
+                                    () => _isObscuredNew = !_isObscuredNew),
+                              ),
+                            ),
+                          ),
+
+                          // Confirm Password
+                          const InputLabel('Confirm Password'),
+                          TextField(
+                            controller: _confirmPasswordController,
+                            obscureText: _isObscuredConfirm,
+                            decoration: customInputDecoration(
+                              hint: '••••••••',
+                              icon: Icons.lock_outline,
+                              suffix: IconButton(
+                                icon: Icon(
+                                  _isObscuredConfirm
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  size: 20,
+                                ),
+                                onPressed: () => setState(
+                                    () => _isObscuredConfirm =
+                                        !_isObscuredConfirm),
+                              ),
+                            ),
+                          ),
+
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 20),
+
+                          // Tombol RESET PASSWORD
+                          _isLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator())
+                              : SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _onResetPassword,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'RESET PASSWORD',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ],
                       ),
                     ),
+                    // ── End Card ───────────────────────────────
 
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                    // ── Remember your password? SIGN IN ────────
+                    Padding(
+                      padding: const EdgeInsets.only(top: 32, bottom: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Remember your password? ',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LoginPage(),
+                              ),
+                            ),
+                            child: const Text(
+                              'SIGN IN',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-
-                    const SizedBox(height: 20),
-
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ActionButton(
-                          label: 'SEND OTP CODE',
-                          onPressed: _onRequestOtp,
-                        ),
+                    ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Remember your password? SIGN IN
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Remember your password? ',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                  TextButton(
-                    onPressed:
-                        () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
-                        ),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'SIGN IN',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
