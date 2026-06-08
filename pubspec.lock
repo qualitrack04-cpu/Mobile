@@ -402,7 +402,7 @@ packages:
     source: hosted
     version: "4.8.0"
   image_picker:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: image_picker
       sha256: "91c025426c2881c551100bce834e201c835a170151545f58d17da5180ca7d9ac"
@@ -578,7 +578,7 @@ packages:
     source: hosted
     version: "9.3.0"
   open_filex:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: open_filex
       sha256: "9976da61b6a72302cf3b1efbce259200cd40232643a467aac7370addf94d6900"
