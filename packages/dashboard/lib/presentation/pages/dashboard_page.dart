@@ -111,17 +111,23 @@ class _DashboardPageState extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/icon/QualiTrack.png',
-              height: (screenWidth * 0.075).clamp(26.0, 34.0),
+              'assets/icon/Q.png',
+              height: (screenWidth * 0.08).clamp(32.0, 42.0), // Memperbesar logo
               fit: BoxFit.contain,
             ),
-            Text(
-              'Track',
-              style: GoogleFonts.inter(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: (screenWidth * 0.06).clamp(20.0, 26.0),
-                height: 1.0,
+            // Menggeser teks: Offset(Kiri/Kanan, Atas/Bawah)
+            // - Angka pertama (kiri/kanan): minus (-) untuk geser kiri, plus (+) untuk kanan
+            // - Angka kedua (atas/bawah): minus (-) untuk geser ke atas, plus (+) untuk ke bawah
+            Transform.translate(
+              offset: const Offset(-3, 3), // Coba atur angka '3' ini (naik/turun) sampai pas sejajar
+              child: Text(
+                'ualiTrack',
+                style: GoogleFonts.inter(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: (screenWidth * 0.06).clamp(24.0, 30.0), 
+                  height: 1.0, // Dibuat 1.0 agar tidak ada padding berlebih dari font
+                ),
               ),
             ),
           ],
@@ -211,8 +217,8 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildCalendar(schedule, screenWidth),
               const SizedBox(height: 24),
 
-              // 3. Audit Summary
-              _buildSectionTitle('AUDIT SUMMARY'),
+              // 3. summary card
+              _buildSectionTitle('SUMMARY CARD'),
               const SizedBox(height: 12),
               _buildAuditSummary(summary, screenWidth),
               const SizedBox(height: 24),
