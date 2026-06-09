@@ -11,6 +11,8 @@ class Finding extends Equatable {
   final FindingStatus status;
   final String department;
   final String reporter;
+  final bool isCapaClosed;
+  final DateTime? capaClosedAt;
 
   const Finding({
     required this.id,
@@ -22,6 +24,8 @@ class Finding extends Equatable {
     required this.status,
     required this.department,
     required this.reporter,
+    this.isCapaClosed = false,
+    this.capaClosedAt,
   });
 
   @override
@@ -33,6 +37,9 @@ class Finding extends Equatable {
         clauseRef,
         foundAt,
         status,
+        department,
         reporter,
+        isCapaClosed,
+        capaClosedAt,
       ];
 }
