@@ -33,6 +33,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final _titleController = TextEditingController();
   final _reporterController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _reporterFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
   String? _selectedDepartment;
   FindingCategory _selectedCategory = FindingCategory.majorNC;
   final List<XFile> _evidenceImages = [];
@@ -74,6 +77,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _titleController.addListener(() => setState(() {}));
     _reporterController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
+    _titleFocus.addListener(() => setState(() {}));
+    _reporterFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
   }
 
   @override
@@ -81,6 +87,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _reporterController.dispose();
+    _titleFocus.dispose();
+    _reporterFocus.dispose();
+    _descriptionFocus.dispose();
     super.dispose();
   }
 
@@ -263,7 +272,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
+                        focusNode: _titleFocus,
                         hint: 'Enter the finding title...',
+                        minLength: 5,
+                        maxLength: 150,
                       ),
                       _buildReporterField(),
                       _buildDivider(),
@@ -274,8 +286,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
+                        focusNode: _descriptionFocus,
                         hint: 'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
+                        minLength: 10,
+                        maxLength: 1000,
                       ),
                       _buildDivider(),
                       _buildEvidenceSection(),
@@ -337,15 +352,21 @@ class _FindingFormPageState extends State<FindingFormPage> {
     return _buildTextField(
       label: 'REPORTER',
       controller: _reporterController,
+      focusNode: _reporterFocus,
       hint: 'Enter the reporter name...',
+      minLength: 3,
+      maxLength: 100,
     );
   }
 
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -361,7 +382,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -369,6 +393,29 @@ class _FindingFormPageState extends State<FindingFormPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              if (!focusNode.hasFocus) return const SizedBox.shrink();
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/${minLength} characters';
+                hintColor = Colors.orange;
+              } else if (maxLength != null) {
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
