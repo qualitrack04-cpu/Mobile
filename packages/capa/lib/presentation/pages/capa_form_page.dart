@@ -21,6 +21,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _actionController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
+  final _actionFocus = FocusNode();
   DateTime? _selectedDeadline = DateTime.now();
   String? _selectedFindingId;
   String? _selectedPicId;
@@ -45,7 +48,11 @@ class _CapaFormPageState extends State<CapaFormPage> {
       _selectedFindingId = widget.findingId;
     }
     _titleController.addListener(() => setState(() {}));
+    _descriptionController.addListener(() => setState(() {}));
     _actionController.addListener(() => setState(() {}));
+    _titleFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
+    _actionFocus.addListener(() => setState(() {}));
     _loadData();
   }
 
@@ -67,8 +74,8 @@ class _CapaFormPageState extends State<CapaFormPage> {
               ? fData['data'] as List<dynamic>
               : <dynamic>[];
 
-      // Load semua users untuk PIC: GET /api/Auth/auditors (karena /users tidak ada)
-      final uRes = await api.client.get('/api/Auth/auditors');
+      // Load semua users untuk PIC dengan role Auditee
+      final uRes = await api.client.get('/api/Auth/users?role=Auditee');
       final usersRaw = uRes.data['data'] as List<dynamic>;
 
       setState(() {
@@ -102,6 +109,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _actionController.dispose();
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
+    _actionFocus.dispose();
     super.dispose();
   }
 
@@ -190,7 +200,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
                             _buildTextField(
                               label: 'TITLE',
                               controller: _titleController,
+                              focusNode: _titleFocus,
                               hint: 'Enter the capa title...',
+                              minLength: 5,
+                              maxLength: 200,
                             ),
                             _buildDivider(),
                             _buildFindingDropdown(),
@@ -198,15 +211,21 @@ class _CapaFormPageState extends State<CapaFormPage> {
                             _buildTextField(
                               label: 'DESCRIPTION',
                               controller: _descriptionController,
+                              focusNode: _descriptionFocus,
                               hint: 'Detail the non-conformance observed during the audit...',
                               maxLines: 4,
+                              minLength: 10,
+                              maxLength: 1000,
                             ),
                             _buildDivider(),
                             _buildTextField(
                               label: 'ACTION',
                               controller: _actionController,
-                              hint: 'Detail the non-conformance observed during the audit...',
+                              focusNode: _actionFocus,
+                              hint: 'Detail the corrective action to be taken...',
                               maxLines: 4,
+                              minLength: 10,
+                              maxLength: 1000,
                             ),
                             _buildDivider(),
                             _buildPicDropdown(),
@@ -236,8 +255,11 @@ class _CapaFormPageState extends State<CapaFormPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -256,7 +278,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -264,6 +289,30 @@ class _CapaFormPageState extends State<CapaFormPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          // AnimatedBuilder memiliki listener sendiri → update real-time tanpa bergantung setState parent
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              if (!focusNode.hasFocus) return const SizedBox.shrink();
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/${minLength} characters';
+                hintColor = Colors.orange;
+              } else if (maxLength != null) {
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),

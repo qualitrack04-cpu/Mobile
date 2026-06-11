@@ -126,7 +126,7 @@ class _FindingListViewState extends State<_FindingListView> {
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                           children: [
                             if (isLoading || sortedFindings.isNotEmpty)
-                              ...displayList.map(
+                              ...sortedFindings.map(
                                 (finding) => _FindingCard(finding: finding),
                               ),
                           ],

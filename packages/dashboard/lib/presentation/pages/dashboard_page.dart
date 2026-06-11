@@ -962,7 +962,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
               final int day = index - firstWeekday + 2;
               
-              // GANTI isToday menjadi isSelected
+              // Apakah tanggal ini adalah hari ini (tetap ada meski dipilih tanggal lain)
+              final today = DateTime.now();
+              final bool isToday =
+                  today.year == _calendarMonth.year &&
+                  today.month == _calendarMonth.month &&
+                  today.day == day;
+
+              // Apakah tanggal ini yang sedang dipilih
               final bool isSelected = 
                   _selectedDate.year == _calendarMonth.year &&
                   _selectedDate.month == _calendarMonth.month &&
@@ -984,9 +991,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent, // Pakai isSelected
+                    color: isSelected ? AppColors.primary : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    border: isSelected ? null : Border.all(color: Colors.transparent),
+                    // Border biru hanya muncul jika hari ini tapi TIDAK sedang dipilih
+                    border: isToday && !isSelected
+                        ? Border.all(color: AppColors.primary, width: 1.5)
+                        : Border.all(color: Colors.transparent),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -995,8 +1005,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         day.toString(),
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, // Pakai isSelected
-                          color: isSelected ? Colors.white : AppColors.textPrimary, // Pakai isSelected
+                          fontWeight: isSelected || isToday ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : isToday
+                                  ? AppColors.primary // teks hari ini berwarna biru jika tidak dipilih
+                                  : AppColors.textPrimary,
                         ),
                       ),
                       if (hasSchedule) ...[
