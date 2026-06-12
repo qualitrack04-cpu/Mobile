@@ -23,6 +23,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final _descriptionController = TextEditingController();
   final _scrollController = ScrollController();
   final _formNotifier = ValueNotifier<int>(0);
+  final _titleFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
 
   List<AuditorEntity> _auditors = [];
   bool _isLoadingAuditors = true;
@@ -124,6 +126,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     // Trigger rebuild FAB setiap kali text field berubah
     _titleController.addListener(() => _formNotifier.value++);
     _descriptionController.addListener(() => _formNotifier.value++);
+    _titleFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
   }
 
   @override
@@ -132,6 +136,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _descriptionController.dispose();
     _scrollController.dispose();
     _formNotifier.dispose();
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
     super.dispose();
   }
 
@@ -316,6 +322,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     _buildTextField(
                       label: 'TITLE',
                       controller: _titleController,
+                      focusNode: _titleFocus,
                       hint: 'Input audit title',
                     ),
                     _buildAuditorDropdown(),
@@ -466,8 +473,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
   }) {
+    const int minLength = 5;
+    const int maxLength = 200;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -488,15 +499,39 @@ class _AuditFormPageState extends State<AuditFormPage> {
           const SizedBox(height: 12),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.next,
             scrollPadding: const EdgeInsets.only(bottom: 120),
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
               border: InputBorder.none,
               isDense: true,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              if (!focusNode.hasFocus) return const SizedBox.shrink();
+              final int len = controller.text.length;
+              final bool belowMin = len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/$minLength characters';
+                hintColor = Colors.orange;
+              } else {
+                charHint = '$len/$maxLength characters';
+                hintColor = AppColors.textDisabled;
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
@@ -679,6 +714,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   Widget _buildDescriptionField() {
+    const int minLength = 10;
+    const int maxLength = 500;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -699,7 +737,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           const SizedBox(height: 12),
           TextField(
             controller: _descriptionController,
+            focusNode: _descriptionFocus,
             maxLines: 2,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.done,
             scrollPadding: const EdgeInsets.only(bottom: 120),
@@ -708,6 +749,27 @@ class _AuditFormPageState extends State<AuditFormPage> {
               hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
               border: InputBorder.none,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([_descriptionController, _descriptionFocus]),
+            builder: (context, _) {
+              if (!_descriptionFocus.hasFocus) return const SizedBox.shrink();
+              final int len = _descriptionController.text.length;
+              final bool belowMin = len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/$minLength characters';
+                hintColor = Colors.orange;
+              } else {
+                charHint = '$len/$maxLength characters';
+                hintColor = AppColors.textDisabled;
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
