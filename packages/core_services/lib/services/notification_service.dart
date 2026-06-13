@@ -41,12 +41,13 @@ class NotificationService {
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'download_channel',
+      'download_channel_v2', // Diubah agar Android me-recreate channel dengan setting baru
       'Downloads',
       channelDescription: 'Notifications for downloaded files',
       importance: Importance.max,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
+      channelShowBadge: false, // Menghilangkan badge merah pada app icon
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
