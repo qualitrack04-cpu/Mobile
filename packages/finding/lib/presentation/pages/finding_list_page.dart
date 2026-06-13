@@ -92,7 +92,19 @@ class _FindingListViewState extends State<_FindingListView> {
                   ),
                 );
 
-                final displayList = isLoading ? skeletonList : findings;
+                // Filter findings: hide if Closed > 24 hours ago
+                final filteredFindings = findings.where((finding) {
+                  if (finding.status == FindingStatus.closed) {
+                    if (finding.capaClosedAt != null) {
+                      final diff = DateTime.now().toUtc().difference(finding.capaClosedAt!.toUtc());
+                      return diff.inHours < 24;
+                    }
+                    return false; // hide if closed but no date
+                  }
+                  return true;
+                }).toList();
+
+                final displayList = isLoading ? skeletonList : filteredFindings;
 
                 // Urutkan berdasarkan kategori
                 final sortedFindings = List.of(displayList)..sort((a, b) {
