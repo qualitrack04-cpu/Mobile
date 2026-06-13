@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/role_dropdown.dart';
+import 'otp_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -33,12 +34,12 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$',
+  bool _isValidGmail(String email) {
+    final gmailRegex = RegExp(
+      r'^[\w\.\-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return emailRegex.hasMatch(email);
+    return gmailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onRegister() async {
@@ -48,8 +49,8 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() => _errorMessage = 'All fields are required');
       return;
     }
-    if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Please enter a valid email address');
+    if (!_isValidGmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
       return;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -76,9 +77,14 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Register success, please login')),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtpPage(
+            email: _emailController.text.trim(),
+            isForgotPassword: false,
+          ),
+        ),
       );
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
@@ -205,7 +211,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               enableSuggestions: false,
                               autofillHints: const [AutofillHints.email],
                               decoration: customInputDecoration(
-                                hint: 'name@company.com',
+                                hint: 'username@gmail.com',
                                 icon: Icons.mail_outline,
                               ),
                             ),
