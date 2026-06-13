@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -50,11 +51,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   String _userRole = 'Auditor';
+  String _photoPath = '';
 
   Future<void> _loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     final roleStr = prefs.getString('user_role') ?? 'Auditor';
-    
+    final photoPath = prefs.getString('user_photo') ?? '';
+
     if (mounted) {
       setState(() {
         if (roleStr == 'QualityManager') {
@@ -64,6 +67,7 @@ class _DashboardPageState extends State<DashboardPage> {
         } else {
           _userRole = roleStr;
         }
+        _photoPath = photoPath; // ← tambah ini
       });
     }
   }
@@ -71,7 +75,6 @@ class _DashboardPageState extends State<DashboardPage> {
   void _refresh() {
     if (!mounted) return;
     setState(() {
-
       _calendarMonth = DateTime.now();
       _selectedDate = DateTime.now();
 
@@ -106,27 +109,35 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
               'assets/icon/Q.png',
-              height: (screenWidth * 0.08).clamp(32.0, 42.0), // Memperbesar logo
+              height: (screenWidth * 0.08).clamp(
+                32.0,
+                42.0,
+              ), // Memperbesar logo
               fit: BoxFit.contain,
             ),
             // Menggeser teks: Offset(Kiri/Kanan, Atas/Bawah)
             // - Angka pertama (kiri/kanan): minus (-) untuk geser kiri, plus (+) untuk kanan
             // - Angka kedua (atas/bawah): minus (-) untuk geser ke atas, plus (+) untuk ke bawah
             Transform.translate(
-              offset: const Offset(-3, 3), // Coba atur angka '3' ini (naik/turun) sampai pas sejajar
+              offset: const Offset(
+                -3,
+                3,
+              ), // Coba atur angka '3' ini (naik/turun) sampai pas sejajar
               child: Text(
                 'ualiTrack',
                 style: GoogleFonts.inter(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w700,
-                  fontSize: (screenWidth * 0.06).clamp(24.0, 30.0), 
-                  height: 1.0, // Dibuat 1.0 agar tidak ada padding berlebih dari font
+                  fontSize: (screenWidth * 0.06).clamp(24.0, 30.0),
+                  height:
+                      1.0, // Dibuat 1.0 agar tidak ada padding berlebih dari font
                 ),
               ),
             ),
@@ -138,10 +149,13 @@ class _DashboardPageState extends State<DashboardPage> {
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              ),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+                _loadUserRole();
+              },
               child: Container(
                 width: 38,
                 height: 38,
@@ -153,11 +167,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   padding: const EdgeInsets.all(2),
                   child: CircleAvatar(
                     backgroundColor: AppColors.primaryLight,
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: AppColors.surface,
-                    ),
+                    backgroundImage:
+                        _photoPath.isNotEmpty
+                            ? MemoryImage(base64Decode(_photoPath))
+                            : null,
+                    child:
+                        _photoPath.isEmpty
+                            ? Icon(
+                              Icons.person,
+                              size: 20,
+                              color: AppColors.surface,
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -168,7 +189,12 @@ class _DashboardPageState extends State<DashboardPage> {
       body: RefreshIndicator(
         onRefresh: () async {
           _refresh();
-          await Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]);
+          await Future.wait([
+            _summaryFuture,
+            _scoreFuture,
+            _scheduleFuture,
+            _reportsFuture,
+          ]);
         },
         child: _buildBody(screenWidth),
       ),
@@ -177,7 +203,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBody(double screenWidth) {
     return FutureBuilder<List<dynamic>>(
-      future: Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]),
+      future: Future.wait([
+        _summaryFuture,
+        _scoreFuture,
+        _scheduleFuture,
+        _reportsFuture,
+      ]),
       builder: (context, snapshot) {
         final isLoading =
             snapshot.connectionState == ConnectionState.waiting &&
@@ -241,7 +272,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildAuditReportList(List<CompletedAuditReport> reports, double screenWidth) {
+  Widget _buildAuditReportList(
+    List<CompletedAuditReport> reports,
+    double screenWidth,
+  ) {
     if (reports.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
@@ -259,7 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return SizedBox(
-      height: 240, 
+      height: 240,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: reports.length,
@@ -299,14 +333,21 @@ class _DashboardPageState extends State<DashboardPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: PdfThumbnailWidget(sessionId: report.sessionId),
                 ),
               ),
               // Bagian bawah (Text + Button)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 26, 16, 16), // top 26 agar tidak nabrak icon tengah
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    26,
+                    16,
+                    16,
+                  ), // top 26 agar tidak nabrak icon tengah
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -327,7 +368,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: ElevatedButton(
                           onPressed: () => _viewPdf(report.sessionId),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00104A), // Dark navy
+                            backgroundColor: const Color(
+                              0xFF00104A,
+                            ), // Dark navy
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -361,7 +404,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F4FA), // Light blue background
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white, width: 2), // Biar ada border putih
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ), // Biar ada border putih
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -431,9 +477,9 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to open PDF: $e')));
       }
     }
   }
@@ -484,16 +530,16 @@ class _DashboardPageState extends State<DashboardPage> {
           filePath: file.path,
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File saved to ${file.path}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('File saved to ${file.path}')));
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download PDF: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to download PDF: $e')));
       }
     }
   }
@@ -522,7 +568,8 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text(
             'Hello, $_userRole! 👋',
             style: GoogleFonts.inter(
-              fontSize: 32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
+              fontSize:
+                  32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
             ),
@@ -548,7 +595,8 @@ class _DashboardPageState extends State<DashboardPage> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        mainAxisExtent: 85, // Tinggi FIX untuk tiap kotak agar 100% tidak terpotong
+        mainAxisExtent:
+            85, // Tinggi FIX untuk tiap kotak agar 100% tidak terpotong
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -639,13 +687,16 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildComplianceScore(ComplianceScoreResponse scoreResponse, double screenWidth) {
+  Widget _buildComplianceScore(
+    ComplianceScoreResponse scoreResponse,
+    double screenWidth,
+  ) {
     // 1. Daftar 4 departemen wajib sesuai desain
     final List<String> standardDepts = [
       'Packaging',
       'Quality Control',
       'Warehouse',
-      'Production'
+      'Production',
     ];
 
     // 2. Map warna spesifik untuk tiap departemen
@@ -657,34 +708,36 @@ class _DashboardPageState extends State<DashboardPage> {
     };
 
     // 3. Gabungkan data API dengan departemen standar
-    final List<ComplianceScore> displayScores = standardDepts.map((deptName) {
-      // Cari apakah ada data dari API untuk departemen ini
-      final apiDataList = scoreResponse.data.where((d) {
-        // Normalisasi nama dari backend ke nama tampilan:
-        // 'Produksi' atau 'Production' → Production
-        // 'QC' atau 'Quality Control' → Quality Control
-        if (deptName == 'Production') {
-          return d.department.toLowerCase() == 'production' || 
-                 d.department.toLowerCase() == 'produksi';
-        }
-        if (deptName == 'Quality Control') {
-          return d.department == 'QC' || 
-                 d.department.toLowerCase() == 'quality control' ||
-                 d.department.toLowerCase() == 'quality manager';
-        }
-        return d.department.toLowerCase() == deptName.toLowerCase();
-      }).toList();
-      
-      return apiDataList.isNotEmpty 
-          ? apiDataList.first 
-          : ComplianceScore(
-              department: deptName,
-              score: 0.0,
-              totalAudit: 0,
-              totalResponses: 0,
-              conformResponses: 0,
-            );
-    }).toList();
+    final List<ComplianceScore> displayScores =
+        standardDepts.map((deptName) {
+          // Cari apakah ada data dari API untuk departemen ini
+          final apiDataList =
+              scoreResponse.data.where((d) {
+                // Normalisasi nama dari backend ke nama tampilan:
+                // 'Produksi' atau 'Production' → Production
+                // 'QC' atau 'Quality Control' → Quality Control
+                if (deptName == 'Production') {
+                  return d.department.toLowerCase() == 'production' ||
+                      d.department.toLowerCase() == 'produksi';
+                }
+                if (deptName == 'Quality Control') {
+                  return d.department == 'QC' ||
+                      d.department.toLowerCase() == 'quality control' ||
+                      d.department.toLowerCase() == 'quality manager';
+                }
+                return d.department.toLowerCase() == deptName.toLowerCase();
+              }).toList();
+
+          return apiDataList.isNotEmpty
+              ? apiDataList.first
+              : ComplianceScore(
+                department: deptName,
+                score: 0.0,
+                totalAudit: 0,
+                totalResponses: 0,
+                conformResponses: 0,
+              );
+        }).toList();
 
     // 4. Ubah menjadi List yang bisa di-scroll ke samping (Horizontal)
     final cardWidth = (screenWidth * 0.4).clamp(140.0, 200.0);
@@ -694,20 +747,24 @@ class _DashboardPageState extends State<DashboardPage> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: displayScores.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16), // Jarak antar kotak
+        separatorBuilder:
+            (context, index) => const SizedBox(width: 16), // Jarak antar kotak
         itemBuilder: (context, index) {
           final item = displayScores[index];
-          
+
           // Normalisasi nama departemen dari backend ke nama tampilan
           String displayDept = item.department;
-          if (item.department.toLowerCase() == 'produksi' || item.department.toLowerCase() == 'production') {
+          if (item.department.toLowerCase() == 'produksi' ||
+              item.department.toLowerCase() == 'production') {
             displayDept = 'Production';
-          } else if (item.department == 'QC' || item.department.toLowerCase() == 'quality control' || item.department.toLowerCase() == 'quality manager') {
+          } else if (item.department == 'QC' ||
+              item.department.toLowerCase() == 'quality control' ||
+              item.department.toLowerCase() == 'quality manager') {
             displayDept = 'Quality Control';
           }
 
           final color = colors[displayDept] ?? AppColors.primaryLight;
-          
+
           return SizedBox(
             width: cardWidth,
             child: _complianceCard(
@@ -735,7 +792,10 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color, width: 1.5), // Tambahkan border di sini
+        border: Border.all(
+          color: color,
+          width: 1.5,
+        ), // Tambahkan border di sini
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -756,7 +816,7 @@ class _DashboardPageState extends State<DashboardPage> {
               color: color,
             ),
           ),
-          
+
           if (hasAudit) ...[
             Text(
               '${item.score.toStringAsFixed(1)}%',
@@ -883,7 +943,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           _calendarMonth.year,
                           _calendarMonth.month - 1,
                         );
-                        // Fetch ulang jadwal untuk bulan yang baru
                         _scheduleFuture = _dashboardService
                             .getAuditSchedule(
                               month: _calendarMonth.month,
@@ -907,7 +966,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           _calendarMonth.year,
                           _calendarMonth.month + 1,
                         );
-                        // Fetch ulang jadwal untuk bulan yang baru
                         _scheduleFuture = _dashboardService
                             .getAuditSchedule(
                               month: _calendarMonth.month,
@@ -929,64 +987,80 @@ class _DashboardPageState extends State<DashboardPage> {
           // --- NAMA HARI (MON, TUE, dll) ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: weekdays.map((day) {
-              return Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDisabled,
+            children:
+                weekdays.map((day) {
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDisabled,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 12),
 
-                    // --- GRID TANGGAL ---
+          // --- GRID TANGGAL ---
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: daysInMonth + firstWeekday - 1,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: screenWidth > 600 ? 1.5 : 1.1, // Dibuat lebih kecil dari 1 supaya kotak di kalender lebih tinggi di HP
+              childAspectRatio: screenWidth > 600 ? 1.5 : 1.1,
             ),
             itemBuilder: (context, index) {
               if (index < firstWeekday - 1) {
-                return const SizedBox(); // Kotak kosong sebelum tanggal 1
+                return const SizedBox();
               }
 
               final int day = index - firstWeekday + 2;
-              
-              // GANTI isToday menjadi isSelected
-              final bool isSelected = 
+
+              // Apakah tanggal ini adalah hari ini
+              final today = DateTime.now();
+              final bool isToday =
+                  today.year == _calendarMonth.year &&
+                  today.month == _calendarMonth.month &&
+                  today.day == day;
+
+              // Apakah tanggal ini yang sedang dipilih
+              final bool isSelected =
                   _selectedDate.year == _calendarMonth.year &&
                   _selectedDate.month == _calendarMonth.month &&
                   _selectedDate.day == day;
 
               // Cari apakah ada jadwal di tanggal ini
-              final scheduleDayList = schedule.data.where((s) => s.day == day).toList();
-              final scheduleDay = scheduleDayList.isNotEmpty ? scheduleDayList.first : null;
-              final hasSchedule = scheduleDay != null && scheduleDay.departments.isNotEmpty;
+              final scheduleDayList =
+                  schedule.data.where((s) => s.day == day).toList();
+              final scheduleDay =
+                  scheduleDayList.isNotEmpty ? scheduleDayList.first : null;
+              final hasSchedule =
+                  scheduleDay != null && scheduleDay.departments.isNotEmpty;
 
-              // BUNGKUS DENGAN GestureDetector AGAR BISA DIKLIK
               return GestureDetector(
                 onTap: () {
                   setState(() {
-                    // Update tanggal yang dipilih saat diklik
-                    _selectedDate = DateTime(_calendarMonth.year, _calendarMonth.month, day);
+                    _selectedDate = DateTime(
+                      _calendarMonth.year,
+                      _calendarMonth.month,
+                      day,
+                    );
                   });
                 },
                 child: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent, // Pakai isSelected
+                    color: isSelected ? AppColors.primary : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    border: isSelected ? null : Border.all(color: Colors.transparent),
+                    border:
+                        isToday && !isSelected
+                            ? Border.all(color: AppColors.primary, width: 1.5)
+                            : Border.all(color: Colors.transparent),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -995,33 +1069,52 @@ class _DashboardPageState extends State<DashboardPage> {
                         day.toString(),
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, // Pakai isSelected
-                          color: isSelected ? Colors.white : AppColors.textPrimary, // Pakai isSelected
+                          fontWeight:
+                              isSelected || isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                          color:
+                              isSelected
+                                  ? Colors.white
+                                  : isToday
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
                         ),
                       ),
                       if (hasSchedule) ...[
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                            children: scheduleDay.departments.take(3).map((dept) {
-                              // Normalisasi nama departemen dari backend
-                              String normalizedDept = dept.department;
-                              if (dept.department.toLowerCase() == 'produksi' || dept.department.toLowerCase() == 'production') {
-                                normalizedDept = 'Production';
-                              } else if (dept.department == 'QC' || dept.department.toLowerCase() == 'quality control' || dept.department.toLowerCase() == 'quality manager') {
-                                normalizedDept = 'Quality Control';
-                              }
-                              final color = deptColors[normalizedDept] ?? AppColors.primaryLight;
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                              width: 4,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                              ),
-                            );
-                          }).toList(),
+                          children:
+                              scheduleDay.departments.take(3).map((dept) {
+                                String normalizedDept = dept.department;
+                                if (dept.department.toLowerCase() ==
+                                        'produksi' ||
+                                    dept.department.toLowerCase() ==
+                                        'production') {
+                                  normalizedDept = 'Production';
+                                } else if (dept.department == 'QC' ||
+                                    dept.department.toLowerCase() ==
+                                        'quality control' ||
+                                    dept.department.toLowerCase() ==
+                                        'quality manager') {
+                                  normalizedDept = 'Quality Control';
+                                }
+                                final color =
+                                    deptColors[normalizedDept] ??
+                                    AppColors.primaryLight;
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1.5,
+                                  ),
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }).toList(),
                         ),
                       ],
                     ],
@@ -1035,42 +1128,42 @@ class _DashboardPageState extends State<DashboardPage> {
           const Divider(),
           const SizedBox(height: 12),
 
-          // --- LEGEND WAKTU ---
+          // --- LEGEND ---
           Wrap(
             spacing: 12,
             runSpacing: 8,
-            children: deptColors.entries.map((entry) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: entry.value,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    entry.key.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+            children:
+                deptColors.entries.map((entry) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: entry.value,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        entry.key.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
           ),
         ],
       ),
     );
   }
 
-  // Helper untuk konversi angka bulan ke nama bulan
   String _monthName(int month) {
     const months = [
       'January',
@@ -1117,10 +1210,10 @@ class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
         '/api/Pdf/audit-report/${widget.sessionId}',
         options: Options(responseType: ResponseType.bytes),
       );
-      
+
       final document = await PdfDocument.openData(response.data);
       final page = await document.getPage(1);
-      
+
       // Render page at a small thumbnail resolution to save memory
       final pageImage = await page.render(
         width: page.width / 3,
@@ -1156,7 +1249,16 @@ class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)));
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        ),
+      );
     }
     if (_hasError || _pageImage == null) {
       return const Center(

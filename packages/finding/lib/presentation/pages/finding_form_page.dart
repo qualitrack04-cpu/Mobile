@@ -33,8 +33,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final _titleController = TextEditingController();
   final _reporterController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _reporterFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
   String? _selectedDepartment;
-  FindingCategory _selectedCategory = FindingCategory.majorNC;
+  FindingCategory? _selectedCategory;
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -42,7 +45,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _titleController.text.trim().isNotEmpty &&
       _reporterController.text.trim().isNotEmpty &&
       _descriptionController.text.trim().isNotEmpty &&
-      _selectedDepartment != null;
+      _selectedDepartment != null &&
+      _selectedCategory != null;
 
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
@@ -74,6 +78,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _titleController.addListener(() => setState(() {}));
     _reporterController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
+    _titleFocus.addListener(() => setState(() {}));
+    _reporterFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
   }
 
   @override
@@ -81,6 +88,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _reporterController.dispose();
+    _titleFocus.dispose();
+    _reporterFocus.dispose();
+    _descriptionFocus.dispose();
     super.dispose();
   }
 
@@ -263,7 +273,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
+                        focusNode: _titleFocus,
                         hint: 'Enter the finding title...',
+                        minLength: 5,
+                        maxLength: 150,
                       ),
                       _buildReporterField(),
                       _buildDivider(),
@@ -274,8 +287,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
+                        focusNode: _descriptionFocus,
                         hint: 'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
+                        minLength: 10,
+                        maxLength: 1000,
                       ),
                       _buildDivider(),
                       _buildEvidenceSection(),
@@ -337,15 +353,21 @@ class _FindingFormPageState extends State<FindingFormPage> {
     return _buildTextField(
       label: 'REPORTER',
       controller: _reporterController,
+      focusNode: _reporterFocus,
       hint: 'Enter the reporter name...',
+      minLength: 3,
+      maxLength: 100,
     );
   }
 
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -361,7 +383,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -369,6 +394,29 @@ class _FindingFormPageState extends State<FindingFormPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              if (!focusNode.hasFocus) return const SizedBox.shrink();
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/${minLength} characters';
+                hintColor = Colors.orange;
+              } else if (maxLength != null) {
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
@@ -396,6 +444,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
             child: DropdownButton<FindingCategory>(
               value: _selectedCategory,
               isExpanded: true,
+              hint: const Text('Select Category',
+                  style: TextStyle(color: Colors.black26, fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
               items: categories.entries.map((e) {
                 return DropdownMenuItem(
@@ -680,10 +730,16 @@ class _FindingFormPageState extends State<FindingFormPage> {
           backgroundColor: Colors.orange));
       return;
     }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Category cannot be empty!'),
+          backgroundColor: Colors.orange));
+      return;
+    }
 
     context.read<FindingBloc>().add(
           CreateFindingEvent(
-            category: _selectedCategory,
+            category: _selectedCategory!,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
