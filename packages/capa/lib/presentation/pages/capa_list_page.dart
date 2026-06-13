@@ -52,15 +52,20 @@ class _CapaListViewState extends State<_CapaListView> {
   }
 
   List<Capa> _filterCapas(List<Capa> capas) {
-  final now = DateTime.now();
-  return capas.where((capa) {
-    if (capa.status == 'Closed' && capa.closedAt != null) {
-      final diff = now.difference(capa.closedAt!);
-      return diff.inHours < 24;
-    }
-    return true;
-  }).toList();
-}
+    final now = DateTime.now();
+    return capas.where((capa) {
+      if (capa.status == 'Closed') {
+        if (capa.closedAt != null) {
+          // Pastikan perbedaan waktu dihitung dalam UTC untuk menghindari masalah zona waktu
+          final diff = now.toUtc().difference(capa.closedAt!.toUtc());
+          return diff.inHours < 24;
+        }
+        // Jika statusnya Closed tapi tidak ada data closedAt (data lama), kita sembunyikan saja.
+        return false;
+      }
+      return true; // Tampilkan yang Open, In Progress, Pending Verification
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,9 +166,7 @@ class _CapaListViewState extends State<_CapaListView> {
               ),
 
               // FAB
-              // FAB
-              if (_userRole != 'Auditor')
-                Positioned(
+              Positioned(
                   bottom: 16,
                   right: 16,
                   child: Builder(
