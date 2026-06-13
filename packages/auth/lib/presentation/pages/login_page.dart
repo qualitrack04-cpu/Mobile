@@ -51,14 +51,8 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = 'Email and password are required');
       return;
     }
-<<<<<<< HEAD
-
-    if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Please enter a valid email address');
-=======
     if (!_isValidGmail(_emailController.text.trim())) {
       setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
->>>>>>> develop
       return;
     }
 
@@ -76,12 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-<<<<<<< HEAD
-
-      Navigator.pushReplacement(
-=======
       Navigator.pushAndRemoveUntil(
->>>>>>> develop
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
         (route) => false,

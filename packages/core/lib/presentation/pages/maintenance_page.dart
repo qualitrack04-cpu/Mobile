@@ -58,7 +58,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
             children: [
               const SizedBox(height: 40),
 
-              Image.asset('assets/icon/QualiTrack.png', height: 140),
+              Image.asset('assets/icon/Qualek.png', height: 140),
 
               const SizedBox(height: 80),
 
