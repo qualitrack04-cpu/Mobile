@@ -34,12 +34,12 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$',
+  bool _isValidGmail(String email) {
+    final gmailRegex = RegExp(
+      r'^[\w\.\-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return emailRegex.hasMatch(email);
+    return gmailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onLogin() async {
@@ -48,8 +48,8 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = 'Email and password are required');
       return;
     }
-    if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Please enter a valid email address');
+    if (!_isValidGmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
       return;
     }
 
@@ -168,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                         enableSuggestions: false,
                         autofillHints: const [AutofillHints.email],
                         decoration: customInputDecoration(
-                          hint: 'name@company.com',
+                          hint: 'username@gmail.com',
                           icon: Icons.mail_outline,
                         ),
                       ),

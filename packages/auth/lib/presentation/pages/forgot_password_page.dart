@@ -23,12 +23,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$',
+  bool _isValidGmail(String email) {
+    final gmailRegex = RegExp(
+      r'^[\w\.\-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return emailRegex.hasMatch(email);
+    return gmailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onRequestOtp() async {
@@ -36,8 +36,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       setState(() => _errorMessage = 'Email wajib diisi');
       return;
     }
-    if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email tidak valid');
+    if (!_isValidGmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
       return;
     }
 
@@ -154,7 +154,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             autocorrect: false,
                             enableSuggestions: false,
                             decoration: customInputDecoration(
-                              hint: 'name@company.com',
+                              hint: 'username@gmail.com',
                               icon: Icons.mail_outline,
                             ),
                           ),
