@@ -73,7 +73,6 @@ class FindingRemoteDatasource {
     try {
       final capaResponse = await apiService.client.get('/api/Capa');
       final capaData = capaResponse.data as List<dynamic>;
-      final prefs = await SharedPreferences.getInstance();
       final now = DateTime.now();
 
       // Map findingId -> Capa
@@ -111,38 +110,26 @@ class FindingRemoteDatasource {
             final verifiedAtStr = closeOut?['verifiedAt'] as String?;
             if (verifiedAtStr != null && verifiedAtStr.isNotEmpty) {
               closedTime = DateTime.tryParse(verifiedAtStr);
-            }
-
-            // Jika tidak ada closeOut timestamp di backend, gunakan local timestamp di SharedPreferences
-            if (closedTime == null) {
-              final prefsKey = 'capa_closed_time_${capa['id']}';
-              final localTimeStr = prefs.getString(prefsKey);
-              if (localTimeStr != null) {
-                closedTime = DateTime.tryParse(localTimeStr);
-              } else {
-                closedTime = now;
-                await prefs.setString(prefsKey, now.toIso8601String());
-              }
+            } else {
+              // Jika CAPA ditutup secara paksa tanpa verifikasi (tidak ada record waktu di database),
+              // langsung hilangkan saja dari daftar.
+              toRemove.add(finding.id);
+              continue;
             }
           }
         }
 
-        // 2. Jika tidak ada CAPA tapi status finding sendiri adalah Closed
+        // 2. Jika tidak ada CAPA tapi status finding sendiri adalah Closed (Jika diperlukan, fallback langsung hilangkan)
         if (closedTime == null && finding.status == FindingStatus.closed) {
-          final prefsKey = 'finding_closed_time_${finding.id}';
-          final localTimeStr = prefs.getString(prefsKey);
-          if (localTimeStr != null) {
-            closedTime = DateTime.tryParse(localTimeStr);
-          } else {
-            closedTime = now;
-            await prefs.setString(prefsKey, now.toIso8601String());
-          }
+           toRemove.add(finding.id);
+           continue;
         }
 
         // 3. Jika terdeteksi closedTime dan sudah lewat 24 jam, tandai untuk dihapus
         if (closedTime != null) {
           final diff = now.difference(closedTime);
-          if (diff.inHours >= 24) {
+          // UBAH DISINI: Ganti inSeconds >= 10 kembali menjadi inHours >= 24 setelah selesai testing
+          if (diff.inSeconds >= 10) {
             toRemove.add(finding.id);
           }
         }
@@ -180,7 +167,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'reporter': reporter,
+        'reporterName': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -202,7 +189,7 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'reporter': reporter,
+        'reporterName': reporter,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);

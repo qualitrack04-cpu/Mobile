@@ -21,6 +21,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isObscured = true;
@@ -30,17 +31,18 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w\.-]+@[\w\.-]+\.(com|net|org|id|co\.id|ac\.id|edu|gov|io|app|dev|tech)$',
+  bool _isValidGmail(String email) {
+    final gmailRegex = RegExp(
+      r'^[\w\.\-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return emailRegex.hasMatch(email);
+    return gmailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onLogin() async {
@@ -49,9 +51,14 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = 'Email and password are required');
       return;
     }
+<<<<<<< HEAD
 
     if (!_isValidEmail(_emailController.text.trim())) {
       setState(() => _errorMessage = 'Please enter a valid email address');
+=======
+    if (!_isValidGmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
+>>>>>>> develop
       return;
     }
 
@@ -69,10 +76,15 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
+<<<<<<< HEAD
 
       Navigator.pushReplacement(
+=======
+      Navigator.pushAndRemoveUntil(
+>>>>>>> develop
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (route) => false,
       );
     } catch (e) {
       debugPrint('LOGIN ERROR: $e');
@@ -100,23 +112,28 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFEEF2F7),
       body: AutofillGroup(
-        child: Center(
+        child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 40,
+            ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo
+                // ── Logo DI LUAR card ──────────────────────────────
                 Container(
-                  width: 70,
-                  height: 70,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.shield,
-                    size: 40,
+                    size: 26,
                     color: Colors.white,
                   ),
                 ),
@@ -133,13 +150,15 @@ class _LoginPageState extends State<LoginPage> {
                   'Precision Quality & Audit Management',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
+                // ── Card ───────────────────────────────────────────
                 Container(
-                  padding: const EdgeInsets.all(25),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(15),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: const [
                       BoxShadow(
                         color: Colors.black12,
@@ -151,6 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Sign In title
                       const Text(
                         'Sign In',
                         style: TextStyle(
@@ -161,6 +181,16 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
 
+                      // Username
+                      const InputLabel('Username'),
+                      TextField(
+                        controller: _usernameController,
+                        decoration: customInputDecoration(
+                          hint: 'Nailong bin Amir',
+                          icon: Icons.person_outline,
+                        ),
+                      ),
+
                       // Work Email
                       const InputLabel('Work Email'),
                       TextField(
@@ -170,46 +200,50 @@ class _LoginPageState extends State<LoginPage> {
                         enableSuggestions: false,
                         autofillHints: const [AutofillHints.email],
                         decoration: customInputDecoration(
-                          hint: 'name@company.com',
+                          hint: 'username@gmail.com',
                           icon: Icons.mail_outline,
                         ),
                       ),
 
-                      // Password + Forget Password link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Password',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordPage(),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forget Password?',
+// Password + Forget Password
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12, bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Password',
                               style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.primary,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordPage(),
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Forget Password?',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      
                       TextField(
                         controller: _passwordController,
                         obscureText: _isObscured,
@@ -256,28 +290,38 @@ class _LoginPageState extends State<LoginPage> {
                               label: 'SIGN IN',
                               onPressed: _onLogin,
                             ),
+
+                      // ── Don't have account? DI DALAM card ─────────
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Don't have account?",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RegisterPage(),
+                                ),
+                              ),
+                              child: const Text(
+                                'SIGN UP',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-                const Text(
-                  "Don't have account?",
-                  style: TextStyle(color: Colors.grey),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterPage()),
-                  ),
-                  child: const Text(
-                    'SIGN UP',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                // ── End Card ───────────────────────────────────────
               ],
             ),
           ),

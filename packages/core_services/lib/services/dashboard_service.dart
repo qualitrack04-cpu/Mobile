@@ -154,7 +154,7 @@ class CompletedAuditReport {
     return CompletedAuditReport(
       sessionId: json['sessionId'] ?? '',
       department: json['department'] ?? '',
-      planTitle: json['planTitle'] ?? '',
+      planTitle: json['auditPlanTitle'] ?? '',
     );
   }
 }
@@ -167,7 +167,7 @@ class DashboardService {
   // Fungsi 4: Ambil Laporan Audit Selesai
   Future<List<CompletedAuditReport>> getCompletedReports() async {
     try {
-      final res = await apiService.client.get('/api/AuditSession/completed');
+      final res = await apiService.client.get('/api/AuditReport');
       final list = res.data['data'] as List? ?? [];
       return list.map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {

@@ -12,6 +12,7 @@ import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -35,6 +36,24 @@ class _FindingListView extends StatefulWidget {
 class _FindingListViewState extends State<_FindingListView> {
   List<Finding> _lastFindings = [];
   bool _isFirstLoad = true;
+  String _userRole = '';
+  String _userName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userRole = prefs.getString('user_role') ?? '';
+        _userName = prefs.getString('user_name') ?? '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +62,7 @@ class _FindingListViewState extends State<_FindingListView> {
     return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
+              automaticallyImplyLeading: false,
               backgroundColor: AppColors.surface,
               elevation: 0,
               title: Text(
@@ -92,7 +112,19 @@ class _FindingListViewState extends State<_FindingListView> {
                   ),
                 );
 
-                final displayList = isLoading ? skeletonList : findings;
+                // Filter findings: hide if Closed > 24 hours ago
+                final filteredFindings = findings.where((finding) {
+                  if (finding.status == FindingStatus.closed) {
+                    if (finding.capaClosedAt != null) {
+                      final diff = DateTime.now().toUtc().difference(finding.capaClosedAt!.toUtc());
+                      return diff.inHours < 24;
+                    }
+                    return false; // hide if closed but no date
+                  }
+                  return true;
+                }).toList();
+
+                final displayList = isLoading ? skeletonList : filteredFindings;
 
                 // Urutkan berdasarkan kategori
                 final sortedFindings = List.of(displayList)..sort((a, b) {
@@ -126,8 +158,12 @@ class _FindingListViewState extends State<_FindingListView> {
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                           children: [
                             if (isLoading || sortedFindings.isNotEmpty)
-                              ...displayList.map(
-                                (finding) => _FindingCard(finding: finding),
+                              ...sortedFindings.map(
+                                (finding) => _FindingCard(
+                                  finding: finding,
+                                  userRole: _userRole,
+                                  userName: _userName,
+                                ),
                               ),
                           ],
                         ),
@@ -200,8 +236,14 @@ class _FindingListViewState extends State<_FindingListView> {
 
 class _FindingCard extends StatelessWidget {
   final Finding finding;
+  final String userRole;
+  final String userName;
 
-  const _FindingCard({required this.finding});
+  const _FindingCard({
+    required this.finding,
+    required this.userRole,
+    required this.userName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,53 +304,56 @@ class _FindingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ✅ Tombol Edit — dengan frame yang jelas
-                  GestureDetector(
-                    onTap: () async {
-                      final bloc = context.read<FindingBloc>();
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => BlocProvider.value(
-                                value: bloc,
-                                child: FindingEditPage(finding: finding),
-                              ),
-                        ),
-                      );
-                      // FindingEditPage mengembalikan Finding object saat berhasil
-                      if (result != null && context.mounted) {
-                        bloc.add(const LoadFindings());
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE9EEF3),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFCDD5DE),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Edit',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                  // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter sama dengan user_name)
+                  if (userRole != 'Auditor' || (userRole == 'Auditor' && finding.reporter == userName))
+                    GestureDetector(
+                      onTap: () async {
+                        final bloc = context.read<FindingBloc>();
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => BlocProvider.value(
+                                  value: bloc,
+                                  child: FindingEditPage(finding: finding),
+                                ),
                           ),
-                        ],
+                        );
+                        // FindingEditPage mengembalikan Finding object saat berhasil
+                        if (result != null && context.mounted) {
+                          bloc.add(const LoadFindings());
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE9EEF3),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFCDD5DE),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Edit',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    )
+                  else
+                    const SizedBox.shrink(), // Kosong jika tidak boleh edit
 
                   // Tombol Details (tetap seperti semula)
                   GestureDetector(

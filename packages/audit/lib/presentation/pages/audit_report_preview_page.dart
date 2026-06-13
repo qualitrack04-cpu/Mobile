@@ -7,8 +7,10 @@ import 'package:open_filex/open_filex.dart';
 import 'package:dio/dio.dart';
 
 import 'package:core_services/services/api_service.dart';
+import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../../data/datasources/checklist_remote_datasource.dart';
@@ -100,14 +102,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0F3659)),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AuditChecklistPage(audit: widget.audit),
-              ),
-            );
-          },
+          onPressed: () => _showExitConfirmation(),
         ),
         title: Text(
           'Audit Report Preview',
@@ -390,67 +385,186 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     );
   }
 
-  Future<void> _downloadAndHandlePdf({required bool viewOnly}) async {
+
+  /// View: unduh ke temp dir lalu langsung buka di PDF reader HP
+  /// Tidak menandai audit sebagai selesai — hanya untuk melihat isi PDF
+  /// Tampilkan dialog konfirmasi sebelum keluar dari halaman preview
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Leave Audit Report Preview?',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F3659),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'You have not generated the PDF yet. Go to Dashboard or stay on this page to create your PDF report.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true)
+                        .pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const DashboardScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF003B5C),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Go to Dashboard',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF003B5C)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Stay Here',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF003B5C))),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _viewPdf() async {
     try {
       final apiService = GetIt.I<ApiService>();
-      
-      // 1. Tampilkan loading
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Generating PDF...'), duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Opening PDF...'), duration: Duration(seconds: 2)),
       );
 
-      // 2. Unduh PDF via API
       final response = await apiService.client.get(
         '/api/Pdf/audit-report/${widget.sessionId}',
         options: Options(responseType: ResponseType.bytes),
       );
-      
-      // 3. Simpan ke local storage
+
       final bytes = response.data;
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/audit-report-${widget.sessionId}.pdf');
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/audit-report-${widget.sessionId}.pdf');
       await file.writeAsBytes(bytes);
 
-      // 4. TANDAI SESI SELESAI SECARA PERMANEN KARENA PDF SUDAH DIGENERATE
-      try {
-        final datasource = GetIt.instance<ChecklistRemoteDatasource>();
-        await datasource.markSessionComplete(widget.sessionId);
-        
-        // Hapus session key agar audit ini tidak bisa dilanjutkan/direview lagi
-        final prefs = await SharedPreferences.getInstance();
-        final sessionKey = 'audit_session_${widget.audit.scheduleId}';
-        await prefs.remove(sessionKey);
-        await prefs.remove('${sessionKey}_state');
-        
-        // Tandai audit finished di Bloc agar List terupdate
-        if (mounted) {
-          context.read<AuditBloc>().add(
-            MarkAuditFinishedEvent(audit: widget.audit, isFinished: true)
-          );
-        }
-      } catch (e) {
-        // Abaikan error jika gagal tandai selesai, minimal PDF sudah terdownload
-      }
-
+      // View saja — JANGAN tandai selesai. Audit selesai hanya saat Download.
       if (mounted) {
-        if (viewOnly) {
-          // Buka dengan aplikasi eksternal
-          OpenFilex.open(file.path);
-        } else {
-          // Hanya notifikasi sukses download
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('PDF downloaded to ${file.path}')),
-          );
-        }
+        Navigator.pop(context); // Tutup PdfSuccessDialog
+        await OpenFilex.open(file.path);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Failed to open PDF: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
+
+  /// Download: simpan ke folder Download HP + tampil notifikasi
+  Future<void> _downloadAndSavePdf() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Downloading PDF...'), duration: Duration(seconds: 2)),
+      );
+
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!await dir.exists()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      File file = File('${dir!.path}/audit-report-${widget.sessionId}.pdf');
+      int counter = 1;
+      while (await file.exists()) {
+        file = File('${dir.path}/audit-report-${widget.sessionId} ($counter).pdf');
+        counter++;
+      }
+
+      await file.writeAsBytes(bytes);
+
+      // Tandai sesi selesai
+      try {
+        final datasource = GetIt.instance<ChecklistRemoteDatasource>();
+        await datasource.markSessionComplete(widget.sessionId);
+        final prefs = await SharedPreferences.getInstance();
+        final sessionKey = 'audit_session_${widget.audit.scheduleId}';
+        await prefs.remove(sessionKey);
+        await prefs.remove('${sessionKey}_state');
+        if (mounted) {
+          context.read<AuditBloc>().add(
+            MarkAuditFinishedEvent(audit: widget.audit, isFinished: true),
+          );
+        }
+      } catch (_) {}
+
+      if (mounted) {
+        await NotificationService().showDownloadNotification(
+          id: widget.sessionId.hashCode,
+          title: 'Download Complete',
+          body: 'audit-report-${widget.sessionId}.pdf has been downloaded',
+          filePath: file.path,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF saved to ${file.path}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download PDF: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
 
   Widget _buildStickyButton() {
     return Container(
@@ -470,11 +584,12 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
             context: context,
             barrierDismissible: false,
             builder: (_) => PdfSuccessDialog(
+              sessionId: widget.sessionId,
               onView: () {
-                _downloadAndHandlePdf(viewOnly: true);
+                _viewPdf();
               },
               onDownload: () {
-                _downloadAndHandlePdf(viewOnly: false);
+                _downloadAndSavePdf();
               },
             ),
           );
