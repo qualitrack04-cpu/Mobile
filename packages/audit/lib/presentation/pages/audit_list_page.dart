@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../bloc/audit_bloc.dart';
@@ -41,6 +42,18 @@ class _AuditListViewState extends State<_AuditListView> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _loadUserRole();
+  }
+
+  String _userRole = '';
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userRole = prefs.getString('user_role') ?? '';
+      });
+    }
   }
 
   @override
@@ -128,33 +141,35 @@ class _AuditListViewState extends State<_AuditListView> {
         ],
       ),
 
-      floatingActionButton: SizedBox(
-        width: fabSize,
-        height: fabSize,
-        child: FloatingActionButton(
-          backgroundColor: AppColors.primaryLight,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(fabSize * 0.25),
-          ),
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<AuditBloc>(),
-                  child: const AuditFormPage(),
+      floatingActionButton: _userRole == 'Auditor'
+          ? null
+          : SizedBox(
+              width: fabSize,
+              height: fabSize,
+              child: FloatingActionButton(
+                backgroundColor: AppColors.primaryLight,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(fabSize * 0.25),
+                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<AuditBloc>(),
+                        child: const AuditFormPage(),
+                      ),
+                    ),
+                  );
+                },
+                child: Icon(
+                  Icons.add,
+                  size: fabSize * 0.45,
+                  color: Colors.white,
                 ),
               ),
-            );
-          },
-          child: Icon(
-            Icons.add,
-            size: fabSize * 0.45,
-            color: Colors.white,
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -314,7 +329,7 @@ class _AuditListViewState extends State<_AuditListView> {
                 return AuditCard(
                   audit: audit,
 
-                  onEdit: () async {
+                  onEdit: _userRole == 'Auditor' ? null : () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -340,7 +355,7 @@ class _AuditListViewState extends State<_AuditListView> {
                           );
                         },
 
-                  onDelete: () async {
+                  onDelete: _userRole == 'Auditor' ? null : () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
