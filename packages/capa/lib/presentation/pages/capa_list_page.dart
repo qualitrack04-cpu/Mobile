@@ -69,6 +69,7 @@ class _CapaListViewState extends State<_CapaListView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.surface,
         elevation: 0,
         title: Text(

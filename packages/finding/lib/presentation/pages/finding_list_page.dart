@@ -62,6 +62,7 @@ class _FindingListViewState extends State<_FindingListView> {
     return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
+              automaticallyImplyLeading: false,
               backgroundColor: AppColors.surface,
               elevation: 0,
               title: Text(

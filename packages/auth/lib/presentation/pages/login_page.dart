@@ -66,9 +66,10 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (route) => false,
       );
     } catch (e) {
       setState(() => _errorMessage = 'Email or password is wrong');
