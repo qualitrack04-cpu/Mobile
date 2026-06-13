@@ -24,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscured = true;
   bool _isLoading = false;
   String? _errorMessage;
-  String? _selectedRole = 'AuditorInternal';
+  String? _selectedRole = 'QualityManager';
 
   @override
   void dispose() {
@@ -173,41 +173,45 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      // Password + Forget Password
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Password',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ForgotPasswordPage(),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forget Password?',
+// Password + Forget Password
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12, bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Password',
                               style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.primary,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordPage(),
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Forget Password?',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      
                       TextField(
                         controller: _passwordController,
                         obscureText: _isObscured,

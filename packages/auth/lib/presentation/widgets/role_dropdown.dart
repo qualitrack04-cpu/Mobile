@@ -17,24 +17,26 @@ class RoleDropdown extends StatelessWidget {
       value: selectedRole,
       decoration: customInputDecoration(
         hint: '',
-        icon: Icons.person_outline,
+        icon: Icons.work_outline,
       ),
       items: const [
-        DropdownMenuItem(
-          value: 'Admin',
-          child: Text('Admin'),
-        ),
         DropdownMenuItem(
           value: 'QualityManager',
           child: Text('Quality Manager'),
         ),
         DropdownMenuItem(
-          value: 'AuditorInternal',
+          value: 'Auditor',
           child: Text('Auditor Internal'),
         ),
         DropdownMenuItem(
-          value: 'Auditee',
-          child: Text('Auditee'),
+          enabled: false,
+          value: null,
+          child: Text('Admin', style: TextStyle(color: Colors.grey)),
+        ),
+        DropdownMenuItem(
+          enabled: false,
+          value: null,
+          child: Text('Auditee', style: TextStyle(color: Colors.grey)),
         ),
       ],
       onChanged: onChanged,

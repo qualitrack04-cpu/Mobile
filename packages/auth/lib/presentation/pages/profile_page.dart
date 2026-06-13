@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
@@ -43,10 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _formatRole(String role) {
     if (role.isEmpty) return '-';
     return role
-        .replaceAllMapped(
-          RegExp(r'(?<=[a-z])([A-Z])'),
-          (Match m) => ' ${m[1]}',
-        )
+        .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
         .trim();
   }
 
@@ -88,117 +85,119 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Divider(height: 1, color: AppColors.border),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      _buildProfileHeader(),
-                      const SizedBox(height: 24),
-                      _buildInfoCard(),
-                    ],
-                  ),
-                ),
-
-                // Dropdown menu
-                if (_showMenu)
-                  Positioned(
-                    top: 0,
-                    right: 16,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              setState(() => _showMenu = false);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => EditProfilePage(
-                                    name: _name,
-                                    email: _email,
-                                    role: _role,
-                                    photoPath: _photoPath,
-                                  ),
-                                ),
-                              ).then((_) => _loadUserData());
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.edit_outlined,
-                                    size: 16,
-                                    color: Colors.black87,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Edit Profile',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          const Divider(height: 1),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() => _showMenu = false);
-                              _showLogoutDialog(context);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.logout_rounded,
-                                    size: 16,
-                                    color: Colors.red,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Log Out',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        _buildProfileHeader(),
+                        const SizedBox(height: 24),
+                        _buildInfoCard(),
+                      ],
                     ),
                   ),
-              ],
-            ),
+
+                  // Dropdown menu
+                  if (_showMenu)
+                    Positioned(
+                      top: 0,
+                      right: 16,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setState(() => _showMenu = false);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => EditProfilePage(
+                                          name: _name,
+                                          email: _email,
+                                          role: _role,
+                                          photoPath: _photoPath,
+                                        ),
+                                  ),
+                                ).then((_) => _loadUserData());
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.edit_outlined,
+                                      size: 16,
+                                      color: Colors.black87,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Edit Profile',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const Divider(height: 1),
+
+                            InkWell(
+                              onTap: () {
+                                setState(() => _showMenu = false);
+                                _showLogoutDialog(context);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.logout_rounded,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Log Out',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
     );
   }
 
@@ -215,16 +214,18 @@ class _ProfilePageState extends State<ProfilePage> {
           CircleAvatar(
             radius: 48,
             backgroundColor: AppColors.borderLight,
-            backgroundImage: _photoPath.isNotEmpty
-                ? FileImage(File(_photoPath))
-                : null,
-            child: _photoPath.isEmpty
-                ? Icon(
-                    Icons.person,
-                    size: 52,
-                    color: AppColors.primaryMuted,
-                  )
-                : null,
+            backgroundImage:
+                _photoPath.isNotEmpty
+                    ? MemoryImage(base64Decode(_photoPath))
+                    : null,
+            child:
+                _photoPath.isEmpty
+                    ? Icon(
+                      Icons.person,
+                      size: 52,
+                      color: AppColors.primaryMuted,
+                    )
+                    : null,
           ),
           const SizedBox(height: 14),
           Text(
@@ -264,15 +265,9 @@ class _ProfilePageState extends State<ProfilePage> {
             value: _name.isEmpty ? '-' : _name,
           ),
           Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(
-            label: 'Email',
-            value: _email.isEmpty ? '-' : _email,
-          ),
+          _buildInfoField(label: 'Email', value: _email.isEmpty ? '-' : _email),
           Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(
-            label: 'Role',
-            value: _formatRole(_role),
-          ),
+          _buildInfoField(label: 'Role', value: _formatRole(_role)),
         ],
       ),
     );
@@ -295,10 +290,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(10),
@@ -320,57 +312,58 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Log Out',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to log out?',
-          style: GoogleFonts.inter(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final authService = GetIt.instance<AuthService>();
-              await authService.logout();
-              if (!context.mounted) return;
-              Navigator.pop(ctx);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
+            title: Text(
               'Log Out',
               style: GoogleFonts.inter(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
               ),
             ),
+            content: Text(
+              'Are you sure you want to log out?',
+              style: GoogleFonts.inter(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.inter(color: AppColors.textMuted),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final authService = GetIt.instance<AuthService>();
+                  await authService.logout();
+                  if (!context.mounted) return;
+                  Navigator.pop(ctx);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Log Out',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

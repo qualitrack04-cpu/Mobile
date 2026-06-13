@@ -39,7 +39,7 @@ class AuthService {
           'fullName': fullName,
           'email': email,
           'password': password,
-          'role': 'QualityManager',
+          'role': role,
         },
       );
     } catch (e) {
@@ -59,80 +59,80 @@ class AuthService {
     }
   }
 
-  // // POST /api/Auth/resend-otp
-  // Future<void> resendOtp({required String email}) async {
-  //   try {
-  //     await apiService.client.post(
-  //       '/api/Auth/resend-otp',
-  //       data: {'email': email},
-  //     );
-  //   } catch (e) {
-  //     throw Exception('Gagal kirim ulang OTP');
-  //   }
-  // }
+  // POST /api/Auth/resend-otp
+  Future<void> resendOtp({required String email}) async {
+    try {
+      await apiService.client.post(
+        '/api/Auth/resend-otp',
+        data: {'email': email},
+      );
+    } catch (e) {
+      throw Exception('Gagal kirim ulang OTP');
+    }
+  }
 
-  // // POST /api/Auth/forgot-password/request-otp
-  // Future<void> requestForgotPasswordOtp({required String email}) async {
-  //   try {
-  //     await apiService.client.post(
-  //       '/api/Auth/forgot-password/request-otp',
-  //       data: {'email': email},
-  //     );
-  //   } catch (e) {
-  //     throw Exception('Email tidak ditemukan');
-  //   }
-  // }
+  // POST /api/Auth/forgot-password/request-otp
+  Future<void> requestForgotPasswordOtp({required String email}) async {
+    try {
+      await apiService.client.post(
+        '/api/Auth/forgot-password/request-otp',
+        data: {'email': email},
+      );
+    } catch (e) {
+      throw Exception('Email tidak ditemukan');
+    }
+  }
 
   // POST /api/Auth/forgot-password/verify-otp
-  // Future<void> verifyForgotPasswordOtp({
-  //   required String email,
-  //   required String otp,
-  // }) async {
-  //   try {
-  //     await apiService.client.post(
-  //       '/api/Auth/forgot-password/verify-otp',
-  //       data: {'email': email, 'otp': otp},
-  //     );
-  //   } catch (e) {
-  //     throw Exception('OTP salah atau sudah kadaluarsa');
-  //   }
-  // }
-
-  // // POST /api/Auth/forgot-password/reset
-  // Future<void> resetPassword({
-  //   required String email,
-  //   required String otp,
-  //   required String newPassword,
-  // }) async {
-  //   try {
-  //     await apiService.client.post(
-  //       '/api/Auth/forgot-password/reset',
-  //       data: {'email': email, 'otp': otp, 'newPassword': newPassword},
-  //     );
-  //   } catch (e) {
-  //     throw Exception('Gagal reset password');
-  //   }
-  // }
-
-  // POST /api/Auth/forgot-password (alur baru tanpa OTP)
-  Future<void> forgotPassword({
+  Future<void> verifyForgotPasswordOtp({
     required String email,
-    required String newPassword,
-    required String confirmPassword,
+    required String otp,
   }) async {
     try {
       await apiService.client.post(
-        '/api/Auth/forgot-password',
-        data: {
-          'email': email,
-          'newPassword': newPassword,
-          'confirmPassword': confirmPassword,
-        },
+        '/api/Auth/forgot-password/verify-otp',
+        data: {'email': email, 'otp': otp},
       );
     } catch (e) {
-      throw Exception('Gagal reset password, pastikan email terdaftar');
+      throw Exception('OTP salah atau sudah kadaluarsa');
     }
   }
+
+  // POST /api/Auth/forgot-password/reset
+  Future<void> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await apiService.client.post(
+        '/api/Auth/forgot-password/reset',
+        data: {'email': email, 'otp': otp, 'newPassword': newPassword},
+      );
+    } catch (e) {
+      throw Exception('Gagal reset password');
+    }
+  }
+
+  // // POST /api/Auth/forgot-password (alur tanpa OTP - dinonaktifkan)
+  // Future<void> forgotPassword({
+  //   required String email,
+  //   required String newPassword,
+  //   required String confirmPassword,
+  // }) async {
+  //   try {
+  //     await apiService.client.post(
+  //       '/api/Auth/forgot-password',
+  //       data: {
+  //         'email': email,
+  //         'newPassword': newPassword,
+  //         'confirmPassword': confirmPassword,
+  //       },
+  //     );
+  //   } catch (e) {
+  //     throw Exception('Gagal reset password, pastikan email terdaftar');
+  //   }
+  // }
 
   // Logout
   Future<void> logout() async {

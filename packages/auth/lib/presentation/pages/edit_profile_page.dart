@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
@@ -57,10 +58,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _formatRole(String role) {
     if (role.isEmpty) return '-';
     return role
-        .replaceAllMapped(
-          RegExp(r'(?<=[a-z])([A-Z])'),
-          (Match m) => ' ${m[1]}',
-        )
+        .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
         .trim();
   }
 
@@ -71,52 +69,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder:
+          (ctx) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: Text('Camera', style: GoogleFonts.inter()),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final picked = await picker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 80,
+                    );
+                    if (picked != null) {
+                      setState(() => _selectedPhoto = File(picked.path));
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: Text('Gallery', style: GoogleFonts.inter()),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 80,
+                    );
+                    if (picked != null) {
+                      setState(() => _selectedPhoto = File(picked.path));
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: Text('Camera', style: GoogleFonts.inter()),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final picked = await picker.pickImage(
-                  source: ImageSource.camera,
-                  imageQuality: 80,
-                );
-                if (picked != null) {
-                  setState(() => _selectedPhoto = File(picked.path));
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: Text('Gallery', style: GoogleFonts.inter()),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final picked = await picker.pickImage(
-                  source: ImageSource.gallery,
-                  imageQuality: 80,
-                );
-                if (picked != null) {
-                  setState(() => _selectedPhoto = File(picked.path));
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -146,74 +145,75 @@ class _EditProfilePageState extends State<EditProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Are you sure you want to save the changes to your profile? This action will update your account information.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.black87,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _saveChanges();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+      builder:
+          (ctx) => Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                label: Text(
-                  'Save',
+                const SizedBox(height: 20),
+                Text(
+                  'Are you sure you want to save the changes to your profile? This action will update your account information.',
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  color: Colors.black54,
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _saveChanges();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    label: Text(
+                      'Save',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -227,7 +227,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
 
       if (_selectedPhoto != null) {
-        await authService.updateProfilePhoto(_selectedPhoto!.path);
+        final bytes = await _selectedPhoto!.readAsBytes();
+        final base64String = base64Encode(bytes);
+        await authService.updateProfilePhoto(base64String);
       }
 
       if (!mounted) return;
@@ -247,7 +249,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   ImageProvider? _getPhotoProvider() {
     if (_selectedPhoto != null) return FileImage(_selectedPhoto!);
-    if (widget.photoPath.isNotEmpty) return FileImage(File(widget.photoPath));
+    if (widget.photoPath.isNotEmpty) {
+      try {
+        return MemoryImage(base64Decode(widget.photoPath));
+      } catch (e) {
+        return null;
+      }
+    }
     return null;
   }
 
@@ -300,13 +308,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         radius: 48,
                         backgroundColor: AppColors.borderLight,
                         backgroundImage: _getPhotoProvider(),
-                        child: _getPhotoProvider() == null
-                            ? Icon(
-                                Icons.person,
-                                size: 52,
-                                color: AppColors.primaryMuted,
-                              )
-                            : null,
+                        child:
+                            _getPhotoProvider() == null
+                                ? Icon(
+                                  Icons.person,
+                                  size: 52,
+                                  color: AppColors.primaryMuted,
+                                )
+                                : null,
                       ),
                       Positioned(
                         bottom: 0,
@@ -381,24 +390,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     label: 'Password',
                     controller: _passwordController,
                     isObscured: _isObscured,
-                    onToggle: () =>
-                        setState(() => _isObscured = !_isObscured),
+                    onToggle: () => setState(() => _isObscured = !_isObscured),
                   ),
                   Divider(height: 1, color: AppColors.borderLight),
                   _buildPasswordField(
                     label: 'New Password',
                     controller: _newPasswordController,
                     isObscured: _isObscuredNew,
-                    onToggle: () =>
-                        setState(() => _isObscuredNew = !_isObscuredNew),
+                    onToggle:
+                        () => setState(() => _isObscuredNew = !_isObscuredNew),
                   ),
                   Divider(height: 1, color: AppColors.borderLight),
                   _buildPasswordField(
                     label: 'New Password Verivication',
                     controller: _confirmPasswordController,
                     isObscured: _isObscuredConfirm,
-                    onToggle: () => setState(
-                        () => _isObscuredConfirm = !_isObscuredConfirm),
+                    onToggle:
+                        () => setState(
+                          () => _isObscuredConfirm = !_isObscuredConfirm,
+                        ),
                   ),
                 ],
               ),
@@ -416,33 +426,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
             Align(
               alignment: Alignment.centerRight,
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton.icon(
-                      onPressed: _onSaveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+              child:
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton.icon(
+                        onPressed: _onSaveChanges,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      label: Text(
-                        'save changes',
-                        style: GoogleFonts.inter(
+                        icon: const Icon(
+                          Icons.edit_outlined,
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                          size: 16,
+                        ),
+                        label: Text(
+                          'save changes',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
             ),
           ],
         ),
