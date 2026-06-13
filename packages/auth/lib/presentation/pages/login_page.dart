@@ -9,6 +9,9 @@ import '../widgets/action_button.dart';
 import '../widgets/role_dropdown.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
+import 'package:dio/dio.dart';
+import 'package:core_services/services/maintenance_exception.dart';
+import 'package:core/presentation/pages/maintenance_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -46,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _errorMessage = 'Email and password are required');
       return;
     }
+
     if (!_isValidEmail(_emailController.text.trim())) {
       setState(() => _errorMessage = 'Please enter a valid email address');
       return;
@@ -58,20 +62,38 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final authService = GetIt.instance<AuthService>();
+
       await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email or password is wrong');
+      debugPrint('LOGIN ERROR: $e');
+
+      if (e is DioException && e.error is MaintenanceException) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MaintenancePage()),
+        );
+        return;
+      }
+
+      setState(() {
+        _errorMessage = 'Email or password is wrong';
+      });
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

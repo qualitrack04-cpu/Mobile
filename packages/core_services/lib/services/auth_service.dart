@@ -1,5 +1,7 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import 'maintenance_exception.dart';
 
 class AuthService {
   final ApiService apiService;
@@ -7,24 +9,31 @@ class AuthService {
   AuthService({required this.apiService});
 
   // POST /api/Auth/login
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     try {
       final response = await apiService.client.post(
         '/api/Auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
+
       final data = response.data as Map<String, dynamic>;
+
       final prefs = await SharedPreferences.getInstance();
+
       await prefs.setString('auth_token', data['token'] as String);
+
       await prefs.setString('user_role', data['role'] as String);
+
       await prefs.setString('user_name', data['fullName'] as String);
+
       await prefs.setString('user_id', data['userId'].toString());
+    } on DioException catch (e) {
+      // Maintenance dari ApiService
+      if (e.error is MaintenanceException) {
+        rethrow;
+      }
+
+      throw Exception('Email atau password salah');
     } catch (e) {
       throw Exception('Email atau password salah');
     }
