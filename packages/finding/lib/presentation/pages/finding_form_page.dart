@@ -34,7 +34,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final _reporterController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedDepartment;
-  FindingCategory _selectedCategory = FindingCategory.majorNC;
+  FindingCategory? _selectedCategory;
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -42,7 +42,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _titleController.text.trim().isNotEmpty &&
       _reporterController.text.trim().isNotEmpty &&
       _descriptionController.text.trim().isNotEmpty &&
-      _selectedDepartment != null;
+      _selectedDepartment != null &&
+      _selectedCategory != null;
 
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
@@ -396,6 +397,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
             child: DropdownButton<FindingCategory>(
               value: _selectedCategory,
               isExpanded: true,
+              hint: const Text('Select Category',
+                  style: TextStyle(color: Colors.black26, fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
               items: categories.entries.map((e) {
                 return DropdownMenuItem(
@@ -680,10 +683,16 @@ class _FindingFormPageState extends State<FindingFormPage> {
           backgroundColor: Colors.orange));
       return;
     }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Category cannot be empty!'),
+          backgroundColor: Colors.orange));
+      return;
+    }
 
     context.read<FindingBloc>().add(
           CreateFindingEvent(
-            category: _selectedCategory,
+            category: _selectedCategory!,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
