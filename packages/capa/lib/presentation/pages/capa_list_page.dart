@@ -10,6 +10,7 @@ import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -33,6 +34,22 @@ class _CapaListView extends StatefulWidget {
 class _CapaListViewState extends State<_CapaListView> {
   List<Capa> _lastCapas = [];
   bool _isFirstLoad = true;
+  String _userRole = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userRole = prefs.getString('user_role') ?? '';
+      });
+    }
+  }
 
   List<Capa> _filterCapas(List<Capa> capas) {
   final now = DateTime.now();
@@ -136,7 +153,7 @@ class _CapaListViewState extends State<_CapaListView> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                     children: [
                       if (isLoading || displayList.isNotEmpty)
-                        ...displayList.map((capa) => _CapaCard(capa: capa)),
+                        ...displayList.map((capa) => _CapaCard(capa: capa, userRole: _userRole)),
                     ],
                   ),
                 ),
@@ -144,53 +161,54 @@ class _CapaListViewState extends State<_CapaListView> {
 
               // FAB
               // FAB
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: Builder(
-                  builder: (context) {
-                    final screenWidth = MediaQuery.of(context).size.width;
+              if (_userRole != 'Auditor')
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: Builder(
+                    builder: (context) {
+                      final screenWidth = MediaQuery.of(context).size.width;
 
-                    // ukuran FAB dinamis seperti AuditListPage
-                    final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+                      // ukuran FAB dinamis seperti AuditListPage
+                      final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
 
-                    return SizedBox(
-                      width: fabSize,
-                      height: fabSize,
-                      child: FloatingActionButton(
-                        backgroundColor: AppColors.primaryLight,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(fabSize * 0.25),
+                      return SizedBox(
+                        width: fabSize,
+                        height: fabSize,
+                        child: FloatingActionButton(
+                          backgroundColor: AppColors.primaryLight,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(fabSize * 0.25),
+                          ),
+                          onPressed: () async {
+                            final bloc = context.read<CapaBloc>();
+
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => BlocProvider.value(
+                                      value: bloc,
+                                      child: const CapaFormPage(),
+                                    ),
+                              ),
+                            );
+
+                            if (result == true && context.mounted) {
+                              bloc.add(const LoadCapas());
+                            }
+                          },
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: fabSize * 0.45,
+                          ),
                         ),
-                        onPressed: () async {
-                          final bloc = context.read<CapaBloc>();
-
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => BlocProvider.value(
-                                    value: bloc,
-                                    child: const CapaFormPage(),
-                                  ),
-                            ),
-                          );
-
-                          if (result == true && context.mounted) {
-                            bloc.add(const LoadCapas());
-                          }
-                        },
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: fabSize * 0.45,
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           );
         },
@@ -201,7 +219,8 @@ class _CapaListViewState extends State<_CapaListView> {
 
 class _CapaCard extends StatefulWidget {
   final Capa capa;
-  const _CapaCard({required this.capa});
+  final String userRole;
+  const _CapaCard({required this.capa, required this.userRole});
 
   @override
   State<_CapaCard> createState() => _CapaCardState();
@@ -367,6 +386,24 @@ class _CapaCardState extends State<_CapaCard> {
         // ✅ status kosong: tampil placeholder "Status"
         bgColor = const Color(0xFFF0F0F0);
         textColor = Colors.black38;
+    }
+
+    if (widget.userRole == 'Auditor') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          _currentStatus.isEmpty ? 'Status' : _currentStatus,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+      );
     }
 
     return Container(
