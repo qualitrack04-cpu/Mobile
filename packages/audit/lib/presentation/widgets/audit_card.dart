@@ -352,6 +352,8 @@ class AuditCard extends StatelessWidget {
                 elevation: 3,
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.grey.shade500,
                 // ✅ padding dikurangi supaya teks tidak terpotong di layar sempit
                 padding: const EdgeInsets.symmetric(horizontal: 8),
 
