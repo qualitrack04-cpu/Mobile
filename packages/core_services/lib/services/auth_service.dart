@@ -7,11 +7,15 @@ class AuthService {
   AuthService({required this.apiService});
 
   // POST /api/Auth/login
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({
+    required String email,
+    required String password,
+    required String role,
+  }) async {
     try {
       final response = await apiService.client.post(
         '/api/Auth/login',
-        data: {'email': email, 'password': password},
+        data: {'email': email, 'password': password, 'role': role},
       );
       final data = response.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
@@ -21,7 +25,7 @@ class AuthService {
       await prefs.setString('user_id', data['userId'].toString());
       await prefs.setString('user_email', email);
     } catch (e) {
-      throw Exception('Email atau password salah');
+      rethrow;
     }
   }
 

@@ -61,6 +61,7 @@ class _LoginPageState extends State<LoginPage> {
       await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        role: _selectedRole ?? 'QualityManager',
       );
 
       if (!mounted) return;
@@ -70,7 +71,16 @@ class _LoginPageState extends State<LoginPage> {
         (route) => false,
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email or password is wrong');
+      // Tampilkan pesan error spesifik dari backend jika ada
+      String msg = e.toString();
+      if (msg.contains('Role yang dipilih tidak sesuai')) {
+        msg = 'Role yang dipilih tidak sesuai dengan akun ini';
+      } else if (msg.contains('Email atau password')) {
+        msg = 'Email atau password salah';
+      } else {
+        msg = 'Login gagal, coba lagi';
+      }
+      setState(() => _errorMessage = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

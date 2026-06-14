@@ -63,7 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
         if (roleStr == 'QualityManager') {
           _userRole = 'Quality Manager';
         } else if (roleStr == 'Auditor') {
-          _userRole = 'Auditor';
+          _userRole = 'Auditor Internal';
         } else {
           _userRole = roleStr;
         }
