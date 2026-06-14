@@ -197,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             TextField(
                               controller: _fullNameController,
                               decoration: customInputDecoration(
-                                hint: 'Nailong bin Amir',
+                                hint: 'Username',
                                 icon: Icons.person_outline,
                               ),
                             ),
