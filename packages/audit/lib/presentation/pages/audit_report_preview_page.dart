@@ -475,7 +475,8 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
 
       final bytes = response.data;
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/audit-report-${widget.sessionId}.pdf');
+      final safeTitle = widget.audit.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
       await file.writeAsBytes(bytes);
 
       // View saja — JANGAN tandai selesai. Audit selesai hanya saat Download.
@@ -518,10 +519,13 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      File file = File('${dir!.path}/audit-report-${widget.sessionId}.pdf');
+      final safeTitle = widget.audit.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final baseFileName = 'AuditReport_$safeTitle';
+
+      File file = File('${dir!.path}/$baseFileName.pdf');
       int counter = 1;
       while (await file.exists()) {
-        file = File('${dir.path}/audit-report-${widget.sessionId} ($counter).pdf');
+        file = File('${dir.path}/$baseFileName ($counter).pdf');
         counter++;
       }
 
@@ -546,12 +550,35 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         await NotificationService().showDownloadNotification(
           id: widget.sessionId.hashCode,
           title: 'Download Complete',
-          body: 'audit-report-${widget.sessionId}.pdf has been downloaded',
+          body: '${file.path.split('/').last} has been downloaded',
           filePath: file.path,
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF saved to ${file.path}')),
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Audit report successfully saved to Downloads folder',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     } catch (e) {

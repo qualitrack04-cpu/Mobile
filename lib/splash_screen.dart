@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:core_services/core_services.dart';
+import 'package:core_services/global_navigator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:auth/presentation/pages/login_page.dart';
 import 'package:dashboard/presentation/pages/dashboard_screen.dart';
@@ -44,12 +45,31 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<bool> _doInit() async {
     // Semua proses yang dulu ada di main.dart, sekarang di sini
     await di.init();                              // Initialize injector
+
+    // Setup unauthenticated (401) handler
+    final apiService = di.sl<ApiService>();
+    apiService.onUnauthorized = () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('auth_token');
+      await prefs.remove('user_role');
+      await prefs.remove('user_name');
+      await prefs.remove('user_id');
+      await prefs.remove('user_email');
+      await prefs.remove('user_photo');
+
+      globalNavigatorKey.currentState?.pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+    };
+
     await NotificationService().init();           // Initialize notification service
     await Permission.notification.request();      // Request notification permissions
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    // TODO: KEMBALIKAN KODE DI BAWAH INI JIKA SERVER SUDAH NYALA
     return token != null && token.isNotEmpty;     // Return status login
+    // return true; // Bypass sementara agar bisa nyoba UI
   }
 
   @override

@@ -165,9 +165,34 @@ class AuthService {
     required String name,
     required String email,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', name);
-    await prefs.setString('user_email', email);
+    try {
+      await apiService.client.put(
+        '/api/User/update-profile', // Asumsi endpoint update profil
+        data: {
+          'fullName': name,
+          'email': email,
+        },
+      );
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', name);
+      await prefs.setString('user_email', email);
+    } catch (e) {
+      throw Exception('Gagal menyimpan profil ke server');
+    }
+  }
+
+  Future<void> changePassword({required String newPassword}) async {
+    try {
+      await apiService.client.post(
+        '/api/Auth/change-password', // Asumsi endpoint ubah password
+        data: {
+          'newPassword': newPassword,
+        },
+      );
+    } catch (e) {
+      throw Exception('Gagal mengganti password di server');
+    }
   }
 
   Future<void> updateProfilePhoto(String photoPath) async {

@@ -2,11 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://backendqualitrack-production.up.railway.app'; 
+  static const String baseUrl = 'https://be.qualitrack.labs.it.pens.ac.id'; 
   // Untuk railway :'https://backendqualitrack-production.up.railway.app'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 
   late final Dio _dio;
+
+  void Function()? onUnauthorized;
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -39,7 +41,11 @@ class ApiService {
           print('ERROR RESPONSE: ${error.response?.data}');
           print('STATUS CODE: ${error.response?.statusCode}');
           if (error.response?.statusCode == 401) {
-            // TODO: redirect ke halaman login
+            // Jangan trigger auto-logout jika 401 berasal dari percobaan login
+            if (!error.requestOptions.path.contains('/api/Auth/login')) {
+              // Server sudah nyala, trigger auto-logout
+              onUnauthorized?.call();
+            }
           }
           return handler.next(error);
         },
