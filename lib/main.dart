@@ -1,33 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
-import 'package:auth/presentation/pages/login_page.dart';
-import 'package:dashboard/presentation/pages/dashboard_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:core_services/core_services.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'injector.dart' as di;
+import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await di.init(); // ✅ initialize injector
-  
-  // Initialize notification service
-  await NotificationService().init();
 
-  // Request notification permissions
-  await Permission.notification.request();
-  
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('auth_token');
-  final isLoggedIn = token != null && token.isNotEmpty;
-
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  // Langsung tampilkan app → Splash Screen muncul duluan
+  // Semua proses init (di.init, notif, permission, cek login) 
+  // berjalan di dalam SplashScreen sambil splash ditampilkan
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-  
-  const MyApp({super.key, required this.isLoggedIn});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +24,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: AppColors.background,
         fontFamily: 'Inter',
       ),
-      home: isLoggedIn ? const DashboardScreen() : const LoginPage(),
+      home: const SplashScreen(),
     );
   }
 }
