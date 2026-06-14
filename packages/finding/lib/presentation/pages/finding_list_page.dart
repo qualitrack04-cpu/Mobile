@@ -38,6 +38,7 @@ class _FindingListViewState extends State<_FindingListView> {
   bool _isFirstLoad = true;
   String _userRole = '';
   String _userName = '';
+  String _userId = '';
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _FindingListViewState extends State<_FindingListView> {
       setState(() {
         _userRole = prefs.getString('user_role') ?? '';
         _userName = prefs.getString('user_name') ?? '';
+        _userId = prefs.getString('user_id') ?? '';
       });
     }
   }
@@ -109,6 +111,7 @@ class _FindingListViewState extends State<_FindingListView> {
                     status: FindingStatus.open,
                     department: 'Department Name',
                     reporter: '',
+                    reporterId: '',
                   ),
                 );
 
@@ -163,6 +166,7 @@ class _FindingListViewState extends State<_FindingListView> {
                                   finding: finding,
                                   userRole: _userRole,
                                   userName: _userName,
+                                  userId: _userId,
                                 ),
                               ),
                           ],
@@ -238,11 +242,13 @@ class _FindingCard extends StatelessWidget {
   final Finding finding;
   final String userRole;
   final String userName;
+  final String userId;
 
   const _FindingCard({
     required this.finding,
     required this.userRole,
     required this.userName,
+    required this.userId,
   });
 
   @override
@@ -304,8 +310,8 @@ class _FindingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter sama dengan user_name)
-                  if (userRole != 'Auditor' || (userRole == 'Auditor' && finding.reporter == userName))
+                  // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter id sama dengan user_id)
+                  if (userRole != 'Auditor' || (userRole == 'Auditor' && finding.reporterId == userId))
                     GestureDetector(
                       onTap: () async {
                         final bloc = context.read<FindingBloc>();

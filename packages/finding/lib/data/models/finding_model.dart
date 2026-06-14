@@ -12,6 +12,7 @@ class FindingModel extends Finding {
     required super.status,
     required super.department,
     required super.reporter,
+    required super.reporterId,
     super.isCapaClosed,
     super.capaClosedAt,
   });
@@ -51,6 +52,7 @@ class FindingModel extends Finding {
       status: FindingStatus.fromString(json['status'] as String),
       department: json['department'] as String,
       reporter: json['reporterName'] as String? ?? '',
+      reporterId: json['reporterId'] as String? ?? '',
       isCapaClosed: isCapaClosed,
       capaClosedAt: capaClosedAt,
     );
@@ -64,6 +66,7 @@ class FindingModel extends Finding {
       'clauseRef': clauseRef,
       'department': department,
       'reporterName': reporter,
+      'reporterId': reporterId,
     };
   }
 }
