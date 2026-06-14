@@ -11,6 +11,7 @@ class Finding extends Equatable {
   final FindingStatus status;
   final String department;
   final String reporter;
+  final String reporterId;
   final bool isCapaClosed;
   final DateTime? capaClosedAt;
 
@@ -24,6 +25,7 @@ class Finding extends Equatable {
     required this.status,
     required this.department,
     required this.reporter,
+    required this.reporterId,
     this.isCapaClosed = false,
     this.capaClosedAt,
   });
@@ -39,6 +41,7 @@ class Finding extends Equatable {
         status,
         department,
         reporter,
+        reporterId,
         isCapaClosed,
         capaClosedAt,
       ];
