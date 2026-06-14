@@ -366,7 +366,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: double.infinity,
                         height: 38,
                         child: ElevatedButton(
-                          onPressed: () => _viewPdf(report.sessionId),
+                          onPressed: () => _viewPdf(report.sessionId, report.planTitle),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(
                               0xFF00104A,
@@ -429,7 +429,7 @@ class _DashboardPageState extends State<DashboardPage> {
             top: 12,
             right: 12,
             child: GestureDetector(
-              onTap: () => _downloadAndSavePdf(report.sessionId),
+              onTap: () => _downloadAndSavePdf(report.sessionId, report.planTitle),
               child: Container(
                 width: 32,
                 height: 32,
@@ -451,7 +451,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   /// Buka PDF langsung di reader HP (tanpa simpan ke Download)
-  Future<void> _viewPdf(String sessionId) async {
+  Future<void> _viewPdf(String sessionId, String planTitle) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -467,7 +467,8 @@ class _DashboardPageState extends State<DashboardPage> {
       final bytes = response.data;
       // Simpan ke direktori temporary (bukan Download)
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/audit-report-$sessionId.pdf');
+      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
       await file.writeAsBytes(bytes);
 
       if (mounted) {
@@ -485,7 +486,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   /// Download PDF → simpan ke folder Download HP → tampil notifikasi
-  Future<void> _downloadAndSavePdf(String sessionId) async {
+  Future<void> _downloadAndSavePdf(String sessionId, String planTitle) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -510,10 +511,13 @@ class _DashboardPageState extends State<DashboardPage> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      File file = File('${dir!.path}/audit-report-$sessionId.pdf');
+      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final baseFileName = 'AuditReport_$safeTitle';
+      
+      File file = File('${dir!.path}/$baseFileName.pdf');
       int counter = 1;
       while (await file.exists()) {
-        file = File('${dir.path}/audit-report-$sessionId ($counter).pdf');
+        file = File('${dir.path}/$baseFileName ($counter).pdf');
         counter++;
       }
 
@@ -526,13 +530,36 @@ class _DashboardPageState extends State<DashboardPage> {
         await NotificationService().showDownloadNotification(
           id: sessionId.hashCode,
           title: 'Download Complete',
-          body: 'audit-report-$sessionId.pdf has been downloaded',
+          body: '${file.path.split('/').last} has been downloaded',
           filePath: file.path,
         );
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('File saved to ${file.path}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Audit report successfully saved to Downloads folder',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

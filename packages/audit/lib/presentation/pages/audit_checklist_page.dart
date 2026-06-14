@@ -209,6 +209,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               description: f['description'] as String? ?? '',
               clauseRef: f['clauseRef'] as String? ?? '',
               reporter: f['reporter'] as String? ?? '',
+              reporterId: f['reporterId'] as String? ?? '',
               foundAt:
                   DateTime.tryParse(f['foundAt'] as String? ?? '') ??
                   DateTime.now(),
@@ -741,6 +742,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
           elevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
