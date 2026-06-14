@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
@@ -10,6 +9,7 @@ import 'package:dio/dio.dart';
 class PdfSuccessDialog extends StatelessWidget {
   final VoidCallback onView;
   final VoidCallback onDownload;
+  final VoidCallback onGoToDashboard;
   final String reportTitle;
   final String sessionId;
 
@@ -17,6 +17,7 @@ class PdfSuccessDialog extends StatelessWidget {
     super.key,
     required this.onView,
     required this.onDownload,
+    required this.onGoToDashboard,
     required this.sessionId,
     this.reportTitle = 'Monthly Compliance Report',
   });
@@ -61,13 +62,7 @@ class PdfSuccessDialog extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(confirmCtx, rootNavigator: true)
-                        .pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const DashboardScreen(),
-                      ),
-                      (route) => false,
-                    );
+                    onGoToDashboard();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003B5C),

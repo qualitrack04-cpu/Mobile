@@ -10,7 +10,6 @@ import 'package:core_services/services/api_service.dart';
 import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../../data/datasources/checklist_remote_datasource.dart';
@@ -425,12 +424,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true)
-                        .pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const DashboardScreen(),
-                      ),
-                      (route) => false,
-                    );
+                        .popUntil((route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003B5C),
@@ -460,6 +454,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         ),
       ),
     );
+  }
+
+  void _goToDashboard() {
+    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
   }
 
   Future<void> _viewPdf() async {
@@ -591,6 +589,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
               onDownload: () {
                 _downloadAndSavePdf();
               },
+              onGoToDashboard: _goToDashboard,
             ),
           );
         },
