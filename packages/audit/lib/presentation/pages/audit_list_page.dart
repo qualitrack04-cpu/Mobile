@@ -46,12 +46,14 @@ class _AuditListViewState extends State<_AuditListView> {
   }
 
   String _userRole = '';
+  String _userName = '';
 
   Future<void> _loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _userRole = prefs.getString('user_role') ?? '';
+        _userName = prefs.getString('user_name') ?? '';
       });
     }
   }
@@ -344,17 +346,20 @@ class _AuditListViewState extends State<_AuditListView> {
 
                   onChecklist: audit.isFinished
                       ? null
-                      : () async {
-                          await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: context.read<AuditBloc>(),
-                                child: AuditChecklistPage(audit: audit),
-                              ),
-                            ),
-                          );
-                        },
+                      // Auditor hanya bisa akses checklist audit yang dia jadi PIC-nya
+                      : (_userRole == 'Auditor' && audit.auditorName != _userName)
+                          ? null
+                          : () async {
+                              await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: context.read<AuditBloc>(),
+                                    child: AuditChecklistPage(audit: audit),
+                                  ),
+                                ),
+                              );
+                            },
 
                   onDelete: _userRole == 'Auditor' ? null : () async {
                     final confirmed = await showDialog<bool>(
