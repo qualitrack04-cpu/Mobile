@@ -22,8 +22,13 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isObscured = true;
   bool _isObscuredConfirm = true;
   bool _isLoading = false;
-  String? _errorMessage;
   String? _selectedRole = 'QualityManager';
+
+  String? _nameError;
+  String? _emailError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+  String? _generalError;
 
   @override
   void dispose() {
@@ -34,38 +39,54 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  bool _isValidGmail(String email) {
-    final gmailRegex = RegExp(
-      r'^[\w\.\-]+@gmail\.com$',
-      caseSensitive: false,
-    );
-    return gmailRegex.hasMatch(email.trim());
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w\.-]+@gmail\.com$', caseSensitive: false);
+    return emailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onRegister() async {
-    if (_fullNameController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'All fields are required');
-      return;
-    }
-    if (!_isValidGmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
-      return;
-    }
-    if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Password not match');
-      return;
-    }
-    if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'Password min 6 characters');
-      return;
+    setState(() {
+      _nameError = null;
+      _emailError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+      _generalError = null;
+    });
+
+    bool hasError = false;
+
+    if (_fullNameController.text.trim().isEmpty) {
+      setState(() => _nameError = 'Username is required');
+      hasError = true;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (_emailController.text.trim().isEmpty) {
+      setState(() => _emailError = 'Email is required');
+      hasError = true;
+    } else if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _emailError = 'Email must use @gmail.com');
+      hasError = true;
+    }
+
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      hasError = true;
+    } else if (_passwordController.text.length < 6) {
+      setState(() => _passwordError = 'Password min 6 characters');
+      hasError = true;
+    }
+
+    if (_confirmPasswordController.text.isEmpty) {
+      setState(() => _confirmPasswordError = 'Please confirm your password');
+      hasError = true;
+    } else if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _confirmPasswordError = 'Passwords do not match');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    setState(() => _isLoading = true);
 
     try {
       final authService = GetIt.instance<AuthService>();
@@ -80,17 +101,31 @@ class _RegisterPageState extends State<RegisterPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => OtpPage(
-            email: _emailController.text.trim(),
-            isForgotPassword: false,
-          ),
+          builder:
+              (_) => OtpPage(
+                email: _emailController.text.trim(),
+                isForgotPassword: false,
+              ),
         ),
       );
     } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      setState(
+        () => _generalError = e.toString().replaceAll('Exception: ', ''),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildErrorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        error,
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+    );
   }
 
   @override
@@ -101,7 +136,6 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Back button ────────────────────────────────────
               Align(
                 alignment: Alignment.topLeft,
                 child: TextButton.icon(
@@ -121,55 +155,48 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20, // sama dengan login
-                    vertical: 40,   // sama dengan login
+                    horizontal: 20,
+                    vertical: 40,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // ── Logo di luar card ──────────────────────
                       Container(
-                        width: 44,  // sama dengan login
-                        height: 44, // sama dengan login
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(10), // sama dengan login
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.shield,
-                          size: 26,  // sama dengan login
+                          size: 26,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 8), // sama dengan login
+                      const SizedBox(height: 8),
                       const Text(
                         'QualiTrack',
                         style: TextStyle(
-                          fontSize: 18, // sama dengan login
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
                         ),
                       ),
                       const Text(
                         'Precision Quality & Audit Management',
-                        style: TextStyle(
-                          fontSize: 12, // sama dengan login
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
-                      const SizedBox(height: 20), // sama dengan login
-
-                      // ── Card ──────────────────────────────────
+                      const SizedBox(height: 20),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(24), // sama dengan login
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16), // sama dengan login
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: const [
                             BoxShadow(
                               color: Colors.black12,
@@ -181,18 +208,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Judul
                             const Text(
                               'Sign Up',
                               style: TextStyle(
-                                fontSize: 28, // sama dengan login
+                                fontSize: 28,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary,
                               ),
                             ),
-                            const SizedBox(height: 16), // sama dengan login
+                            const SizedBox(height: 16),
 
-                            // Username
                             const InputLabel('Username'),
                             TextField(
                               controller: _fullNameController,
@@ -201,8 +226,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 icon: Icons.person_outline,
                               ),
                             ),
+                            _buildErrorText(_nameError),
 
-                            // Work Email
                             const InputLabel('Work Email'),
                             TextField(
                               controller: _emailController,
@@ -210,17 +235,37 @@ class _RegisterPageState extends State<RegisterPage> {
                               autocorrect: false,
                               enableSuggestions: false,
                               autofillHints: const [AutofillHints.email],
+                              onChanged: (val) {
+                                setState(() {
+                                  _emailError =
+                                      val.trim().isEmpty
+                                          ? 'Email is required'
+                                          : !_isValidEmail(val.trim())
+                                          ? 'Email must use @gmail.com'
+                                          : null;
+                                });
+                              },
                               decoration: customInputDecoration(
-                                hint: 'username@gmail.com',
+                                hint: 'name@gmail.com',
                                 icon: Icons.mail_outline,
                               ),
                             ),
+                            _buildErrorText(_emailError),
 
-                            // Password
                             const InputLabel('Password'),
                             TextField(
                               controller: _passwordController,
                               obscureText: _isObscured,
+                              onChanged: (val) {
+                                setState(() {
+                                  _passwordError =
+                                      val.isEmpty
+                                          ? 'Password is required'
+                                          : val.length < 6
+                                          ? 'Password min 6 characters'
+                                          : null;
+                                });
+                              },
                               decoration: customInputDecoration(
                                 hint: '••••••••',
                                 icon: Icons.lock_outline,
@@ -231,17 +276,29 @@ class _RegisterPageState extends State<RegisterPage> {
                                         : Icons.visibility_off_outlined,
                                     size: 20,
                                   ),
-                                  onPressed: () => setState(
-                                      () => _isObscured = !_isObscured),
+                                  onPressed:
+                                      () => setState(
+                                        () => _isObscured = !_isObscured,
+                                      ),
                                 ),
                               ),
                             ),
+                            _buildErrorText(_passwordError),
 
-                            // Password Verification
-                            const InputLabel('Password Verivication'),
+                            const InputLabel('Password Verification'),
                             TextField(
                               controller: _confirmPasswordController,
                               obscureText: _isObscuredConfirm,
+                              onChanged: (val) {
+                                setState(() {
+                                  _confirmPasswordError =
+                                      val.isEmpty
+                                          ? 'Please confirm your password'
+                                          : val != _passwordController.text
+                                          ? 'Passwords do not match'
+                                          : null;
+                                });
+                              },
                               decoration: customInputDecoration(
                                 hint: '••••••••',
                                 icon: Icons.lock_outline,
@@ -252,25 +309,28 @@ class _RegisterPageState extends State<RegisterPage> {
                                         : Icons.visibility_off_outlined,
                                     size: 20,
                                   ),
-                                  onPressed: () => setState(() =>
-                                      _isObscuredConfirm =
-                                          !_isObscuredConfirm),
+                                  onPressed:
+                                      () => setState(
+                                        () =>
+                                            _isObscuredConfirm =
+                                                !_isObscuredConfirm,
+                                      ),
                                 ),
                               ),
                             ),
+                            _buildErrorText(_confirmPasswordError),
 
-                            // Role
                             const InputLabel('Role'),
                             RoleDropdown(
                               selectedRole: _selectedRole,
-                              onChanged: (val) =>
-                                  setState(() => _selectedRole = val),
+                              onChanged:
+                                  (val) => setState(() => _selectedRole = val),
                             ),
 
-                            if (_errorMessage != null) ...[
+                            if (_generalError != null) ...[
                               const SizedBox(height: 8),
                               Text(
-                                _errorMessage!,
+                                _generalError!,
                                 style: const TextStyle(
                                   color: Colors.red,
                                   fontSize: 13,
@@ -278,51 +338,49 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ],
 
-                            const SizedBox(height: 25), // sama dengan login
+                            const SizedBox(height: 25),
 
-                            // Tombol SIGN UP
                             _isLoading
                                 ? const Center(
-                                    child: CircularProgressIndicator())
+                                  child: CircularProgressIndicator(),
+                                )
                                 : SizedBox(
-                                    width: double.infinity,
-                                    height: 52,
-                                    child: ElevatedButton(
-                                      onPressed: _onRegister,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      child: const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'SIGN UP',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.2,
-                                            ),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Icon(
-                                            Icons.arrow_forward,
-                                            color: Colors.white,
-                                            size: 18,
-                                          ),
-                                        ],
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed: _onRegister,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'SIGN UP',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Icon(
+                                          Icons.arrow_forward,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                ),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 32),
                     ],
                   ),
