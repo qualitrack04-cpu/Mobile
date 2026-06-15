@@ -35,6 +35,13 @@ class AuthService {
       await prefs.setString('user_name', data['fullName'] as String);
 
       await prefs.setString('user_id', data['userId'].toString());
+    } on DioException catch (e) {
+      // Maintenance dari ApiService
+      if (e.error is MaintenanceException) {
+        rethrow;
+      }
+
+      throw Exception('Email atau password salah');
     } catch (e) {
       rethrow;
     }
