@@ -22,7 +22,9 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isObscured = true;
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _emailError;
+  String? _passwordError;
+  String? _generalError;
   String? _selectedRole = 'QualityManager';
 
   @override
@@ -32,29 +34,39 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  bool _isValidGmail(String email) {
-    final gmailRegex = RegExp(
-      r'^[\w\.\-]+@gmail\.com$',
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[\w\.-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return gmailRegex.hasMatch(email.trim());
+    return emailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onLogin() async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Email and password are required');
-      return;
-    }
-    if (!_isValidGmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
-      return;
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _generalError = null;
+    });
+
+    bool hasError = false;
+
+    if (_emailController.text.trim().isEmpty) {
+      setState(() => _emailError = 'Email is required');
+      hasError = true;
+    } else if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _emailError = 'Email must use @gmail.com');
+      hasError = true;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    setState(() => _isLoading = true);
 
     try {
       final authService = GetIt.instance<AuthService>();
@@ -71,7 +83,6 @@ class _LoginPageState extends State<LoginPage> {
         (route) => false,
       );
     } catch (e) {
-      // Tampilkan pesan error spesifik dari backend jika ada
       String msg = e.toString();
       if (msg.contains('Role yang dipilih tidak sesuai')) {
         msg = 'Role yang dipilih tidak sesuai dengan akun ini';
@@ -80,10 +91,21 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         msg = 'Login gagal, coba lagi';
       }
-      setState(() => _errorMessage = msg);
+      setState(() => _generalError = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildErrorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        error,
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+    );
   }
 
   @override
@@ -100,7 +122,6 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // ── Logo DI LUAR card ──────────────────────────────
                 Container(
                   width: 44,
                   height: 44,
@@ -129,7 +150,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Card ───────────────────────────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
@@ -147,7 +167,6 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Sign In title
                       const Text(
                         'Sign In',
                         style: TextStyle(
@@ -166,13 +185,23 @@ class _LoginPageState extends State<LoginPage> {
                         autocorrect: false,
                         enableSuggestions: false,
                         autofillHints: const [AutofillHints.email],
+                        onChanged: (val) {
+                          setState(() {
+                            _emailError = val.trim().isEmpty
+                                ? 'Email is required'
+                                : !_isValidEmail(val.trim())
+                                    ? 'Email must use @gmail.com'
+                                    : null;
+                          });
+                        },
                         decoration: customInputDecoration(
-                          hint: 'username@gmail.com',
+                          hint: 'name@gmail.com',
                           icon: Icons.mail_outline,
                         ),
                       ),
+                      _buildErrorText(_emailError),
 
-// Password + Forget Password
+                      // Password + Forget Password
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 8),
                         child: Row(
@@ -210,10 +239,17 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                       ),
-                      
+
                       TextField(
                         controller: _passwordController,
                         obscureText: _isObscured,
+                        onChanged: (val) {
+                          setState(() {
+                            _passwordError = val.isEmpty
+                                ? 'Password is required'
+                                : null;
+                          });
+                        },
                         decoration: customInputDecoration(
                           hint: '••••••••',
                           icon: Icons.lock_outline,
@@ -229,6 +265,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
+                      _buildErrorText(_passwordError),
 
                       // Role
                       const InputLabel('Role'),
@@ -238,10 +275,10 @@ class _LoginPageState extends State<LoginPage> {
                             setState(() => _selectedRole = val),
                       ),
 
-                      if (_errorMessage != null) ...[
+                      if (_generalError != null) ...[
                         const SizedBox(height: 8),
                         Text(
-                          _errorMessage!,
+                          _generalError!,
                           style: const TextStyle(
                             color: Colors.red,
                             fontSize: 13,
@@ -258,7 +295,6 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: _onLogin,
                             ),
 
-                      // ── Don't have account? DI DALAM card ─────────
                       const SizedBox(height: 16),
                       Center(
                         child: Column(
@@ -288,7 +324,6 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                 ),
-                // ── End Card ───────────────────────────────────────
               ],
             ),
           ),
