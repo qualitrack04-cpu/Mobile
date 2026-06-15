@@ -170,6 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     int secondsRemaining = 59;
     Timer? timer;
     StateSetter? dialogSetState;
+    bool isResending = false;
 
     void startTimer() {
       timer?.cancel();
@@ -322,8 +323,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: 24),
                       Center(
                         child: GestureDetector(
-                          onTap: secondsRemaining == 0
+                          onTap: (secondsRemaining == 0 && !isResending)
                               ? () async {
+                                  dialogSetState?.call(() => isResending = true);
                                   try {
                                     final authService = GetIt.instance<AuthService>();
                                     await authService.resendOtp(email: newEmail);
@@ -339,6 +341,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         const SnackBar(content: Text('Gagal kirim ulang OTP!'), backgroundColor: Colors.red),
                                       );
                                     }
+                                  } finally {
+                                    dialogSetState?.call(() => isResending = false);
                                   }
                                 }
                               : null,
@@ -346,17 +350,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             text: TextSpan(
                               style: TextStyle(
                                 fontSize: 13,
-                                color: secondsRemaining == 0 ? AppColors.primary : Colors.grey,
-                                fontWeight: secondsRemaining == 0 ? FontWeight.bold : FontWeight.normal,
+                                color: (secondsRemaining == 0 && !isResending) ? AppColors.primary : Colors.grey,
+                                fontWeight: (secondsRemaining == 0 && !isResending) ? FontWeight.bold : FontWeight.normal,
                               ),
                               children: [
                                 const TextSpan(text: 'Didn\'t receive the code? '),
                                 TextSpan(
-                                  text: secondsRemaining == 0
-                                      ? 'resend code'
-                                      : 'resend code in ${secondsRemaining}s',
+                                  text: isResending
+                                      ? 'resending...'
+                                      : secondsRemaining == 0
+                                          ? 'resend code'
+                                          : 'resend code in ${secondsRemaining}s',
                                   style: TextStyle(
-                                    color: secondsRemaining == 0 ? AppColors.primary : Colors.grey,
+                                    color: (secondsRemaining == 0 && !isResending) ? AppColors.primary : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

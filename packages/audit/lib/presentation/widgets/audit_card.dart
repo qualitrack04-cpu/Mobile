@@ -197,7 +197,7 @@ class AuditCard extends StatelessWidget {
           ),
         ),
 
-        if (!isFinished && audit.id.isNotEmpty)
+        if (!isFinished && audit.id.isNotEmpty && onDelete != null)
           GestureDetector(
             onTap: onDelete,
             child: Container(

@@ -1,5 +1,6 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
 class AuthService {
   final ApiService apiService;
@@ -10,12 +11,11 @@ class AuthService {
   Future<void> login({
     required String email,
     required String password,
-    required String role,
   }) async {
     try {
       final response = await apiService.client.post(
         '/api/Auth/login',
-        data: {'email': email, 'password': password, 'role': role},
+        data: {'email': email, 'password': password},
       );
       final data = response.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
@@ -46,8 +46,22 @@ class AuthService {
           'role': role,
         },
       );
+    } on DioException catch (e) {
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data['message'] != null) {
+          throw Exception(data['message']);
+        }
+        if (data is Map && data['title'] != null) {
+          throw Exception(data['title']); // Untuk format ASP.NET Core
+        }
+        if (data is String) {
+          throw Exception(data);
+        }
+      }
+      throw Exception('Registrasi gagal. Cek kembali data Anda atau hubungi admin.');
     } catch (e) {
-      throw Exception('Registrasi gagal, email mungkin sudah terdaftar');
+      throw Exception('Terjadi kesalahan saat registrasi.');
     }
   }
 

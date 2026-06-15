@@ -27,6 +27,7 @@ class _OtpPageState extends State<OtpPage> {
   final List<FocusNode> _focusNodes =
       List.generate(4, (_) => FocusNode());
   bool _isLoading = false;
+  bool _isResending = false;
   String? _errorMessage;
 
   // Countdown timer
@@ -118,7 +119,9 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _onResendOtp() async {
-    if (_secondsRemaining > 0) return;
+    if (_secondsRemaining > 0 || _isResending) return;
+
+    setState(() => _isResending = true);
 
     try {
       final authService = GetIt.instance<AuthService>();
@@ -144,6 +147,8 @@ class _OtpPageState extends State<OtpPage> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 
@@ -317,18 +322,23 @@ class _OtpPageState extends State<OtpPage> {
                     const SizedBox(height: 16),
 
                     // Countdown timer
-                    Text(
-                      _secondsRemaining > 0
-                          ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
-                          : 'Resend code',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: _secondsRemaining > 0
-                            ? Colors.grey
-                            : AppColors.primary,
-                        fontWeight: _secondsRemaining > 0
-                            ? FontWeight.normal
-                            : FontWeight.bold,
+                    GestureDetector(
+                      onTap: (_secondsRemaining == 0 && !_isResending) ? _onResendOtp : null,
+                      child: Text(
+                        _isResending
+                            ? 'Resending...'
+                            : _secondsRemaining > 0
+                                ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
+                                : 'Resend code',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: (_secondsRemaining > 0 || _isResending)
+                              ? Colors.grey
+                              : AppColors.primary,
+                          fontWeight: (_secondsRemaining > 0 || _isResending)
+                              ? FontWeight.normal
+                              : FontWeight.bold,
+                        ),
                       ),
                     ),
 

@@ -154,6 +154,7 @@ class FindingRemoteDatasource {
     required String clauseRef,
     required String department,
     required String reporter,
+    String? reporterId,
     String? sessionId,
     String? checklistItemId,
   }) async {
@@ -168,6 +169,7 @@ class FindingRemoteDatasource {
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -180,6 +182,7 @@ class FindingRemoteDatasource {
     required String clauseRef,
     required String department,
     required String reporter,
+    String? reporterId,
   }) async {
     final response = await apiService.client.put(
       '/api/Finding/$id',
@@ -190,6 +193,7 @@ class FindingRemoteDatasource {
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);

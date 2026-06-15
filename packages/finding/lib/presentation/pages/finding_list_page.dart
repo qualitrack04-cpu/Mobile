@@ -310,8 +310,8 @@ class _FindingCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter id sama dengan user_id)
-                  if (userRole != 'Auditor' || (userRole == 'Auditor' && finding.reporterId == userId))
+                  // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter name sama dengan user_name)
+                  if (userRole != 'Auditor' || (userRole == 'Auditor' && finding.reporter == userName))
                     GestureDetector(
                       onTap: () async {
                         final bloc = context.read<FindingBloc>();

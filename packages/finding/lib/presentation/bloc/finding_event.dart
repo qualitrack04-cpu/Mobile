@@ -24,6 +24,7 @@ class CreateFindingEvent extends FindingEvent {
   final String clauseRef;
   final String department;
   final String reporter;
+  final String? reporterId;
   final String? sessionId;         // ✅ TAMBAH
   final String? checklistItemId;   // ✅ TAMBAH
   final List<String> evidencePaths;
@@ -34,6 +35,7 @@ class CreateFindingEvent extends FindingEvent {
     required this.clauseRef,
     required this.department,
     required this.reporter,
+    this.reporterId,
     this.sessionId,                // ✅ TAMBAH
     this.checklistItemId,          // ✅ TAMBAH
     this.evidencePaths = const [],
@@ -46,6 +48,7 @@ class CreateFindingEvent extends FindingEvent {
         clauseRef,
         department,
         reporter,
+        reporterId,
         sessionId,
         checklistItemId,
         evidencePaths,
@@ -59,6 +62,7 @@ class UpdateFindingEvent extends FindingEvent {
   final String clauseRef;
   final String department;
   final String reporter;
+  final String? reporterId;
   final List<String> evidencePaths;
 
   const UpdateFindingEvent({
@@ -68,11 +72,12 @@ class UpdateFindingEvent extends FindingEvent {
     required this.clauseRef,
     required this.department,
     required this.reporter,
+    this.reporterId,
     this.evidencePaths = const [],
   });
 
   @override
-  List<Object?> get props => [id, category, description, clauseRef, department, reporter, evidencePaths];
+  List<Object?> get props => [id, category, description, clauseRef, department, reporter, reporterId, evidencePaths];
 }
 
 class LoadFindingDetail extends FindingEvent {

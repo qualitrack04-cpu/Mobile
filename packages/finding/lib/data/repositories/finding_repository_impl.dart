@@ -36,6 +36,7 @@ class FindingRepositoryImpl implements FindingRepository {
     required String clauseRef,
     required String department,
     required String reporter,
+    String? reporterId,
     String? sessionId,          // ✅ TAMBAH
     String? checklistItemId,    // ✅ TAMBAH
   }) async {
@@ -46,6 +47,7 @@ class FindingRepositoryImpl implements FindingRepository {
         clauseRef: clauseRef,
         department: department,
         reporter: reporter,
+        reporterId: reporterId,
         sessionId: sessionId,             // ✅ TAMBAH
         checklistItemId: checklistItemId, // ✅ TAMBAH
       );
@@ -59,9 +61,10 @@ class FindingRepositoryImpl implements FindingRepository {
     required String id,
     required FindingCategory category,
     required String description,
-    required String reporter,
     required String clauseRef,
     required String department,
+    required String reporter,
+    String? reporterId,
     }) async {
     try {
       return await datasource.updateFinding(
@@ -71,6 +74,7 @@ class FindingRepositoryImpl implements FindingRepository {
         clauseRef: clauseRef,
         department: department,
         reporter: reporter,
+        reporterId: reporterId,
       );
     } catch (e) {
       throw Exception('Gagal mengupdate finding: $e');

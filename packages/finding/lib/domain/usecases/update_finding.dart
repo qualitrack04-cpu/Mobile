@@ -14,6 +14,7 @@ class UpdateFinding {
     required String clauseRef,
     required String department,
     required String reporter,
+    String? reporterId,
   }) async {
     return await repository.updateFinding(
       id: id,
@@ -22,6 +23,7 @@ class UpdateFinding {
       clauseRef: clauseRef,
       department: department,
       reporter: reporter,
+      reporterId: reporterId,
     );
   }
 }

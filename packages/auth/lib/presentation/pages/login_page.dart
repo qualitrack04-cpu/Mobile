@@ -6,7 +6,6 @@ import 'package:get_it/get_it.dart';
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/action_button.dart';
-import '../widgets/role_dropdown.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 
@@ -23,7 +22,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscured = true;
   bool _isLoading = false;
   String? _errorMessage;
-  String? _selectedRole = 'QualityManager';
 
   @override
   void dispose() {
@@ -61,7 +59,6 @@ class _LoginPageState extends State<LoginPage> {
       await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        role: _selectedRole ?? 'QualityManager',
       );
 
       if (!mounted) return;
@@ -230,13 +227,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      // Role
-                      const InputLabel('Role'),
-                      RoleDropdown(
-                        selectedRole: _selectedRole,
-                        onChanged: (val) =>
-                            setState(() => _selectedRole = val),
-                      ),
 
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 8),
