@@ -11,11 +11,12 @@ class AuthService {
   Future<void> login({
     required String email,
     required String password,
+    required String role,
   }) async {
     try {
       final response = await apiService.client.post(
         '/api/Auth/login',
-        data: {'email': email, 'password': password},
+        data: {'email': email, 'password': password, 'role': role},
       );
       final data = response.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
@@ -102,15 +103,17 @@ class AuthService {
   }
 
   // POST /api/Auth/forgot-password/verify-otp
-  Future<void> verifyForgotPasswordOtp({
+  Future<String> verifyForgotPasswordOtp({
     required String email,
     required String otp,
   }) async {
     try {
-      await apiService.client.post(
+      final response = await apiService.client.post(
         '/api/Auth/forgot-password/verify-otp',
         data: {'email': email, 'otp': otp},
       );
+      final data = response.data as Map<String, dynamic>;
+      return data['resetToken'] as String;
     } catch (e) {
       throw Exception('OTP salah atau sudah kadaluarsa');
     }
@@ -119,13 +122,19 @@ class AuthService {
   // POST /api/Auth/forgot-password/reset
   Future<void> resetPassword({
     required String email,
-    required String otp,
+    required String resetToken,
     required String newPassword,
+    required String confirmPassword,
   }) async {
     try {
       await apiService.client.post(
         '/api/Auth/forgot-password/reset',
-        data: {'email': email, 'otp': otp, 'newPassword': newPassword},
+        data: {
+          'email': email, 
+          'resetToken': resetToken, 
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword
+        },
       );
     } catch (e) {
       throw Exception('Gagal reset password');

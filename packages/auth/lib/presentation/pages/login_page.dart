@@ -22,6 +22,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isObscured = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _emailError;
+  String? _passwordError;
 
   @override
   void dispose() {
@@ -39,15 +41,27 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onLogin() async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Email and password are required');
-      return;
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+    });
+
+    bool hasError = false;
+
+    if (_emailController.text.trim().isEmpty) {
+      setState(() => _emailError = 'Email is required');
+      hasError = true;
+    } else if (!_isValidGmail(_emailController.text.trim())) {
+      setState(() => _emailError = 'Email must use @gmail.com');
+      hasError = true;
     }
-    if (!_isValidGmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
-      return;
+
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      hasError = true;
     }
+
+    if (hasError) return;
 
     setState(() {
       _isLoading = true;
@@ -59,6 +73,7 @@ class _LoginPageState extends State<LoginPage> {
       await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        role: 'QualityManager',
       );
 
       if (!mounted) return;
@@ -81,6 +96,17 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildErrorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Text(
+        error,
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+    );
   }
 
   @override
@@ -163,11 +189,21 @@ class _LoginPageState extends State<LoginPage> {
                         autocorrect: false,
                         enableSuggestions: false,
                         autofillHints: const [AutofillHints.email],
+                        onChanged: (val) {
+                          setState(() {
+                            _emailError = val.trim().isEmpty
+                                ? 'Email is required'
+                                : !_isValidGmail(val.trim())
+                                    ? 'Email must use @gmail.com'
+                                    : null;
+                          });
+                        },
                         decoration: customInputDecoration(
                           hint: 'username@gmail.com',
                           icon: Icons.mail_outline,
                         ),
                       ),
+                      _buildErrorText(_emailError),
 
 // Password + Forget Password
                       Padding(
@@ -187,7 +223,9 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ForgotPasswordPage(),
+                                  builder: (_) => ForgotPasswordPage(
+                                    initialEmail: _emailController.text,
+                                  ),
                                 ),
                               ),
                               style: TextButton.styleFrom(
@@ -211,6 +249,11 @@ class _LoginPageState extends State<LoginPage> {
                       TextField(
                         controller: _passwordController,
                         obscureText: _isObscured,
+                        onChanged: (val) {
+                          setState(() {
+                            _passwordError = val.isEmpty ? 'Password is required' : null;
+                          });
+                        },
                         decoration: customInputDecoration(
                           hint: '••••••••',
                           icon: Icons.lock_outline,
@@ -226,6 +269,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
+                      _buildErrorText(_passwordError),
 
 
                       if (_errorMessage != null) ...[

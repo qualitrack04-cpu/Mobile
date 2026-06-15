@@ -78,7 +78,7 @@ class _OtpPageState extends State<OtpPage> {
       final authService = GetIt.instance<AuthService>();
 
       if (widget.isForgotPassword) {
-        await authService.verifyForgotPasswordOtp(
+        final resetToken = await authService.verifyForgotPasswordOtp(
           email: widget.email,
           otp: _otpCode,
         );
@@ -89,7 +89,7 @@ class _OtpPageState extends State<OtpPage> {
           MaterialPageRoute(
             builder: (_) => ResetPasswordPage(
               email: widget.email,
-              otp: _otpCode,
+              resetToken: resetToken,
             ),
           ),
         );
@@ -174,9 +174,9 @@ class _OtpPageState extends State<OtpPage> {
         ),
         leadingWidth: 80,
       ),
-      body: Center(
+      body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: const EdgeInsets.only(left: 30, right: 30, top: 40, bottom: 20),
           child: Column(
             children: [
               // Logo
@@ -262,47 +262,49 @@ class _OtpPageState extends State<OtpPage> {
 
                     // 4 digit OTP
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(4, (index) {
-                        return SizedBox(
-                          width: 65,
-                          height: 65,
-                          child: TextField(
-                            controller: _controllers[index],
-                            focusNode: _focusNodes[index],
-                            maxLength: 1,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                      children: List.generate(7, (i) {
+                        if (i.isOdd) return const SizedBox(width: 12);
+                        final index = i ~/ 2;
+                        return Expanded(
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              maxLength: 1,
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primary,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
+                              onChanged: (value) {
+                                if (value.isNotEmpty && index < 3) {
+                                  _focusNodes[index + 1].requestFocus();
+                                } else if (value.isEmpty && index > 0) {
+                                  _focusNodes[index - 1].requestFocus();
+                                }
+                              },
                             ),
-                            onChanged: (value) {
-                              if (value.isNotEmpty && index < 3) {
-                                _focusNodes[index + 1].requestFocus();
-                              } else if (value.isEmpty && index > 0) {
-                                _focusNodes[index - 1].requestFocus();
-                              }
-                            },
                           ),
                         );
                       }),
