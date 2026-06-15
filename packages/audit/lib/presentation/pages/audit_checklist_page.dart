@@ -81,20 +81,32 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         // CEK APAKAH STATUSNYA PREVIEW
         final state = prefs.getString('${_sessionKey}_state');
         if (state == 'PREVIEW') {
-          // Jika aplikasi sempat tertutup setelah Save tapi sebelum PDF, 
-          // langsung buka halaman Preview tanpa me-load checklist lagi
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AuditReportPreviewPage(
-                  audit: widget.audit,
-                  sessionId: savedSessionId,
+          // Cek apakah user sengaja kembali dari preview (skip redirect)
+          final skipRedirect = prefs.getBool('${_sessionKey}_skip_redirect') ?? false;
+          if (skipRedirect) {
+            // Hapus flag skip, tapi TETAP simpan PREVIEW state
+            // agar jika user keluar dan buka lagi dari audit list → masuk ke preview
+            await prefs.remove('${_sessionKey}_skip_redirect');
+            // Lanjutkan ke checklist tanpa redirect
+          } else {
+            // Jika aplikasi sempat tertutup setelah Save tapi sebelum PDF,
+            // langsung buka halaman Preview tanpa me-load checklist lagi
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: GetIt.instance<AuditBloc>(),
+                    child: AuditReportPreviewPage(
+                      audit: widget.audit,
+                      sessionId: savedSessionId,
+                    ),
+                  ),
                 ),
-              ),
-            );
+              );
+            }
+            return;
           }
-          return;
         }
 
         if (_checklists.isNotEmpty && !_progressLoaded) {
@@ -197,6 +209,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               description: f['description'] as String? ?? '',
               clauseRef: f['clauseRef'] as String? ?? '',
               reporter: f['reporter'] as String? ?? '',
+              reporterId: f['reporterId'] as String? ?? '',
               foundAt:
                   DateTime.tryParse(f['foundAt'] as String? ?? '') ??
                   DateTime.now(),
@@ -622,17 +635,24 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                 
                 // Menutup pop-up (dialog) terlebih dahulu
                 Navigator.pop(context);
-                
-                // Buka halaman Audit Report Preview dan tutup halaman Checklist
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AuditReportPreviewPage(
-                      audit: widget.audit,
-                      sessionId: _sessionId!,
-                    ),
-                  ),
-                );
+
+                // Tunggu satu frame agar pop selesai sebelum push
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: GetIt.instance<AuditBloc>(),
+                          child: AuditReportPreviewPage(
+                            audit: widget.audit,
+                            sessionId: _sessionId!,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                });
               }
             } catch (e) {
               if (mounted) {
@@ -722,6 +742,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
           elevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.pop(context),

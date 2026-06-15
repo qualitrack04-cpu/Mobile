@@ -3,15 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'maintenance_exception.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://be.qualitrack.labs.it.pens.ac.id';
-
-  // Untuk railway :
-  // https://backendqualitrack-production.up.railway.app
-
-  // Untuk server pens :
-  // https://be.qualitrack.labs.it.pens.ac.id
+  static const String baseUrl = 'https://be.qualitrack.labs.it.pens.ac.id'; 
+  // Untuk railway :'https://backendqualitrack-production.up.railway.app'
+  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 
   late final Dio _dio;
+
+  void Function()? onUnauthorized;
 
   ApiService() {
     _dio = Dio(
@@ -67,6 +65,14 @@ class ApiService {
                 error: MaintenanceException(),
               ),
             );
+          }
+
+          if (error.response?.statusCode == 401) {
+            // Jangan trigger auto-logout jika 401 berasal dari percobaan login
+            if (!error.requestOptions.path.contains('/api/Auth/login')) {
+              // Server sudah nyala, trigger auto-logout
+              onUnauthorized?.call();
+            }
           }
 
           handler.next(error);

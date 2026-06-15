@@ -1,7 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/services/auth_service.dart';
+import 'package:core_services/services/dashboard_service.dart';
+import 'package:core_services/services/api_service.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -45,20 +51,23 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   String _userRole = 'Auditor';
+  String _photoPath = '';
 
   Future<void> _loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     final roleStr = prefs.getString('user_role') ?? 'Auditor';
-    
+    final photoPath = prefs.getString('user_photo') ?? '';
+
     if (mounted) {
       setState(() {
         if (roleStr == 'QualityManager') {
           _userRole = 'Quality Manager';
         } else if (roleStr == 'Auditor') {
-          _userRole = 'Auditor';
+          _userRole = 'Auditor Internal';
         } else {
           _userRole = roleStr;
         }
+        _photoPath = photoPath; // ← tambah ini
       });
     }
   }
@@ -66,7 +75,6 @@ class _DashboardPageState extends State<DashboardPage> {
   void _refresh() {
     if (!mounted) return;
     setState(() {
-
       _calendarMonth = DateTime.now();
       _selectedDate = DateTime.now();
 
@@ -101,22 +109,36 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/icon/QualiTrack.png',
-              height: (screenWidth * 0.075).clamp(26.0, 34.0),
+              'assets/icon/Q.png',
+              height: (screenWidth * 0.08).clamp(
+                32.0,
+                42.0,
+              ), // Memperbesar logo
               fit: BoxFit.contain,
             ),
-            Text(
-              'Track',
-              style: GoogleFonts.inter(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: (screenWidth * 0.06).clamp(20.0, 26.0),
-                height: 1.0,
+            // Menggeser teks: Offset(Kiri/Kanan, Atas/Bawah)
+            // - Angka pertama (kiri/kanan): minus (-) untuk geser kiri, plus (+) untuk kanan
+            // - Angka kedua (atas/bawah): minus (-) untuk geser ke atas, plus (+) untuk ke bawah
+            Transform.translate(
+              offset: const Offset(
+                -3,
+                3,
+              ), // Coba atur angka '3' ini (naik/turun) sampai pas sejajar
+              child: Text(
+                'ualiTrack',
+                style: GoogleFonts.inter(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: (screenWidth * 0.06).clamp(24.0, 30.0),
+                  height:
+                      1.0, // Dibuat 1.0 agar tidak ada padding berlebih dari font
+                ),
               ),
             ),
           ],
@@ -127,10 +149,13 @@ class _DashboardPageState extends State<DashboardPage> {
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              ),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+                _loadUserRole();
+              },
               child: Container(
                 width: 38,
                 height: 38,
@@ -142,11 +167,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   padding: const EdgeInsets.all(2),
                   child: CircleAvatar(
                     backgroundColor: AppColors.primaryLight,
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: AppColors.surface,
-                    ),
+                    backgroundImage:
+                        _photoPath.isNotEmpty
+                            ? MemoryImage(base64Decode(_photoPath))
+                            : null,
+                    child:
+                        _photoPath.isEmpty
+                            ? Icon(
+                              Icons.person,
+                              size: 20,
+                              color: AppColors.surface,
+                            )
+                            : null,
                   ),
                 ),
               ),
@@ -157,7 +189,12 @@ class _DashboardPageState extends State<DashboardPage> {
       body: RefreshIndicator(
         onRefresh: () async {
           _refresh();
-          await Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]);
+          await Future.wait([
+            _summaryFuture,
+            _scoreFuture,
+            _scheduleFuture,
+            _reportsFuture,
+          ]);
         },
         child: _buildBody(screenWidth),
       ),
@@ -166,7 +203,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBody(double screenWidth) {
     return FutureBuilder<List<dynamic>>(
-      future: Future.wait([_summaryFuture, _scoreFuture, _scheduleFuture, _reportsFuture]),
+      future: Future.wait([
+        _summaryFuture,
+        _scoreFuture,
+        _scheduleFuture,
+        _reportsFuture,
+      ]),
       builder: (context, snapshot) {
         final isLoading =
             snapshot.connectionState == ConnectionState.waiting &&
@@ -206,8 +248,8 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildCalendar(schedule, screenWidth),
               const SizedBox(height: 24),
 
-              // 3. Audit Summary
-              _buildSectionTitle('AUDIT SUMMARY'),
+              // 3. summary card
+              _buildSectionTitle('SUMMARY CARD'),
               const SizedBox(height: 12),
               _buildAuditSummary(summary, screenWidth),
               const SizedBox(height: 24),
@@ -230,7 +272,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildAuditReportList(List<CompletedAuditReport> reports, double screenWidth) {
+  Widget _buildAuditReportList(
+    List<CompletedAuditReport> reports,
+    double screenWidth,
+  ) {
     if (reports.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
@@ -248,7 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return SizedBox(
-      height: 240, 
+      height: 240,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: reports.length,
@@ -280,43 +325,29 @@ class _DashboardPageState extends State<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Bagian atas (dummy pdf thumbnail)
+              // Bagian atas (actual pdf thumbnail)
               Container(
                 height: 100,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA), // Light Gray/White
+                  color: Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Reporting\nStructure',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: Colors.black87,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'White Paper',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
                   ),
+                  child: PdfThumbnailWidget(sessionId: report.sessionId),
                 ),
               ),
               // Bagian bawah (Text + Button)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 26, 16, 16), // top 26 agar tidak nabrak icon tengah
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    26,
+                    16,
+                    16,
+                  ), // top 26 agar tidak nabrak icon tengah
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -335,9 +366,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: double.infinity,
                         height: 38,
                         child: ElevatedButton(
-                          onPressed: () => _downloadAndOpenPdf(report.sessionId),
+                          onPressed: () => _viewPdf(report.sessionId, report.planTitle),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00104A), // Dark navy
+                            backgroundColor: const Color(
+                              0xFF00104A,
+                            ), // Dark navy
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -371,7 +404,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0F4FA), // Light blue background
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white, width: 2), // Biar ada border putih
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ), // Biar ada border putih
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -393,7 +429,7 @@ class _DashboardPageState extends State<DashboardPage> {
             top: 12,
             right: 12,
             child: GestureDetector(
-              onTap: () => _downloadAndOpenPdf(report.sessionId),
+              onTap: () => _downloadAndSavePdf(report.sessionId, report.planTitle),
               child: Container(
                 width: 32,
                 height: 32,
@@ -414,8 +450,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _downloadAndOpenPdf(String sessionId) async {
-    // Tampilkan loading dialog
+  /// Buka PDF langsung di reader HP (tanpa simpan ke Download)
+  Future<void> _viewPdf(String sessionId, String planTitle) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -429,20 +465,108 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 
       final bytes = response.data;
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/audit-report-$sessionId.pdf');
+      // Simpan ke direktori temporary (bukan Download)
+      final tempDir = await getTemporaryDirectory();
+      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
       await file.writeAsBytes(bytes);
 
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
+        Navigator.pop(context);
         await OpenFilex.open(file.path);
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Tutup loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e')),
+        Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to open PDF: $e')));
+      }
+    }
+  }
+
+  /// Download PDF → simpan ke folder Download HP → tampil notifikasi
+  Future<void> _downloadAndSavePdf(String sessionId, String planTitle) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _dashboardService.apiService.client.get(
+        '/api/Pdf/audit-report/$sessionId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!await dir.exists()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final baseFileName = 'AuditReport_$safeTitle';
+      
+      File file = File('${dir!.path}/$baseFileName.pdf');
+      int counter = 1;
+      while (await file.exists()) {
+        file = File('${dir.path}/$baseFileName ($counter).pdf');
+        counter++;
+      }
+
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        Navigator.pop(context);
+
+        // Tampil notifikasi sistem Android
+        await NotificationService().showDownloadNotification(
+          id: sessionId.hashCode,
+          title: 'Download Complete',
+          body: '${file.path.split('/').last} has been downloaded',
+          filePath: file.path,
         );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Audit report successfully saved to Downloads folder',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to download PDF: $e')));
       }
     }
   }
@@ -471,7 +595,8 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text(
             'Hello, $_userRole! 👋',
             style: GoogleFonts.inter(
-              fontSize: 32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
+              fontSize:
+                  32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
               fontWeight: FontWeight.w700,
               color: AppColors.primary,
             ),
@@ -497,7 +622,8 @@ class _DashboardPageState extends State<DashboardPage> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        mainAxisExtent: 85, // Tinggi FIX untuk tiap kotak agar 100% tidak terpotong
+        mainAxisExtent:
+            85, // Tinggi FIX untuk tiap kotak agar 100% tidak terpotong
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -588,13 +714,16 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildComplianceScore(ComplianceScoreResponse scoreResponse, double screenWidth) {
+  Widget _buildComplianceScore(
+    ComplianceScoreResponse scoreResponse,
+    double screenWidth,
+  ) {
     // 1. Daftar 4 departemen wajib sesuai desain
     final List<String> standardDepts = [
       'Packaging',
       'Quality Control',
       'Warehouse',
-      'Production'
+      'Production',
     ];
 
     // 2. Map warna spesifik untuk tiap departemen
@@ -606,27 +735,36 @@ class _DashboardPageState extends State<DashboardPage> {
     };
 
     // 3. Gabungkan data API dengan departemen standar
-    final List<ComplianceScore> displayScores = standardDepts.map((deptName) {
-      // Cari apakah ada data dari API untuk departemen ini
-      final apiDataList = scoreResponse.data.where((d) {
-        // Toleransi kalau dari backend namanya "Produksi"
-        if (deptName == 'Production') {
-          return d.department.toLowerCase() == 'production' || 
-                 d.department.toLowerCase() == 'produksi';
-        }
-        return d.department.toLowerCase() == deptName.toLowerCase();
-      }).toList();
-      
-      return apiDataList.isNotEmpty 
-          ? apiDataList.first 
-          : ComplianceScore(
-              department: deptName,
-              score: 0.0,
-              totalAudit: 0,
-              totalResponses: 0,
-              conformResponses: 0,
-            );
-    }).toList();
+    final List<ComplianceScore> displayScores =
+        standardDepts.map((deptName) {
+          // Cari apakah ada data dari API untuk departemen ini
+          final apiDataList =
+              scoreResponse.data.where((d) {
+                // Normalisasi nama dari backend ke nama tampilan:
+                // 'Produksi' atau 'Production' → Production
+                // 'QC' atau 'Quality Control' → Quality Control
+                if (deptName == 'Production') {
+                  return d.department.toLowerCase() == 'production' ||
+                      d.department.toLowerCase() == 'produksi';
+                }
+                if (deptName == 'Quality Control') {
+                  return d.department == 'QC' ||
+                      d.department.toLowerCase() == 'quality control' ||
+                      d.department.toLowerCase() == 'quality manager';
+                }
+                return d.department.toLowerCase() == deptName.toLowerCase();
+              }).toList();
+
+          return apiDataList.isNotEmpty
+              ? apiDataList.first
+              : ComplianceScore(
+                department: deptName,
+                score: 0.0,
+                totalAudit: 0,
+                totalResponses: 0,
+                conformResponses: 0,
+              );
+        }).toList();
 
     // 4. Ubah menjadi List yang bisa di-scroll ke samping (Horizontal)
     final cardWidth = (screenWidth * 0.4).clamp(140.0, 200.0);
@@ -636,21 +774,29 @@ class _DashboardPageState extends State<DashboardPage> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: displayScores.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16), // Jarak antar kotak
+        separatorBuilder:
+            (context, index) => const SizedBox(width: 16), // Jarak antar kotak
         itemBuilder: (context, index) {
           final item = displayScores[index];
-          
-          // Memastikan warnanya tidak tertukar walau API nulisnya "Produksi"
-          final isProduction = item.department.toLowerCase() == 'produksi' || item.department == 'Production';
-          final color = isProduction 
-              ? colors['Production']! 
-              : (colors[item.department] ?? AppColors.primaryLight);
-          
+
+          // Normalisasi nama departemen dari backend ke nama tampilan
+          String displayDept = item.department;
+          if (item.department.toLowerCase() == 'produksi' ||
+              item.department.toLowerCase() == 'production') {
+            displayDept = 'Production';
+          } else if (item.department == 'QC' ||
+              item.department.toLowerCase() == 'quality control' ||
+              item.department.toLowerCase() == 'quality manager') {
+            displayDept = 'Quality Control';
+          }
+
+          final color = colors[displayDept] ?? AppColors.primaryLight;
+
           return SizedBox(
-            width: cardWidth, // Lebar kotaknya responsif
+            width: cardWidth,
             child: _complianceCard(
               ComplianceScore(
-                department: isProduction ? 'Production' : item.department,
+                department: displayDept,
                 score: item.score,
                 totalAudit: item.totalAudit,
                 totalResponses: item.totalResponses,
@@ -673,7 +819,10 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color, width: 1.5), // Tambahkan border di sini
+        border: Border.all(
+          color: color,
+          width: 1.5,
+        ), // Tambahkan border di sini
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -694,7 +843,7 @@ class _DashboardPageState extends State<DashboardPage> {
               color: color,
             ),
           ),
-          
+
           if (hasAudit) ...[
             Text(
               '${item.score.toStringAsFixed(1)}%',
@@ -821,7 +970,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           _calendarMonth.year,
                           _calendarMonth.month - 1,
                         );
-                        // Fetch ulang jadwal untuk bulan yang baru
                         _scheduleFuture = _dashboardService
                             .getAuditSchedule(
                               month: _calendarMonth.month,
@@ -845,7 +993,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           _calendarMonth.year,
                           _calendarMonth.month + 1,
                         );
-                        // Fetch ulang jadwal untuk bulan yang baru
                         _scheduleFuture = _dashboardService
                             .getAuditSchedule(
                               month: _calendarMonth.month,
@@ -867,64 +1014,80 @@ class _DashboardPageState extends State<DashboardPage> {
           // --- NAMA HARI (MON, TUE, dll) ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: weekdays.map((day) {
-              return Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDisabled,
+            children:
+                weekdays.map((day) {
+                  return Expanded(
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDisabled,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
           const SizedBox(height: 12),
 
-                    // --- GRID TANGGAL ---
+          // --- GRID TANGGAL ---
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: daysInMonth + firstWeekday - 1,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: screenWidth > 600 ? 1.5 : 1.1, // Dibuat lebih kecil dari 1 supaya kotak di kalender lebih tinggi di HP
+              childAspectRatio: screenWidth > 600 ? 1.5 : 1.1,
             ),
             itemBuilder: (context, index) {
               if (index < firstWeekday - 1) {
-                return const SizedBox(); // Kotak kosong sebelum tanggal 1
+                return const SizedBox();
               }
 
               final int day = index - firstWeekday + 2;
-              
-              // GANTI isToday menjadi isSelected
-              final bool isSelected = 
+
+              // Apakah tanggal ini adalah hari ini
+              final today = DateTime.now();
+              final bool isToday =
+                  today.year == _calendarMonth.year &&
+                  today.month == _calendarMonth.month &&
+                  today.day == day;
+
+              // Apakah tanggal ini yang sedang dipilih
+              final bool isSelected =
                   _selectedDate.year == _calendarMonth.year &&
                   _selectedDate.month == _calendarMonth.month &&
                   _selectedDate.day == day;
 
               // Cari apakah ada jadwal di tanggal ini
-              final scheduleDayList = schedule.data.where((s) => s.day == day).toList();
-              final scheduleDay = scheduleDayList.isNotEmpty ? scheduleDayList.first : null;
-              final hasSchedule = scheduleDay != null && scheduleDay.departments.isNotEmpty;
+              final scheduleDayList =
+                  schedule.data.where((s) => s.day == day).toList();
+              final scheduleDay =
+                  scheduleDayList.isNotEmpty ? scheduleDayList.first : null;
+              final hasSchedule =
+                  scheduleDay != null && scheduleDay.departments.isNotEmpty;
 
-              // BUNGKUS DENGAN GestureDetector AGAR BISA DIKLIK
               return GestureDetector(
                 onTap: () {
                   setState(() {
-                    // Update tanggal yang dipilih saat diklik
-                    _selectedDate = DateTime(_calendarMonth.year, _calendarMonth.month, day);
+                    _selectedDate = DateTime(
+                      _calendarMonth.year,
+                      _calendarMonth.month,
+                      day,
+                    );
                   });
                 },
                 child: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent, // Pakai isSelected
+                    color: isSelected ? AppColors.primary : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    border: isSelected ? null : Border.all(color: Colors.transparent),
+                    border:
+                        isToday && !isSelected
+                            ? Border.all(color: AppColors.primary, width: 1.5)
+                            : Border.all(color: Colors.transparent),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -933,30 +1096,52 @@ class _DashboardPageState extends State<DashboardPage> {
                         day.toString(),
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, // Pakai isSelected
-                          color: isSelected ? Colors.white : AppColors.textPrimary, // Pakai isSelected
+                          fontWeight:
+                              isSelected || isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                          color:
+                              isSelected
+                                  ? Colors.white
+                                  : isToday
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
                         ),
                       ),
                       if (hasSchedule) ...[
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: scheduleDay.departments.take(3).map((dept) {
-                            // Cek jika namanya "Produksi", samakan dengan "Production"
-                            final isProduction = dept.department.toLowerCase() == 'produksi' || dept.department == 'Production';
-                            final color = isProduction
-                                ? deptColors['Production']!
-                                : (deptColors[dept.department] ?? AppColors.primaryLight);
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                              width: 4,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                              ),
-                            );
-                          }).toList(),
+                          children:
+                              scheduleDay.departments.take(3).map((dept) {
+                                String normalizedDept = dept.department;
+                                if (dept.department.toLowerCase() ==
+                                        'produksi' ||
+                                    dept.department.toLowerCase() ==
+                                        'production') {
+                                  normalizedDept = 'Production';
+                                } else if (dept.department == 'QC' ||
+                                    dept.department.toLowerCase() ==
+                                        'quality control' ||
+                                    dept.department.toLowerCase() ==
+                                        'quality manager') {
+                                  normalizedDept = 'Quality Control';
+                                }
+                                final color =
+                                    deptColors[normalizedDept] ??
+                                    AppColors.primaryLight;
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1.5,
+                                  ),
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }).toList(),
                         ),
                       ],
                     ],
@@ -970,42 +1155,42 @@ class _DashboardPageState extends State<DashboardPage> {
           const Divider(),
           const SizedBox(height: 12),
 
-          // --- LEGEND WAKTU ---
+          // --- LEGEND ---
           Wrap(
             spacing: 12,
             runSpacing: 8,
-            children: deptColors.entries.map((entry) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: entry.value,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    entry.key.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+            children:
+                deptColors.entries.map((entry) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: entry.value,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        entry.key.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
           ),
         ],
       ),
     );
   }
 
-  // Helper untuk konversi angka bulan ke nama bulan
   String _monthName(int month) {
     const months = [
       'January',
@@ -1022,5 +1207,99 @@ class _DashboardPageState extends State<DashboardPage> {
       'December',
     ];
     return months[month - 1];
+  }
+}
+
+class PdfThumbnailWidget extends StatefulWidget {
+  final String sessionId;
+  const PdfThumbnailWidget({super.key, required this.sessionId});
+
+  @override
+  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
+}
+
+class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
+  PdfDocument? _pdfDoc;
+  PdfPageImage? _pageImage;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPdfThumbnail();
+  }
+
+  Future<void> _loadPdfThumbnail() async {
+    try {
+      final apiService = GetIt.I<ApiService>();
+      final response = await apiService.client.get(
+        '/api/Pdf/audit-report/${widget.sessionId}',
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final document = await PdfDocument.openData(response.data);
+      final page = await document.getPage(1);
+
+      // Render page at a small thumbnail resolution to save memory
+      final pageImage = await page.render(
+        width: page.width / 3,
+        height: page.height / 3,
+        format: PdfPageImageFormat.jpeg,
+      );
+
+      if (mounted) {
+        setState(() {
+          _pdfDoc = document;
+          _pageImage = pageImage;
+          _isLoading = false;
+        });
+      }
+
+      await page.close();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfDoc?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
+    if (_hasError || _pageImage == null) {
+      return const Center(
+        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
+      );
+    }
+    return Container(
+      color: Colors.white,
+      child: Image.memory(
+        _pageImage!.bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        alignment: Alignment.topCenter,
+      ),
+    );
   }
 }
