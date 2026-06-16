@@ -62,7 +62,7 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         if (roleStr == 'QualityManager') {
           _userRole = 'Quality Manager';
-        } else if (roleStr == 'Auditor') {
+        } else if (roleStr == 'Auditor' || roleStr == 'AuditorInternal') {
           _userRole = 'Auditor Internal';
         } else {
           _userRole = roleStr;
@@ -169,7 +169,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     backgroundColor: AppColors.primaryLight,
                     backgroundImage:
                         _photoPath.isNotEmpty
-                            ? MemoryImage(base64Decode(_photoPath))
+                            ? NetworkImage(
+                                ApiService.fixImageUrl(_photoPath),
+                              )
                             : null,
                     child:
                         _photoPath.isEmpty
@@ -1156,35 +1158,40 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
 
           // --- LEGEND ---
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children:
-                deptColors.entries.map((entry) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: entry.value,
-                          shape: BoxShape.circle,
-                        ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children:
+                  deptColors.entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: entry.value,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            entry.key.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textMuted,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        entry.key.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+            ),
           ),
         ],
       ),

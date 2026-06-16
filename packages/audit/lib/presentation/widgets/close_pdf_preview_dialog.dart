@@ -41,7 +41,10 @@ class ClosePdfPreviewDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                    '/dashboard',
+                    (route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF003B5C),

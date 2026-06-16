@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/global_navigator.dart';
+import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 import 'splash_screen.dart';
 
 void main() async {
@@ -33,6 +34,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const SplashScreen(),
+      routes: {
+        '/dashboard': (context) => const DashboardScreen(),
+      },
     );
   }
 }

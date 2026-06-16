@@ -6,7 +6,6 @@ import 'package:get_it/get_it.dart';
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/action_button.dart';
-import '../widgets/role_dropdown.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 
@@ -25,7 +24,6 @@ class _LoginPageState extends State<LoginPage> {
   String? _emailError;
   String? _passwordError;
   String? _generalError;
-  String? _selectedRole = 'QualityManager';
 
   @override
   void dispose() {
@@ -73,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
       await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        role: _selectedRole ?? 'QualityManager',
+        role: 'QualityManager',
       );
 
       if (!mounted) return;
@@ -100,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildErrorText(String? error) {
     if (error == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
       child: Text(
         error,
         style: const TextStyle(color: Colors.red, fontSize: 12),
@@ -177,7 +175,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Work Email
                       const InputLabel('Work Email'),
                       TextField(
                         controller: _emailController,
@@ -201,7 +198,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       _buildErrorText(_emailError),
 
-                      // Password + Forget Password
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 8),
                         child: Row(
@@ -219,7 +215,9 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ForgotPasswordPage(),
+                                  builder: (_) => ForgotPasswordPage(
+                                    initialEmail: _emailController.text,
+                                  ),
                                 ),
                               ),
                               style: TextButton.styleFrom(
@@ -266,14 +264,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       _buildErrorText(_passwordError),
-
-                      // Role
-                      const InputLabel('Role'),
-                      RoleDropdown(
-                        selectedRole: _selectedRole,
-                        onChanged: (val) =>
-                            setState(() => _selectedRole = val),
-                      ),
 
                       if (_generalError != null) ...[
                         const SizedBox(height: 8),

@@ -7,12 +7,12 @@ import 'login_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   final String email;
-  final String otp;
+  final String resetToken;
 
   const ResetPasswordPage({
     super.key,
     required this.email,
-    required this.otp,
+    required this.resetToken,
   });
 
   @override
@@ -26,6 +26,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _isObscuredConfirm = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _passwordError;
+  String? _confirmPasswordError;
 
   @override
   void dispose() {
@@ -35,21 +37,30 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   Future<void> _onResetPassword() async {
-    if (_passwordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
-      setState(() => _errorMessage = 'Password wajib diisi');
-      return;
+    setState(() {
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
+
+    bool hasError = false;
+
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password wajib diisi');
+      hasError = true;
+    } else if (_passwordController.text.length < 8) {
+      setState(() => _passwordError = 'Password minimal 8 karakter');
+      hasError = true;
     }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Password tidak sama');
-      return;
+    if (_confirmPasswordController.text.isEmpty) {
+      setState(() => _confirmPasswordError = 'Silakan konfirmasi password');
+      hasError = true;
+    } else if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _confirmPasswordError = 'Password tidak sama');
+      hasError = true;
     }
 
-    if (_passwordController.text.length < 8) {
-      setState(() => _errorMessage = 'Password minimal 8 karakter');
-      return;
-    }
+    if (hasError) return;
 
     setState(() {
       _isLoading = true;
@@ -60,8 +71,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       final authService = GetIt.instance<AuthService>();
       await authService.resetPassword(
         email: widget.email,
-        otp: widget.otp,
+        resetToken: widget.resetToken,
         newPassword: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
       );
 
       if (!mounted) return;
@@ -81,6 +93,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildErrorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Text(
+        error,
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+    );
   }
 
   @override
@@ -161,6 +184,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     TextField(
                       controller: _passwordController,
                       obscureText: _isObscured,
+                      onChanged: (val) {
+                        setState(() {
+                          _passwordError = val.isEmpty
+                              ? 'Password wajib diisi'
+                              : val.length < 8
+                                  ? 'Password minimal 8 karakter'
+                                  : null;
+                        });
+                      },
                       decoration: InputDecoration(
                         hintText: '••••••••',
                         prefixIcon: const Icon(
@@ -197,7 +229,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    _buildErrorText(_passwordError),
+                    const SizedBox(height: 8),
 
                     // Password Verification
                     const Text(
@@ -212,6 +245,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     TextField(
                       controller: _confirmPasswordController,
                       obscureText: _isObscuredConfirm,
+                      onChanged: (val) {
+                        setState(() {
+                          _confirmPasswordError = val.isEmpty
+                              ? 'Silakan konfirmasi password'
+                              : val != _passwordController.text
+                                  ? 'Password tidak sama'
+                                  : null;
+                        });
+                      },
                       decoration: InputDecoration(
                         hintText: '••••••••',
                         prefixIcon: const Icon(
@@ -248,6 +290,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                       ),
                     ),
+                    _buildErrorText(_confirmPasswordError),
 
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 8),

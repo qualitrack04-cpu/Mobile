@@ -51,14 +51,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _onEmailChanged() {
-    final isDifferent = _emailController.text.trim() != widget.email;
-    if (!isDifferent && !_isEmailVerified) {
-      setState(() => _isEmailVerified = true);
-    } else if (isDifferent && _isEmailVerified) {
+    if (_emailController.text.trim() != widget.email && _isEmailVerified) {
       setState(() => _isEmailVerified = false);
     } else {
-      setState(() {}); // Untuk trigger rebuild agar tombol Verify muncul/hilang
+      setState(() {});
     }
+  }
+
+  bool get _isEmailFormatValid {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return false;
+    return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
   }
 
   @override
@@ -73,6 +76,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   String _formatRole(String role) {
+    if (role == 'Auditor' || role == 'AuditorInternal') return 'Auditor Internal';
     if (role.isEmpty) return '-';
     return role
         .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
@@ -147,7 +151,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final authService = GetIt.instance<AuthService>();
-      await authService.resendOtp(email: newEmail);
+      await authService.requestEmailChangeOtp(newEmail: newEmail);
 
       if (!mounted) return;
       setState(() => _isSendingOtp = false);
@@ -170,6 +174,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     int secondsRemaining = 59;
     Timer? timer;
     StateSetter? dialogSetState;
+    bool isResending = false;
 
     void startTimer() {
       timer?.cancel();
@@ -322,11 +327,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: 24),
                       Center(
                         child: GestureDetector(
-                          onTap: secondsRemaining == 0
+                          onTap: (secondsRemaining == 0 && !isResending)
                               ? () async {
+                                  dialogSetState?.call(() => isResending = true);
                                   try {
                                     final authService = GetIt.instance<AuthService>();
-                                    await authService.resendOtp(email: newEmail);
+                                    await authService.requestEmailChangeOtp(newEmail: newEmail);
                                     startTimer();
                                     if (ctx.mounted) {
                                       ScaffoldMessenger.of(ctx).showSnackBar(
@@ -339,6 +345,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         const SnackBar(content: Text('Gagal kirim ulang OTP!'), backgroundColor: Colors.red),
                                       );
                                     }
+                                  } finally {
+                                    dialogSetState?.call(() => isResending = false);
                                   }
                                 }
                               : null,
@@ -346,17 +354,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             text: TextSpan(
                               style: TextStyle(
                                 fontSize: 13,
-                                color: secondsRemaining == 0 ? AppColors.primary : Colors.grey,
-                                fontWeight: secondsRemaining == 0 ? FontWeight.bold : FontWeight.normal,
+                                color: (secondsRemaining == 0 && !isResending) ? AppColors.primary : Colors.grey,
+                                fontWeight: (secondsRemaining == 0 && !isResending) ? FontWeight.bold : FontWeight.normal,
                               ),
                               children: [
                                 const TextSpan(text: 'Didn\'t receive the code? '),
                                 TextSpan(
-                                  text: secondsRemaining == 0
-                                      ? 'resend code'
-                                      : 'resend code in ${secondsRemaining}s',
+                                  text: isResending
+                                      ? 'resending...'
+                                      : secondsRemaining == 0
+                                          ? 'resend code'
+                                          : 'resend code in ${secondsRemaining}s',
                                   style: TextStyle(
-                                    color: secondsRemaining == 0 ? AppColors.primary : Colors.grey,
+                                    color: (secondsRemaining == 0 && !isResending) ? AppColors.primary : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -391,8 +401,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     try {
                                       final authService =
                                           GetIt.instance<AuthService>();
-                                      await authService.verifyEmail(
-                                        email: newEmail,
+                                      await authService.verifyEmailChange(
                                         otp: otpCode,
                                       );
 
@@ -401,17 +410,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         _isEmailVerified = true;
                                         _errorMessage = null;
                                       });
-                                      Navigator.pop(ctx);
-                                      ScaffoldMessenger.of(
-                                        this.context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Email berhasil diverifikasi!',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
+                                      Navigator.pop(ctx); // Tutup dialog OTP
+
+                                      // Langsung otomatis jalankan Save Changes untuk semuanya (nama, foto)
+                                      // dan tutup halamannya supaya user tidak bingung.
+                                      _saveChanges();
                                     } catch (e) {
                                       setModalState(
                                         () =>
@@ -464,13 +467,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _onSaveChanges() {
-    if (_emailController.text.trim() != widget.email && !_isEmailVerified) {
-      setState(
-        () =>
-            _errorMessage = 'Harap verifikasi email baru Anda terlebih dahulu',
-      );
-      return;
-    }
+    // Validasi password jika diubah
 
     if (_newPasswordController.text.isNotEmpty) {
       if (_newPasswordController.text != _confirmPasswordController.text) {
@@ -630,10 +627,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isLoading = true);
     try {
       final authService = GetIt.instance<AuthService>();
-      await authService.updateProfile(
-        name: _usernameController.text.trim(),
-        email: _emailController.text.trim(),
-      );
+      
+      bool nameChanged = _usernameController.text.trim() != widget.name;
+      bool emailChanged = _emailController.text.trim() != widget.email;
+
+      if (nameChanged) {
+        await authService.updateProfile(
+          name: _usernameController.text.trim(),
+        );
+      }
 
       if (_newPasswordController.text.isNotEmpty) {
         await authService.changePassword(
@@ -642,9 +644,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
 
       if (_selectedPhoto != null) {
-        final bytes = await _selectedPhoto!.readAsBytes();
-        final base64String = base64Encode(bytes);
-        await authService.updateProfilePhoto(base64String);
+        await authService.updateProfilePhoto(_selectedPhoto!.path);
+      }
+
+      if (emailChanged && !_isEmailVerified) {
+        if (mounted) setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan klik "Verify Now" untuk memverifikasi email baru Anda terlebih dahulu.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return; 
       }
 
       if (!mounted) return;
@@ -654,7 +665,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -665,11 +676,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   ImageProvider? _getPhotoProvider() {
     if (_selectedPhoto != null) return FileImage(_selectedPhoto!);
     if (widget.photoPath.isNotEmpty) {
-      try {
-        return MemoryImage(base64Decode(widget.photoPath));
-      } catch (e) {
-        return null;
-      }
+      // photoPath dari backend berupa path relatif, misal: /uploads/profiles/xxx.jpg
+      return NetworkImage(ApiService.fixImageUrl(widget.photoPath));
     }
     return null;
   }
@@ -828,55 +836,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   color: AppColors.textSecondary,
                                 ),
                               ),
-                              if (_emailController.text.trim() !=
-                                      widget.email &&
-                                  !_isEmailVerified)
-                                GestureDetector(
-                                  onTap:
-                                      _isSendingOtp
-                                          ? null
-                                          : _requestEmailVerification,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
+                              if (_emailController.text.trim() != widget.email && !_isEmailVerified)
+                                if (!_isEmailFormatValid)
+                                  Text(
+                                    'Format email tidak valid',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: _isSendingOtp 
+                                  )
+                                else
+                                  GestureDetector(
+                                    onTap: _isSendingOtp ? null : _requestEmailVerification,
+                                    child: _isSendingOtp
                                         ? const SizedBox(
-                                            height: 12, 
-                                            width: 12, 
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue)
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.primary,
+                                            ),
                                           )
                                         : Text(
                                             'Verify Now',
                                             style: GoogleFonts.inter(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.blue,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2ECC71),
                                             ),
                                           ),
-                                  ),
-                                )
-                              else if (_emailController.text.trim() !=
-                                      widget.email &&
-                                  _isEmailVerified)
+                                  )
+                              else if (_emailController.text.trim() != widget.email && _isEmailVerified)
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 14,
-                                    ),
+                                    const Icon(Icons.check_circle, color: Colors.green, size: 14),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Verified',
                                       style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
                                         color: Colors.green,
                                       ),
                                     ),
@@ -920,15 +920,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: AppColors.borderLight),
-                    _buildPasswordField(
-                      label: 'Password',
-                      controller: _passwordController,
-                      isObscured: _isObscured,
-                      readOnly: true,
-                      onToggle:
-                          () => setState(() => _isObscured = !_isObscured),
-                    ),
+
                     Divider(height: 1, color: AppColors.borderLight),
                     _buildPasswordField(
                       label: 'New Password',
@@ -946,7 +938,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       onToggle:
                           () => setState(
                             () => _isObscuredConfirm = !_isObscuredConfirm,
-                          ),
+                      ),
                     ),
                   ],
                 ),

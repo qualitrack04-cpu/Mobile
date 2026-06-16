@@ -11,6 +11,7 @@ import 'package:get_it/get_it.dart';
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:core_services/services/api_service.dart';
 
 class FindingEditPage extends StatefulWidget {
   final Finding finding;
@@ -52,9 +53,17 @@ class _FindingEditPageState extends State<FindingEditPage> {
     'Packaging': 'Packaging'
   };
 
+  late final FocusNode _titleFocus;
+  late final FocusNode _descriptionFocus;
+  late final FocusNode _reporterFocus;
+
   @override
   void initState() {
     super.initState();
+    _titleFocus = FocusNode();
+    _descriptionFocus = FocusNode();
+    _reporterFocus = FocusNode();
+    
     _titleController =
         TextEditingController(text: widget.finding.clauseRef)
           ..addListener(() => setState(() {}));
@@ -128,6 +137,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _reporterController.dispose();
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
+    _reporterFocus.dispose();
     super.dispose();
   }
 
@@ -298,7 +310,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
+                        focusNode: _titleFocus,
                         hint: 'Masukkan judul finding...',
+                        minLength: 5,
+                        maxLength: 100,
                       ),
                       _buildDivider(),
                       _buildReporterField(),
@@ -310,9 +325,12 @@ class _FindingEditPageState extends State<FindingEditPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
+                        focusNode: _descriptionFocus,
                         hint:
                             'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
+                        minLength: 10,
+                        maxLength: 1000,
                       ),
                       _buildDivider(),
                       _buildEvidenceSection(),
@@ -333,43 +351,35 @@ class _FindingEditPageState extends State<FindingEditPage> {
   Widget _buildDivider() =>
       const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
 
-  /// Reporter — read-only jika lockFields=true (dari audit checklist)
   Widget _buildReporterField() {
-    if (widget.lockFields) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'REPORTER',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-                letterSpacing: 0.5,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'REPORTER',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _reporterController.text,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _reporterController.text,
+                  style: const TextStyle(fontSize: 15, color: Colors.black87),
                 ),
-                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    return _buildTextField(
-      label: 'REPORTER',
-      controller: _reporterController,
-      hint: 'Masukkan nama reporter...',
+              ),
+              const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -418,8 +428,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -438,7 +451,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -446,6 +462,34 @@ class _FindingEditPageState extends State<FindingEditPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
+              if (belowMin) {
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
+              } else if (maxLength != null) {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
@@ -549,7 +593,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             InteractiveViewer(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(url, fit: BoxFit.contain),
+                child: Image.network(ApiService.fixImageUrl(url), fit: BoxFit.contain),
               ),
             ),
             Positioned(
@@ -646,7 +690,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                                     ),
                                   )
                                 : Image.network(
-                                    url,
+                                    ApiService.fixImageUrl(url),
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Icon(
                                       Icons.broken_image_outlined,
@@ -845,16 +889,22 @@ class _FindingEditPageState extends State<FindingEditPage> {
         _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
         _selectedDepartment != widget.finding.department && _departmentMap[_selectedDepartment] != widget.finding.department ||
-        _evidenceImages.isNotEmpty ||
-        _existingEvidences.length != _originalEvidenceCount; // ← evidence dihapus
+        _existingEvidences.length != _originalEvidenceCount ||
+        _evidenceImages.isNotEmpty;
   }
+
+  bool get _isFormValid =>
+      _titleController.text.trim().length >= 5 &&
+      _descriptionController.text.trim().length >= 10 &&
+      _reporterController.text.trim().isNotEmpty &&
+      _selectedDepartment != null;
 
   Widget _buildEditButton(BuildContext context, FindingState state) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is FindingLoading || !_isDirty)
+        onPressed: (state is FindingLoading || !_isDirty || !_isFormValid)
             ? null
             : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
@@ -894,16 +944,16 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   void _onSubmit(BuildContext context) {
     ScaffoldMessenger.of(context).clearSnackBars();
-    if (_titleController.text.isEmpty) {
+    if (_titleController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Title cannot be empty!'),
+        content: Text('Title min 5 characters!'),
         backgroundColor: Colors.orange,
       ));
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.text.trim().length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Description cannot be empty!'),
+        content: Text('Description min 10 characters!'),
         backgroundColor: Colors.orange,
       ));
       return;
@@ -917,6 +967,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
             reporter: _reporterController.text,
+            reporterId: widget.finding.reporterId,
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),
           ),
         );

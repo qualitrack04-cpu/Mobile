@@ -71,8 +71,8 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_passwordController.text.isEmpty) {
       setState(() => _passwordError = 'Password is required');
       hasError = true;
-    } else if (_passwordController.text.length < 6) {
-      setState(() => _passwordError = 'Password min 6 characters');
+    } else if (_passwordController.text.length < 8) {
+      setState(() => _passwordError = 'Password min 8 characters');
       hasError = true;
     }
 
@@ -261,8 +261,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   _passwordError =
                                       val.isEmpty
                                           ? 'Password is required'
-                                          : val.length < 6
-                                          ? 'Password min 6 characters'
+                                          : val.length < 8
+                                          ? 'Password min 8 characters'
                                           : null;
                                 });
                               },

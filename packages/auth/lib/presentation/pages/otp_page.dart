@@ -27,6 +27,7 @@ class _OtpPageState extends State<OtpPage> {
   final List<FocusNode> _focusNodes =
       List.generate(4, (_) => FocusNode());
   bool _isLoading = false;
+  bool _isResending = false;
   String? _errorMessage;
 
   // Countdown timer
@@ -77,7 +78,7 @@ class _OtpPageState extends State<OtpPage> {
       final authService = GetIt.instance<AuthService>();
 
       if (widget.isForgotPassword) {
-        await authService.verifyForgotPasswordOtp(
+        final resetToken = await authService.verifyForgotPasswordOtp(
           email: widget.email,
           otp: _otpCode,
         );
@@ -88,7 +89,7 @@ class _OtpPageState extends State<OtpPage> {
           MaterialPageRoute(
             builder: (_) => ResetPasswordPage(
               email: widget.email,
-              otp: _otpCode,
+              resetToken: resetToken,
             ),
           ),
         );
@@ -118,7 +119,9 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Future<void> _onResendOtp() async {
-    if (_secondsRemaining > 0) return;
+    if (_secondsRemaining > 0 || _isResending) return;
+
+    setState(() => _isResending = true);
 
     try {
       final authService = GetIt.instance<AuthService>();
@@ -144,6 +147,8 @@ class _OtpPageState extends State<OtpPage> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 
@@ -169,9 +174,9 @@ class _OtpPageState extends State<OtpPage> {
         ),
         leadingWidth: 80,
       ),
-      body: Center(
+      body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: const EdgeInsets.only(left: 30, right: 30, top: 40, bottom: 20),
           child: Column(
             children: [
               // Logo
@@ -257,47 +262,49 @@ class _OtpPageState extends State<OtpPage> {
 
                     // 4 digit OTP
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(4, (index) {
-                        return SizedBox(
-                          width: 65,
-                          height: 65,
-                          child: TextField(
-                            controller: _controllers[index],
-                            focusNode: _focusNodes[index],
-                            maxLength: 1,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
+                      children: List.generate(7, (i) {
+                        if (i.isOdd) return const SizedBox(width: 12);
+                        final index = i ~/ 2;
+                        return Expanded(
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              maxLength: 1,
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primary,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
+                              onChanged: (value) {
+                                if (value.isNotEmpty && index < 3) {
+                                  _focusNodes[index + 1].requestFocus();
+                                } else if (value.isEmpty && index > 0) {
+                                  _focusNodes[index - 1].requestFocus();
+                                }
+                              },
                             ),
-                            onChanged: (value) {
-                              if (value.isNotEmpty && index < 3) {
-                                _focusNodes[index + 1].requestFocus();
-                              } else if (value.isEmpty && index > 0) {
-                                _focusNodes[index - 1].requestFocus();
-                              }
-                            },
                           ),
                         );
                       }),
@@ -317,18 +324,23 @@ class _OtpPageState extends State<OtpPage> {
                     const SizedBox(height: 16),
 
                     // Countdown timer
-                    Text(
-                      _secondsRemaining > 0
-                          ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
-                          : 'Resend code',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: _secondsRemaining > 0
-                            ? Colors.grey
-                            : AppColors.primary,
-                        fontWeight: _secondsRemaining > 0
-                            ? FontWeight.normal
-                            : FontWeight.bold,
+                    GestureDetector(
+                      onTap: (_secondsRemaining == 0 && !_isResending) ? _onResendOtp : null,
+                      child: Text(
+                        _isResending
+                            ? 'Resending...'
+                            : _secondsRemaining > 0
+                                ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
+                                : 'Resend code',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: (_secondsRemaining > 0 || _isResending)
+                              ? Colors.grey
+                              : AppColors.primary,
+                          fontWeight: (_secondsRemaining > 0 || _isResending)
+                              ? FontWeight.normal
+                              : FontWeight.bold,
+                        ),
                       ),
                     ),
 

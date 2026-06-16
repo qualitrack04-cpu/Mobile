@@ -8,6 +8,7 @@ import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
@@ -42,9 +43,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final ImagePicker _picker = ImagePicker();
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
       _reporterController.text.trim().isNotEmpty &&
-      _descriptionController.text.trim().isNotEmpty &&
+      _descriptionController.text.trim().length >= 10 &&
       _selectedDepartment != null &&
       _selectedCategory != null;
 
@@ -74,6 +75,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
     // Selalu isi reporter dengan auditorName jika tersedia
     if (widget.auditorName != null && widget.auditorName!.isNotEmpty) {
       _reporterController.text = widget.auditorName!;
+    } else {
+      _loadUserName();
     }
     _titleController.addListener(() => setState(() {}));
     _reporterController.addListener(() => setState(() {}));
@@ -92,6 +95,16 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _reporterFocus.dispose();
     _descriptionFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name') ?? 'Unknown User';
+    if (mounted) {
+      setState(() {
+        _reporterController.text = name;
+      });
+    }
   }
 
   // ✅ Tampilkan pilihan: Kamera atau Galeri
@@ -278,6 +291,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
                         minLength: 5,
                         maxLength: 150,
                       ),
+                      _buildDivider(),
                       _buildReporterField(),
                       _buildDivider(),
                       _buildCategoryDropdown(),
@@ -312,51 +326,35 @@ class _FindingFormPageState extends State<FindingFormPage> {
   Widget _buildDivider() =>
       const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
 
-  /// Jika dipanggil dari audit checklist (auditorName tersedia),
-  /// tampilkan reporter sebagai read-only terkunci.
-  /// Jika dari halaman standalone, tampilkan sebagai field yang bisa diedit.
   Widget _buildReporterField() {
-    final isLocked = widget.auditorName != null && widget.auditorName!.isNotEmpty;
-
-    if (isLocked) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'REPORTER',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-                letterSpacing: 0.5,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'REPORTER',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _reporterController.text,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _reporterController.text,
+                  style: const TextStyle(fontSize: 15, color: Colors.black87),
                 ),
-                const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    return _buildTextField(
-      label: 'REPORTER',
-      controller: _reporterController,
-      focusNode: _reporterFocus,
-      hint: 'Enter the reporter name...',
-      minLength: 3,
-      maxLength: 100,
+              ),
+              const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -398,20 +396,25 @@ class _FindingFormPageState extends State<FindingFormPage> {
           AnimatedBuilder(
             animation: Listenable.merge([controller, focusNode]),
             builder: (context, _) {
-              if (!focusNode.hasFocus) return const SizedBox.shrink();
               final int len = controller.text.length;
               final bool belowMin = minLength != null && len < minLength;
-              final String charHint;
-              final Color hintColor;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
               if (belowMin) {
-                charHint = '$len/${minLength} characters';
-                hintColor = Colors.orange;
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
               } else if (maxLength != null) {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
                 charHint = '$len/$maxLength characters';
                 hintColor = Colors.black38;
               } else {
                 return const SizedBox.shrink();
               }
+
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
@@ -710,7 +713,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  void _onSubmit(BuildContext context) {
+  void _onSubmit(BuildContext context) async {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -737,6 +740,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
       return;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final reporterId = prefs.getString('user_id');
+
+    if (!context.mounted) return;
+
     context.read<FindingBloc>().add(
           CreateFindingEvent(
             category: _selectedCategory!,
@@ -744,6 +752,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
             reporter: _reporterController.text,
+            reporterId: reporterId,
             sessionId: widget.sessionId,           // ✅ TAMBAH
             checklistItemId: widget.checklistItemId, // ✅ TAMBAH
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),

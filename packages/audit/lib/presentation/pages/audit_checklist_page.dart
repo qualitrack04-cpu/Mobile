@@ -62,7 +62,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         isoTemplate: widget.audit.isoTemplates.isNotEmpty
             ? widget.audit.isoTemplates.first
             : '',
-        department: widget.audit.department,
+        department: widget.audit.department == 'Produksi'
+            ? 'Production'
+            : widget.audit.department,
       ),
     );
     _createSession();
@@ -122,7 +124,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           'standard': widget.audit.isoTemplates.isNotEmpty
               ? widget.audit.isoTemplates.first
               : '',
-          'department': widget.audit.department,
+          'department': widget.audit.department == 'Produksi'
+              ? 'Production'
+              : widget.audit.department,
         },
       );
       final checklists = listResponse.data as List<dynamic>;
@@ -1237,7 +1241,7 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                   borderRadius: BorderRadius.circular(8),
                   child: localImagePath!.startsWith('http')
                       ? Image.network(
-                          localImagePath!,
+                          ApiService.fixImageUrl(localImagePath!),
                           width: double.infinity,
                           height: 180,
                           fit: BoxFit.cover,

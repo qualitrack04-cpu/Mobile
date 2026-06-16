@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
+import 'package:core_services/services/api_service.dart';
 import 'package:get_it/get_it.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
@@ -30,17 +30,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserData() async {
     final authService = GetIt.instance<AuthService>();
+    try {
+      await authService.fetchProfile();
+    } catch (_) {}
+
     final user = await authService.getCurrentUser();
-    setState(() {
-      _name = user['name'] ?? '';
-      _email = user['email'] ?? '';
-      _role = user['role'] ?? '';
-      _photoPath = user['photo'] ?? '';
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _name = user['name'] ?? '';
+        _email = user['email'] ?? '';
+        _role = user['role'] ?? '';
+        _photoPath = user['photo'] ?? '';
+        _isLoading = false;
+      });
+    }
   }
 
   String _formatRole(String role) {
+    if (role == 'Auditor' || role == 'AuditorInternal') return 'Auditor Internal';
     if (role.isEmpty) return '-';
     return role
         .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
@@ -216,7 +223,9 @@ class _ProfilePageState extends State<ProfilePage> {
             backgroundColor: AppColors.borderLight,
             backgroundImage:
                 _photoPath.isNotEmpty
-                    ? MemoryImage(base64Decode(_photoPath))
+                    ? NetworkImage(
+                        ApiService.fixImageUrl(_photoPath),
+                      )
                     : null,
             child:
                 _photoPath.isEmpty

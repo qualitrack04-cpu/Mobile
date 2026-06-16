@@ -66,12 +66,18 @@ class CapaModel extends Capa {
       picName = json['pic']['fullName'] as String? ?? '';
     }
 
-    // Parse closedAt dari closeOut.verifiedAt
+    // Parse closedAt dari closeOut.verifiedAt atau langsung dari closedAt
     DateTime? closedAt;
-    if (json['closeOut'] != null) {
+    if (json['closedAt'] != null) {
+      var dateStr = json['closedAt'].toString();
+      if (!dateStr.endsWith('Z')) dateStr += 'Z';
+      closedAt = DateTime.tryParse(dateStr);
+    } else if (json['closeOut'] != null) {
       final verifiedAt = json['closeOut']['verifiedAt'] as String?;
       if (verifiedAt != null) {
-        closedAt = DateTime.parse(verifiedAt);
+        var dateStr = verifiedAt;
+        if (!dateStr.endsWith('Z')) dateStr += 'Z';
+        closedAt = DateTime.tryParse(dateStr);
       }
     }
 

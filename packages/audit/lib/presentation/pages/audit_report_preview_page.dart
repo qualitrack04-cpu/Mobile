@@ -336,7 +336,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      evidences[idx],
+                      ApiService.fixImageUrl(evidences[idx]),
                       width: 240,
                       height: 160,
                       fit: BoxFit.cover,
@@ -423,8 +423,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context, rootNavigator: true)
-                        .popUntil((route) => route.isFirst);
+                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+                      '/dashboard',
+                      (route) => false,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF003B5C),
@@ -457,7 +459,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   }
 
   void _goToDashboard() {
-    Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+      '/dashboard',
+      (route) => false,
+    );
   }
 
   Future<void> _viewPdf() async {

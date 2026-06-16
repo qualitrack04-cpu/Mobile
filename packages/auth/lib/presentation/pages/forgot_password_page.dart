@@ -6,7 +6,12 @@ import '../widgets/custom_input_decoration.dart';
 import 'otp_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({super.key});
+  final String? initialEmail;
+
+  const ForgotPasswordPage({
+    super.key,
+    this.initialEmail,
+  });
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
@@ -16,6 +21,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
+      _emailController.text = widget.initialEmail!;
+    }
+  }
 
   @override
   void dispose() {

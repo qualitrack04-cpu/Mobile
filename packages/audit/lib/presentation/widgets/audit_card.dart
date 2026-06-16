@@ -197,7 +197,7 @@ class AuditCard extends StatelessWidget {
           ),
         ),
 
-        if (!isFinished && audit.id.isNotEmpty)
+        if (!isFinished && audit.id.isNotEmpty && onDelete != null)
           GestureDetector(
             onTap: onDelete,
             child: Container(
@@ -224,36 +224,45 @@ class AuditCard extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.apartment_outlined, size: 16, color: metaColor),
-        const SizedBox(width: 6),
-
-        Flexible(
-          child: Text(
-            audit.department == 'Produksi' ? 'Production' : audit.department,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: metaColor,
-              fontWeight: FontWeight.w500,
-            ),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.apartment_outlined, size: 16, color: metaColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  audit.department == 'Produksi' ? 'Production' : audit.department,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: metaColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-
-        const SizedBox(width: 18),
-
-        Icon(Icons.person_outline, size: 16, color: metaColor),
-        const SizedBox(width: 6),
-
+        const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            audit.auditorName,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: metaColor,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, size: 16, color: metaColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  audit.auditorName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: metaColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -301,43 +310,45 @@ class AuditCard extends StatelessWidget {
 
     return Row(
       children: [
-        // ✅ flex 2→3 supaya "Edit" tidak kepotong di layar sempit
-        Expanded(
-          flex: 3,
+        if (onEdit != null) ...[
+          // ✅ flex 2→3 supaya "Edit" tidak kepotong di layar sempit
+          Expanded(
+            flex: 3,
 
-          child: SizedBox(
-            height: 46,
+            child: SizedBox(
+              height: 46,
 
-            child: ElevatedButton(
-              onPressed: onEdit,
+              child: ElevatedButton(
+                onPressed: onEdit,
 
-              style: ElevatedButton.styleFrom(
-                elevation: 2,
-                backgroundColor: const Color(0xFFE9EEF3),
-                foregroundColor: Colors.black87,
-                // ✅ padding horizontal dikurangi supaya teks tidak terpotong
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  backgroundColor: const Color(0xFFE9EEF3),
+                  foregroundColor: Colors.black87,
+                  // ✅ padding horizontal dikurangi supaya teks tidak terpotong
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
 
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
 
-              child: Text(
-                'Edit',
-                // ✅ font size dikecilkan sedikit & maxLines: 1 + ellipsis
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                child: Text(
+                  'Edit',
+                  // ✅ font size dikecilkan sedikit & maxLines: 1 + ellipsis
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
+        ],
 
         Expanded(
           flex: 5,
