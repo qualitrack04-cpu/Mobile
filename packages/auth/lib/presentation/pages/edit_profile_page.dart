@@ -677,10 +677,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_selectedPhoto != null) return FileImage(_selectedPhoto!);
     if (widget.photoPath.isNotEmpty) {
       // photoPath dari backend berupa path relatif, misal: /uploads/profiles/xxx.jpg
-      final url = widget.photoPath.startsWith('http')
-          ? widget.photoPath
-          : '${ApiService.baseUrl}${widget.photoPath}';
-      return NetworkImage(url);
+      return NetworkImage(ApiService.fixImageUrl(widget.photoPath));
     }
     return null;
   }

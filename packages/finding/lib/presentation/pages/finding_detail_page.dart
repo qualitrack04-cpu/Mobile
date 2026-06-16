@@ -8,6 +8,7 @@ import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:core_services/services/api_service.dart';
 
 class FindingDetailPage extends StatelessWidget {
   final String findingId;
@@ -362,7 +363,7 @@ class _EvidenceThumbnail extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                url,
+                ApiService.fixImageUrl(url),
                 fit: BoxFit.cover,
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;
@@ -474,7 +475,7 @@ class _EvidenceGalleryPageState extends State<_EvidenceGalleryPage> {
           return InteractiveViewer(
             child: Center(
               child: Image.network(
-                url,
+                ApiService.fixImageUrl(url),
                 fit: BoxFit.contain,
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;

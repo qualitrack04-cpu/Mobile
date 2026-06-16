@@ -396,20 +396,25 @@ class _FindingFormPageState extends State<FindingFormPage> {
           AnimatedBuilder(
             animation: Listenable.merge([controller, focusNode]),
             builder: (context, _) {
-              if (!focusNode.hasFocus) return const SizedBox.shrink();
               final int len = controller.text.length;
               final bool belowMin = minLength != null && len < minLength;
-              final String charHint;
-              final Color hintColor;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
               if (belowMin) {
-                charHint = '$len/${minLength} characters';
-                hintColor = Colors.orange;
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
               } else if (maxLength != null) {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
                 charHint = '$len/$maxLength characters';
                 hintColor = Colors.black38;
               } else {
                 return const SizedBox.shrink();
               }
+
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),

@@ -224,9 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
             backgroundImage:
                 _photoPath.isNotEmpty
                     ? NetworkImage(
-                        _photoPath.startsWith('http')
-                            ? _photoPath
-                            : '${ApiService.baseUrl}$_photoPath',
+                        ApiService.fixImageUrl(_photoPath),
                       )
                     : null,
             child:

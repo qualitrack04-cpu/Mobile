@@ -60,7 +60,7 @@ class _CapaListViewState extends State<_CapaListView> {
           final diff = now.toUtc().difference(capa.closedAt!.toUtc());
           return diff.inHours < 24;
         }
-        // Jika statusnya Closed tapi tidak ada data closedAt (data lama), kita sembunyikan saja.
+        // Jika statusnya Closed tapi tidak ada data closedAt, sembunyikan saja.
         return false;
       }
       return true; // Tampilkan yang Open, In Progress, Pending Verification
@@ -130,6 +130,15 @@ class _CapaListViewState extends State<_CapaListView> {
           );
 
           final filteredCapas = _filterCapas(capas);
+          
+          // Urutkan agar yang 'Closed' berada di paling bawah
+          filteredCapas.sort((a, b) {
+            if (a.status == 'Closed' && b.status != 'Closed') return 1;
+            if (a.status != 'Closed' && b.status == 'Closed') return -1;
+            // Jika sama-sama Closed atau bukan, urutkan berdasarkan deadline terdekat
+            return a.deadline.compareTo(b.deadline);
+          });
+
           final displayList = isLoading ? skeletonList : filteredCapas;
 
           return Stack(
@@ -159,7 +168,15 @@ class _CapaListViewState extends State<_CapaListView> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                     children: [
                       if (isLoading || displayList.isNotEmpty)
-                        ...displayList.map((capa) => _CapaCard(capa: capa, userRole: _userRole)),
+                        ...displayList.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final capa = entry.value;
+                          return _CapaCard(
+                            key: capa.id.isEmpty ? ValueKey('skeleton_$index') : ValueKey(capa.id),
+                            capa: capa,
+                            userRole: _userRole,
+                          );
+                        }),
                     ],
                   ),
                 ),
@@ -224,7 +241,7 @@ class _CapaListViewState extends State<_CapaListView> {
 class _CapaCard extends StatefulWidget {
   final Capa capa;
   final String userRole;
-  const _CapaCard({required this.capa, required this.userRole});
+  const _CapaCard({super.key, required this.capa, required this.userRole});
 
   @override
   State<_CapaCard> createState() => _CapaCardState();
@@ -392,7 +409,7 @@ class _CapaCardState extends State<_CapaCard> {
         textColor = Colors.black38;
     }
 
-    if (widget.userRole.startsWith('Auditor')) {
+    if (widget.userRole.startsWith('Auditor') || _currentStatus == 'Closed') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -446,8 +463,34 @@ class _CapaCardState extends State<_CapaCard> {
                   ),
                 );
               }).toList(),
-          onChanged: (newStatus) {
+          onChanged: widget.capa.status == 'Closed' ? null : (newStatus) async {
             if (newStatus == null) return;
+            
+            if (newStatus == 'Closed') {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmation'),
+                  content: const Text('Are you sure you want to close this CAPA? This action cannot be undone.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Yes, Close', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('capa_closed_at_${widget.capa.id}', DateTime.now().toUtc().toIso8601String());
+            }
+
             setState(() => _currentStatus = newStatus);
 
             // ✅ kirim event ke bloc

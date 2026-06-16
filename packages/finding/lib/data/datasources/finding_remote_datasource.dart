@@ -84,12 +84,11 @@ class FindingRemoteDatasource {
         }
       }
 
-      final toRemove = <String>{};
+      for (int i = 0; i < findings.length; i++) {
+        final finding = findings[i];
+        DateTime? closedTime = finding.capaClosedAt;
+        bool isCapaClosed = finding.isCapaClosed;
 
-      for (final finding in findings) {
-        DateTime? closedTime;
-
-        // 1. Cek CAPA terkait
         final capa = capaMap[finding.id];
         if (capa != null) {
           final statusRaw = capa['status'];
@@ -104,40 +103,42 @@ class FindingRemoteDatasource {
               ? (statusIntMap[statusRaw] ?? 'Open')
               : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
 
-          if (statusStr == 'Closed') {
-            // Cek closeOut.verifiedAt
-            final closeOut = capa['closeOut'] as Map<String, dynamic>?;
-            final verifiedAtStr = closeOut?['verifiedAt'] as String?;
-            if (verifiedAtStr != null && verifiedAtStr.isNotEmpty) {
-              closedTime = DateTime.tryParse(verifiedAtStr);
-            } else {
-              // Jika CAPA ditutup secara paksa tanpa verifikasi (tidak ada record waktu di database),
-              // langsung hilangkan saja dari daftar.
-              toRemove.add(finding.id);
-              continue;
+          isCapaClosed = (statusStr == 'Closed');
+
+          if (isCapaClosed) {
+            final verifiedAtStr = capa['closeOut']?['verifiedAt'] as String?;
+            final closedAtStr = capa['closedAt'] as String?;
+            
+            if (closedAtStr != null && closedAtStr.isNotEmpty) {
+              var dateStr = closedAtStr;
+              if (!dateStr.endsWith('Z')) dateStr += 'Z';
+              closedTime = DateTime.tryParse(dateStr);
+            } else if (verifiedAtStr != null && verifiedAtStr.isNotEmpty) {
+              var dateStr = verifiedAtStr;
+              if (!dateStr.endsWith('Z')) dateStr += 'Z';
+              closedTime = DateTime.tryParse(dateStr);
             }
           }
         }
 
-        // 2. Jika tidak ada CAPA tapi status finding sendiri adalah Closed (Jika diperlukan, fallback langsung hilangkan)
-        if (closedTime == null && finding.status == FindingStatus.closed) {
-           toRemove.add(finding.id);
-           continue;
-        }
-
-        // 3. Jika terdeteksi closedTime dan sudah lewat 24 jam, tandai untuk dihapus
-        if (closedTime != null) {
-          final diff = now.difference(closedTime);
-          // UBAH DISINI: Ganti inSeconds >= 10 kembali menjadi inHours >= 24 setelah selesai testing
-          if (diff.inSeconds >= 10) {
-            toRemove.add(finding.id);
-          }
-        }
+        // Recreate the FindingModel with updated capa status
+        findings[i] = FindingModel(
+          id: finding.id,
+          sessionId: finding.sessionId,
+          category: finding.category,
+          description: finding.description,
+          clauseRef: finding.clauseRef,
+          foundAt: finding.foundAt,
+          status: finding.status,
+          department: finding.department,
+          reporter: finding.reporter,
+          reporterId: finding.reporterId,
+          isCapaClosed: isCapaClosed,
+          capaClosedAt: closedTime,
+        );
       }
-
-      findings.removeWhere((f) => toRemove.contains(f.id));
     } catch (e) {
-      print('Error filtering findings with 24h delay: $e');
+      print('Error merging CAPA data into findings: $e');
     }
 
     return findings;

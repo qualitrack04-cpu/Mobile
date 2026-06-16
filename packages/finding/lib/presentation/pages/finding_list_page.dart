@@ -122,14 +122,14 @@ class _FindingListViewState extends State<_FindingListView> {
                       final diff = DateTime.now().toUtc().difference(finding.capaClosedAt!.toUtc());
                       return diff.inHours < 24;
                     }
-                    return false; // hide if closed but no date
+                    return false; // sembunyikan jika tidak ada tanggal close
                   }
                   return true;
                 }).toList();
 
                 final displayList = isLoading ? skeletonList : filteredFindings;
 
-                // Urutkan berdasarkan kategori
+                // Urutkan berdasarkan kategori saja (tetap urut major, minor, ofi)
                 final sortedFindings = List.of(displayList)..sort((a, b) {
                   return a.category.index.compareTo(b.category.index);
                 });

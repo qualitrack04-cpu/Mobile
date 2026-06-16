@@ -6,6 +6,16 @@ class ApiService {
   // Untuk railway :'https://backendqualitrack-production.up.railway.app'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 
+  static String fixImageUrl(String url) {
+    if (url.startsWith('http://localhost:5144')) {
+      return url.replaceFirst('http://localhost:5144', baseUrl);
+    }
+    if (url.startsWith('/uploads')) {
+      return '$baseUrl$url';
+    }
+    return url;
+  }
+
   late final Dio _dio;
 
   void Function()? onUnauthorized;

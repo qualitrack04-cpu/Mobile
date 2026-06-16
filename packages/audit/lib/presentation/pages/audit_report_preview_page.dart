@@ -336,7 +336,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      evidences[idx],
+                      ApiService.fixImageUrl(evidences[idx]),
                       width: 240,
                       height: 160,
                       fit: BoxFit.cover,
