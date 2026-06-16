@@ -47,6 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String _formatRole(String role) {
+    if (role == 'Auditor' || role == 'AuditorInternal') return 'Auditor Internal';
     if (role.isEmpty) return '-';
     return role
         .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')

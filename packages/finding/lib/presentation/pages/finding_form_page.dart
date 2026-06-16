@@ -43,9 +43,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final ImagePicker _picker = ImagePicker();
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
       _reporterController.text.trim().isNotEmpty &&
-      _descriptionController.text.trim().isNotEmpty &&
+      _descriptionController.text.trim().length >= 10 &&
       _selectedDepartment != null &&
       _selectedCategory != null;
 

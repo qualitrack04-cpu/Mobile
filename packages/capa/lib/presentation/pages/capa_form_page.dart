@@ -35,9 +35,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
   String? _loadError;
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
           _selectedFindingId != null &&
-          _actionController.text.trim().isNotEmpty &&
+          _descriptionController.text.trim().length >= 10 &&
+          _actionController.text.trim().length >= 10 &&
           _selectedPicId != null &&
           _selectedDeadline != null;
 

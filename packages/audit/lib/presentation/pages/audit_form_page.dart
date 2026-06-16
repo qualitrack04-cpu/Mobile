@@ -75,7 +75,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
+      _descriptionController.text.trim().length >= 10 &&
       _selectedAuditorId != null &&
       _selectedDepartment != null &&
       _selectedDate != null &&
@@ -435,7 +436,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   'choose an auditor',
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled),
                 ),
-                items: _auditors.where((a) => a.role == 'Auditor').map((auditor) {
+                items: _auditors.where((a) => a.role.startsWith('Auditor')).map((auditor) {
                   return DropdownMenuItem<String>(
                     value: auditor.id,
                     child: Column(
@@ -447,7 +448,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                           style: GoogleFonts.inter(fontSize: 13, color: Colors.black87),
                         ),
                         Text(
-                          auditor.role,
+                          auditor.role == 'Auditor' || auditor.role == 'AuditorInternal' ? 'Auditor Internal' : auditor.role,
                           style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],

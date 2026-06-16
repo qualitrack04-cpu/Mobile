@@ -144,7 +144,7 @@ class _AuditListViewState extends State<_AuditListView> {
         ],
       ),
 
-      floatingActionButton: _userRole == 'Auditor'
+      floatingActionButton: _userRole.startsWith('Auditor')
           ? null
           : SizedBox(
               width: fabSize,
@@ -332,7 +332,7 @@ class _AuditListViewState extends State<_AuditListView> {
                 return AuditCard(
                   audit: audit,
 
-                  onEdit: _userRole == 'Auditor' ? null : () async {
+                  onEdit: _userRole.startsWith('Auditor') ? null : () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -347,7 +347,7 @@ class _AuditListViewState extends State<_AuditListView> {
                   onChecklist: audit.isFinished
                       ? null
                       // Auditor hanya bisa akses checklist audit yang dia jadi PIC-nya
-                      : (_userRole == 'Auditor' && audit.auditorName != _userName)
+                      : (_userRole.startsWith('Auditor') && audit.auditorName != _userName)
                           ? null
                           : () async {
                               await Navigator.push<bool>(
@@ -361,7 +361,7 @@ class _AuditListViewState extends State<_AuditListView> {
                               );
                             },
 
-                  onDelete: _userRole == 'Auditor' ? null : () async {
+                  onDelete: _userRole.startsWith('Auditor') ? null : () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(

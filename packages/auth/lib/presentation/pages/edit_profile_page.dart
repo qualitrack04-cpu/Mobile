@@ -51,9 +51,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _onEmailChanged() {
-    // Email langsung bisa diubah tanpa verifikasi OTP
-    // karena API update-profile sudah handle langsung
-    setState(() {});
+    if (_emailController.text.trim() != widget.email && _isEmailVerified) {
+      setState(() => _isEmailVerified = false);
+    } else {
+      setState(() {});
+    }
+  }
+
+  bool get _isEmailFormatValid {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return false;
+    return RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
   }
 
   @override
@@ -68,6 +76,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   String _formatRole(String role) {
+    if (role == 'Auditor' || role == 'AuditorInternal') return 'Auditor Internal';
     if (role.isEmpty) return '-';
     return role
         .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
@@ -142,7 +151,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final authService = GetIt.instance<AuthService>();
-      await authService.resendOtp(email: newEmail);
+      await authService.requestEmailChangeOtp(newEmail: newEmail);
 
       if (!mounted) return;
       setState(() => _isSendingOtp = false);
@@ -323,7 +332,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   dialogSetState?.call(() => isResending = true);
                                   try {
                                     final authService = GetIt.instance<AuthService>();
-                                    await authService.resendOtp(email: newEmail);
+                                    await authService.requestEmailChangeOtp(newEmail: newEmail);
                                     startTimer();
                                     if (ctx.mounted) {
                                       ScaffoldMessenger.of(ctx).showSnackBar(
@@ -392,8 +401,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     try {
                                       final authService =
                                           GetIt.instance<AuthService>();
-                                      await authService.verifyEmail(
-                                        email: newEmail,
+                                      await authService.verifyEmailChange(
                                         otp: otpCode,
                                       );
 
@@ -402,17 +410,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         _isEmailVerified = true;
                                         _errorMessage = null;
                                       });
-                                      Navigator.pop(ctx);
-                                      ScaffoldMessenger.of(
-                                        this.context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Email berhasil diverifikasi!',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
+                                      Navigator.pop(ctx); // Tutup dialog OTP
+
+                                      // Langsung otomatis jalankan Save Changes untuk semuanya (nama, foto)
+                                      // dan tutup halamannya supaya user tidak bingung.
+                                      _saveChanges();
                                     } catch (e) {
                                       setModalState(
                                         () =>
@@ -626,12 +628,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final authService = GetIt.instance<AuthService>();
       
-      // Hanya panggil updateProfile jika nama/email benar-benar berubah
-      if (_usernameController.text.trim() != widget.name || 
-          _emailController.text.trim() != widget.email) {
+      bool nameChanged = _usernameController.text.trim() != widget.name;
+      bool emailChanged = _emailController.text.trim() != widget.email;
+
+      if (nameChanged) {
         await authService.updateProfile(
           name: _usernameController.text.trim(),
-          email: _emailController.text.trim(),
         );
       }
 
@@ -645,6 +647,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
         await authService.updateProfilePhoto(_selectedPhoto!.path);
       }
 
+      if (emailChanged && !_isEmailVerified) {
+        if (mounted) setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Silakan klik "Verify Now" untuk memverifikasi email baru Anda terlebih dahulu.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return; 
+      }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -652,7 +665,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -826,6 +839,52 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   color: AppColors.textSecondary,
                                 ),
                               ),
+                              if (_emailController.text.trim() != widget.email && !_isEmailVerified)
+                                if (!_isEmailFormatValid)
+                                  Text(
+                                    'Format email tidak valid',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red,
+                                    ),
+                                  )
+                                else
+                                  GestureDetector(
+                                    onTap: _isSendingOtp ? null : _requestEmailVerification,
+                                    child: _isSendingOtp
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.primary,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Verify Now',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2ECC71),
+                                            ),
+                                          ),
+                                  )
+                              else if (_emailController.text.trim() != widget.email && _isEmailVerified)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Colors.green, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Verified',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                           const SizedBox(height: 8),

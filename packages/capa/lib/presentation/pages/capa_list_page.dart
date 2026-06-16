@@ -392,7 +392,7 @@ class _CapaCardState extends State<_CapaCard> {
         textColor = Colors.black38;
     }
 
-    if (widget.userRole == 'Auditor') {
+    if (widget.userRole.startsWith('Auditor')) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(

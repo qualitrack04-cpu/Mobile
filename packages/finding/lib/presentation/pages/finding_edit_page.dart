@@ -837,16 +837,21 @@ class _FindingEditPageState extends State<FindingEditPage> {
         _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
         _selectedDepartment != widget.finding.department && _departmentMap[_selectedDepartment] != widget.finding.department ||
-        _evidenceImages.isNotEmpty ||
         _existingEvidences.length != _originalEvidenceCount; // ← evidence dihapus
   }
+
+  bool get _isFormValid =>
+      _titleController.text.trim().length >= 5 &&
+      _descriptionController.text.trim().length >= 10 &&
+      _reporterController.text.trim().isNotEmpty &&
+      _selectedDepartment != null;
 
   Widget _buildEditButton(BuildContext context, FindingState state) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is FindingLoading || !_isDirty)
+        onPressed: (state is FindingLoading || !_isDirty || !_isFormValid)
             ? null
             : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
@@ -886,16 +891,16 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
   void _onSubmit(BuildContext context) {
     ScaffoldMessenger.of(context).clearSnackBars();
-    if (_titleController.text.isEmpty) {
+    if (_titleController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Title cannot be empty!'),
+        content: Text('Title min 5 characters!'),
         backgroundColor: Colors.orange,
       ));
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.text.trim().length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Description cannot be empty!'),
+        content: Text('Description min 10 characters!'),
         backgroundColor: Colors.orange,
       ));
       return;

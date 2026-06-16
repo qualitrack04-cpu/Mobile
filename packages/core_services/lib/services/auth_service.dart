@@ -192,21 +192,53 @@ class AuthService {
 
   Future<void> updateProfile({
     required String name,
-    required String email,
   }) async {
     try {
       await apiService.client.put(
         '/api/Auth/update-profile',
         data: {
           'fullName': name,
-          'email': email,
         },
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
-      await prefs.setString('user_email', email);
     } catch (e) {
       throw Exception('Gagal menyimpan profil ke server');
+    }
+  }
+
+  Future<void> requestEmailChangeOtp({required String newEmail}) async {
+    try {
+      await apiService.client.post(
+        '/api/Auth/request-email-change-otp',
+        data: {'newEmail': newEmail},
+      );
+    } catch (e) {
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response!.data;
+        throw Exception(data is Map ? data['message'] : 'Gagal mengirim OTP ke email baru');
+      }
+      throw Exception('Gagal mengirim OTP ke email baru');
+    }
+  }
+
+  Future<void> verifyEmailChange({required String otp}) async {
+    try {
+      final response = await apiService.client.post(
+        '/api/Auth/verify-email-change',
+        data: {'otp': otp},
+      );
+      final data = response.data as Map<String, dynamic>;
+      final newEmail = data['newEmail'] as String;
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', newEmail);
+    } catch (e) {
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response!.data;
+        throw Exception(data is Map ? data['message'] : 'Kode OTP tidak valid');
+      }
+      throw Exception('Kode OTP tidak valid');
     }
   }
 
