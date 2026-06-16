@@ -61,12 +61,15 @@ class _CapaFormPageState extends State<CapaFormPage> {
       _isLoadingData = true;
       _loadError = null;
     });
-    try {
-      final api = GetIt.instance<ApiService>();
 
-      // Load findings: GET /api/Finding/without-capa (endpoint khusus dari tim backend)
+    final api = GetIt.instance<ApiService>();
+    List<Map<String, String>> fetchedFindings = [];
+    List<Map<String, String>> fetchedUsers = [];
+    List<String> errors = [];
+
+    // Load findings
+    try {
       final fRes = await api.client.get('/api/Finding/without-capa');
-      // Handle response yang mungkin berupa array langsung atau wrapped {data: [...]}
       final dynamic fData = fRes.data;
       final findingsRaw = fData is List
           ? fData
@@ -74,32 +77,40 @@ class _CapaFormPageState extends State<CapaFormPage> {
               ? fData['data'] as List<dynamic>
               : <dynamic>[];
 
-      // Load semua users untuk PIC dengan role Auditee
-      final uRes = await api.client.get('/api/Auth/users?role=Auditee');
-      final usersRaw = uRes.data['data'] as List<dynamic>;
-
-      setState(() {
-        _findings = findingsRaw.map((f) {
-          final clause = f['clauseRef'] as String? ?? '';
-          final desc = f['description'] as String? ?? '';
-          final label = clause.isNotEmpty ? '$clause - $desc' : desc;
-          return {
-            'id': f['id'] as String,
-            'title': label,
-          };
-        }).toList();
-
-        _users = usersRaw.map((u) => {
-          'id': u['id'] as String,
-          'name': u['fullName'] as String,
-        }).toList();
-
-        _isLoadingData = false;
-      });
+      fetchedFindings = findingsRaw.map((f) {
+        final clause = f['clauseRef'] as String? ?? '';
+        final desc = f['description'] as String? ?? '';
+        final label = clause.isNotEmpty ? '$clause - $desc' : desc;
+        return {
+          'id': f['id'] as String,
+          'title': label,
+        };
+      }).toList();
     } catch (e) {
+      errors.add('Gagal memuat findings');
+    }
+
+    // Load users (PIC Candidates)
+    try {
+      final uRes = await api.client.get('/api/Auth/pic-candidates');
+      final usersRaw = uRes.data['data'] as List<dynamic>? ?? [];
+
+      fetchedUsers = usersRaw.map((u) => {
+        'id': u['id'] as String,
+        'name': u['fullName'] as String,
+      }).toList();
+    } catch (e) {
+      errors.add('Gagal memuat users/PIC');
+    }
+
+    if (mounted) {
       setState(() {
+        _findings = fetchedFindings;
+        _users = fetchedUsers;
         _isLoadingData = false;
-        _loadError = 'Gagal memuat data: ${e.toString()}';
+        if (errors.isNotEmpty) {
+          _loadError = errors.join(' | ');
+        }
       });
     }
   }

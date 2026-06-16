@@ -169,7 +169,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     backgroundColor: AppColors.primaryLight,
                     backgroundImage:
                         _photoPath.isNotEmpty
-                            ? MemoryImage(base64Decode(_photoPath))
+                            ? NetworkImage(
+                                _photoPath.startsWith('http')
+                                    ? _photoPath
+                                    : '${ApiService.baseUrl}$_photoPath',
+                              )
                             : null,
                     child:
                         _photoPath.isEmpty

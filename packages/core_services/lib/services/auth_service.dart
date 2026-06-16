@@ -1,4 +1,5 @@
 import 'package:core_services/services/api_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 
@@ -25,6 +26,11 @@ class AuthService {
       await prefs.setString('user_name', data['fullName'] as String);
       await prefs.setString('user_id', data['userId'].toString());
       await prefs.setString('user_email', email);
+      
+      // Ambil data profil (termasuk URL foto)
+      try {
+        await fetchProfile();
+      } catch (_) {}
     } catch (e) {
       rethrow;
     }
@@ -190,13 +196,12 @@ class AuthService {
   }) async {
     try {
       await apiService.client.put(
-        '/api/User/update-profile', // Asumsi endpoint update profil
+        '/api/Auth/update-profile',
         data: {
           'fullName': name,
           'email': email,
         },
       );
-      
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
       await prefs.setString('user_email', email);
@@ -208,7 +213,7 @@ class AuthService {
   Future<void> changePassword({required String newPassword}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/change-password', // Asumsi endpoint ubah password
+        '/api/Auth/change-password',
         data: {
           'newPassword': newPassword,
         },
@@ -218,8 +223,42 @@ class AuthService {
     }
   }
 
+  Future<void> fetchProfile() async {
+    try {
+      final response = await apiService.client.get('/api/Auth/profile');
+      final data = response.data as Map<String, dynamic>;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', data['fullName'] ?? '');
+      await prefs.setString('user_email', data['email'] ?? '');
+      await prefs.setString('user_role', data['role'] ?? '');
+      
+      final photoUrl = data['profilePhotoUrl'] as String? ?? '';
+      debugPrint('[fetchProfile] profilePhotoUrl = $photoUrl');
+      await prefs.setString('user_photo', photoUrl);
+    } catch (e) {
+      debugPrint('[fetchProfile] ERROR: $e');
+    }
+  }
+
   Future<void> updateProfilePhoto(String photoPath) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_photo', photoPath);
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(photoPath),
+      });
+
+      final response = await apiService.client.post(
+        '/api/Auth/upload-profile-photo',
+        data: formData,
+      );
+      
+      final data = response.data as Map<String, dynamic>;
+      final url = data['url'] as String;
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_photo', url);
+    } catch (e) {
+      throw Exception('Gagal mengupload foto profil');
+    }
   }
 }
