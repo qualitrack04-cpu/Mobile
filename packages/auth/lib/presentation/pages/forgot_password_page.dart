@@ -36,21 +36,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  bool _isValidGmail(String email) {
-    final gmailRegex = RegExp(
-      r'^[\w\.\-]+@gmail\.com$',
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[\w\.-]+@gmail\.com$',
       caseSensitive: false,
     );
-    return gmailRegex.hasMatch(email.trim());
+    return emailRegex.hasMatch(email.trim());
   }
 
   Future<void> _onRequestOtp() async {
     if (_emailController.text.trim().isEmpty) {
-      setState(() => _errorMessage = 'Email wajib diisi');
+      setState(() => _errorMessage = 'Email is required');
       return;
     }
-    if (!_isValidGmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email harus menggunakan akun Gmail (@gmail.com)');
+    if (!_isValidEmail(_emailController.text.trim())) {
+      setState(() => _errorMessage = 'Email must use @gmail.com');
       return;
     }
 
@@ -76,7 +76,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Email tidak ditemukan');
+      setState(() => _errorMessage = 'Email not found');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -84,11 +84,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F7),
       body: SafeArea(
         child: Column(
           children: [
+            // Back button
             Align(
               alignment: Alignment.topLeft,
               child: TextButton.icon(
@@ -104,110 +108,136 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ),
             ),
+
+            // Konten utama
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.07),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.shield, size: 26, color: Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'QualiTrack',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const Text(
-                      'Precision Quality & Audit Management',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 40),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, 10)),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(height: screenHeight * 0.04),
+
+                            // Logo
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(Icons.shield, size: 34, color: Colors.white),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Enter your registered work email below. We will send you a OTP Code to reset your password.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
-                          ),
-                          const SizedBox(height: 20),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            decoration: customInputDecoration(
-                              hint: 'username@gmail.com',
-                              icon: Icons.mail_outline,
+                            const SizedBox(height: 10),
+                            const Text(
+                              'QualiTrack',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
                             ),
-                          ),
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                            const Text(
+                              'Precision Quality & Audit Management',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
                             ),
-                          ],
-                          const SizedBox(height: 20),
-                          _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : SizedBox(
-                                  width: double.infinity,
-                                  height: 52,
-                                  child: ElevatedButton(
-                                    onPressed: _onRequestOtp,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'SEND OTP CODE',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.2,
-                                      ),
+
+                            SizedBox(height: screenHeight * 0.05),
+
+                            // Card
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(screenWidth * 0.06),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 20,
+                                    offset: Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      fontSize: (screenWidth * 0.055).clamp(18.0, 24.0),
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
                                     ),
                                   ),
-                                ),
-                        ],
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Enter your registered work email below. We will send you a OTP Code to reset your password.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: (screenWidth * 0.038).clamp(13.0, 16.0),
+                                      color: Colors.grey,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  TextField(
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    autocorrect: false,
+                                    enableSuggestions: false,
+                                    decoration: customInputDecoration(
+                                      hint: 'name@company.com',
+                                      icon: Icons.mail_outline,
+                                    ),
+                                  ),
+                                  if (_errorMessage != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _errorMessage!,
+                                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 20),
+                                  _isLoading
+                                      ? const Center(child: CircularProgressIndicator())
+                                      : SizedBox(
+                                          width: double.infinity,
+                                          height: 52,
+                                          child: ElevatedButton(
+                                            onPressed: _onRequestOtp,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primary,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'SEND OTP CODE',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 1.2,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+
+                    // "Remember your password?" di BAWAH
                     Padding(
-                      padding: const EdgeInsets.only(top: 32, bottom: 16),
+                      padding: const EdgeInsets.only(bottom: 24),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

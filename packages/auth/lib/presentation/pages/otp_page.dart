@@ -24,13 +24,11 @@ class OtpPage extends StatefulWidget {
 class _OtpPageState extends State<OtpPage> {
   final List<TextEditingController> _controllers =
       List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(4, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   bool _isLoading = false;
   bool _isResending = false;
   String? _errorMessage;
 
-  // Countdown timer
   int _secondsRemaining = 59;
   Timer? _timer;
 
@@ -60,12 +58,11 @@ class _OtpPageState extends State<OtpPage> {
     super.dispose();
   }
 
-  String get _otpCode =>
-      _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.map((c) => c.text).join();
 
   Future<void> _onVerify() async {
     if (_otpCode.length < 4) {
-      setState(() => _errorMessage = 'Masukkan 4 digit OTP');
+      setState(() => _errorMessage = 'Please enter 4 digit OTP');
       return;
     }
 
@@ -112,7 +109,7 @@ class _OtpPageState extends State<OtpPage> {
         );
       }
     } catch (e) {
-      setState(() => _errorMessage = 'OTP salah atau sudah kadaluarsa');
+      setState(() => _errorMessage = 'Invalid or expired OTP');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -135,7 +132,7 @@ class _OtpPageState extends State<OtpPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('OTP sudah dikirim ulang!'),
+          content: Text('OTP has been resent!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -143,7 +140,7 @@ class _OtpPageState extends State<OtpPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Gagal kirim ulang OTP'),
+          content: Text('Failed to resend OTP'),
           backgroundColor: Colors.red,
         ),
       );
@@ -154,8 +151,13 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final otpBoxSize = ((screenWidth - (screenWidth * 0.14) - (3 * 16)) / 4)
+        .clamp(55.0, 75.0);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFEEF2F7),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -175,191 +177,194 @@ class _OtpPageState extends State<OtpPage> {
         leadingWidth: 80,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(left: 30, right: 30, top: 40, bottom: 20),
-          child: Column(
-            children: [
-              // Logo
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.shield,
-                  size: 28,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'QualiTrack',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              const Text(
-                'Precision Quality & Audit Management',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 30),
-
-              Container(
-                padding: const EdgeInsets.all(25),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.07,
+                  vertical: screenHeight * 0.02,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Judul
-                    Text(
-                      'Enter Verification Code',
+                    // Logo
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.shield, size: 34, color: Colors.white),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'QualiTrack',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const Text(
+                      'Precision Quality & Audit Management',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
 
-                    // Deskripsi
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
-                          height: 1.5,
-                        ),
-                        children: [
-                          const TextSpan(
-                            text:
-                                'We have sent a 4-digit verification code to your registered work email\n',
-                          ),
-                          TextSpan(
-                            text: widget.email,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    SizedBox(height: screenHeight * 0.04),
+
+                    // Card
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(screenWidth * 0.06),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 4 digit OTP
-                    Row(
-                      children: List.generate(7, (i) {
-                        if (i.isOdd) return const SizedBox(width: 12);
-                        final index = i ~/ 2;
-                        return Expanded(
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: TextField(
-                              controller: _controllers[index],
-                              focusNode: _focusNodes[index],
-                              maxLength: 1,
-                              textAlign: TextAlign.center,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                              decoration: InputDecoration(
-                                counterText: '',
-                                filled: true,
-                                fillColor: Colors.grey[100],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                if (value.isNotEmpty && index < 3) {
-                                  _focusNodes[index + 1].requestFocus();
-                                } else if (value.isEmpty && index > 0) {
-                                  _focusNodes[index - 1].requestFocus();
-                                }
-                              },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Enter Verification Code',
+                            style: TextStyle(
+                              fontSize: (screenWidth * 0.055).clamp(18.0, 24.0),
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
                           ),
-                        );
-                      }),
-                    ),
+                          const SizedBox(height: 10),
 
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 16),
-
-                    // Countdown timer
-                    GestureDetector(
-                      onTap: (_secondsRemaining == 0 && !_isResending) ? _onResendOtp : null,
-                      child: Text(
-                        _isResending
-                            ? 'Resending...'
-                            : _secondsRemaining > 0
-                                ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
-                                : 'Resend code',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: (_secondsRemaining > 0 || _isResending)
-                              ? Colors.grey
-                              : AppColors.primary,
-                          fontWeight: (_secondsRemaining > 0 || _isResending)
-                              ? FontWeight.normal
-                              : FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ActionButton(
-                            label: 'VERIFY & PROCEED',
-                            onPressed: _onVerify,
+                          // Deskripsi — font lebih besar
+                          RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontSize: (screenWidth * 0.038).clamp(13.0, 16.0),
+                                color: Colors.grey,
+                                height: 1.5,
+                              ),
+                              children: [
+                                const TextSpan(
+                                  text:
+                                      'We have sent a 4-digit verification code to your registered work email\n',
+                                ),
+                                TextSpan(
+                                  text: widget.email,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(height: 24),
+
+                          // 4 kotak OTP dengan jarak yang cukup
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(4, (index) {
+                              return SizedBox(
+                                width: otpBoxSize,
+                                height: otpBoxSize,
+                                child: TextField(
+                                  controller: _controllers[index],
+                                  focusNode: _focusNodes[index],
+                                  maxLength: 1,
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  style: TextStyle(
+                                    fontSize: (screenWidth * 0.06).clamp(20.0, 28.0),
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                  decoration: InputDecoration(
+                                    counterText: '',
+                                    filled: true,
+                                    fillColor: Colors.grey[100],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primary,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    if (value.isNotEmpty && index < 3) {
+                                      _focusNodes[index + 1].requestFocus();
+                                    } else if (value.isEmpty && index > 0) {
+                                      _focusNodes[index - 1].requestFocus();
+                                    }
+                                  },
+                                ),
+                              );
+                            }),
+                          ),
+
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                            ),
+                          ],
+
+                          const SizedBox(height: 16),
+
+                          // Countdown timer
+                          GestureDetector(
+                            onTap: (_secondsRemaining == 0 && !_isResending)
+                                ? _onResendOtp
+                                : null,
+                            child: Text(
+                              _isResending
+                                  ? 'Resending...'
+                                  : _secondsRemaining > 0
+                                      ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
+                                      : 'Resend code',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: (_secondsRemaining > 0 || _isResending)
+                                    ? Colors.grey
+                                    : AppColors.primary,
+                                fontWeight: (_secondsRemaining > 0 || _isResending)
+                                    ? FontWeight.normal
+                                    : FontWeight.bold,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ActionButton(
+                                  label: 'VERIFY & PROCEED',
+                                  onPressed: _onVerify,
+                                ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 20),
-
-              // Having trouble?
-              Row(
+            // "Having trouble?" di BAWAH
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
@@ -384,8 +389,8 @@ class _OtpPageState extends State<OtpPage> {
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
