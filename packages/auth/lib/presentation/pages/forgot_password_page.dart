@@ -92,7 +92,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Back button
             Align(
               alignment: Alignment.topLeft,
               child: TextButton.icon(
@@ -109,7 +108,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
             ),
 
-            // Konten utama
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.07),
@@ -122,7 +120,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           children: [
                             SizedBox(height: screenHeight * 0.04),
 
-                            // Logo
                             Container(
                               width: 64,
                               height: 64,
@@ -148,7 +145,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                             SizedBox(height: screenHeight * 0.05),
 
-                            // Card
                             Container(
                               width: double.infinity,
                               padding: EdgeInsets.all(screenWidth * 0.06),

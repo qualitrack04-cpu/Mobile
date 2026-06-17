@@ -113,10 +113,7 @@ class _LoginPageState extends State<LoginPage> {
       body: AutofillGroup(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 40,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

@@ -109,6 +109,7 @@ class AuthService {
   }
 
   // POST /api/Auth/forgot-password/verify-otp
+// POST /api/Auth/forgot-password/verify-otp
   Future<String> verifyForgotPasswordOtp({
     required String email,
     required String otp,
@@ -136,17 +137,16 @@ class AuthService {
       await apiService.client.post(
         '/api/Auth/forgot-password/reset',
         data: {
-          'email': email, 
-          'resetToken': resetToken, 
+          'email': email,
+          'resetToken': resetToken,
           'newPassword': newPassword,
-          'confirmPassword': confirmPassword
+          'confirmPassword': confirmPassword,
         },
       );
     } catch (e) {
       throw Exception('Gagal reset password');
     }
   }
-
   // // POST /api/Auth/forgot-password (alur tanpa OTP - dinonaktifkan)
   // Future<void> forgotPassword({
   //   required String email,
