@@ -25,7 +25,7 @@ class RoleDropdown extends StatelessWidget {
           child: Text('Quality Manager'),
         ),
         DropdownMenuItem(
-          value: 'Auditor',
+          value: 'AuditorInternal',
           child: Text('Auditor Internal'),
         ),
         DropdownMenuItem(

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path_provider/path_provider.dart';
@@ -340,9 +341,32 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                       width: 240,
                       height: 160,
                       fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: 240,
+                          height: 160,
+                          color: Colors.grey[100],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                  : null,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
                       errorBuilder: (_,__,___) => Container(
-                        width: 240, height: 160, color: Colors.grey[300],
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                        width: 240, height: 160, color: Colors.grey[200],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.broken_image, color: Colors.grey, size: 32),
+                            const SizedBox(height: 8),
+                            Text('Gagal memuat', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                          ],
+                        ),
                       ),
                     ),
                   );
