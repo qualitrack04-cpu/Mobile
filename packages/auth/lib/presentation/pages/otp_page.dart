@@ -22,8 +22,10 @@ class OtpPage extends StatefulWidget {
 }
 
 class _OtpPageState extends State<OtpPage> {
-  final List<TextEditingController> _controllers =
-      List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   bool _isLoading = false;
   bool _isResending = false;
@@ -84,17 +86,15 @@ class _OtpPageState extends State<OtpPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => ResetPasswordPage(
-              email: widget.email,
-              resetToken: resetToken,
-            ),
+            builder:
+                (_) => ResetPasswordPage(
+                  email: widget.email,
+                  resetToken: resetToken,
+                ),
           ),
         );
       } else {
-        await authService.verifyEmail(
-          email: widget.email,
-          otp: _otpCode,
-        );
+        await authService.verifyEmail(email: widget.email, otp: _otpCode);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -153,8 +153,7 @@ class _OtpPageState extends State<OtpPage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final otpBoxSize = ((screenWidth - (screenWidth * 0.14) - (3 * 16)) / 4)
-        .clamp(55.0, 75.0);
+    final otpBoxSize = 64.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFEEF2F7),
@@ -195,7 +194,11 @@ class _OtpPageState extends State<OtpPage> {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.shield, size: 34, color: Colors.white),
+                      child: const Icon(
+                        Icons.shield,
+                        size: 34,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     const Text(
@@ -245,7 +248,10 @@ class _OtpPageState extends State<OtpPage> {
                           RichText(
                             text: TextSpan(
                               style: TextStyle(
-                                fontSize: (screenWidth * 0.038).clamp(13.0, 16.0),
+                                fontSize: (screenWidth * 0.038).clamp(
+                                  13.0,
+                                  16.0,
+                                ),
                                 color: Colors.grey,
                                 height: 1.5,
                               ),
@@ -268,46 +274,63 @@ class _OtpPageState extends State<OtpPage> {
 
                           // 4 kotak OTP dengan jarak yang cukup
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(4, (index) {
-                              return SizedBox(
-                                width: otpBoxSize,
-                                height: otpBoxSize,
-                                child: TextField(
-                                  controller: _controllers[index],
-                                  focusNode: _focusNodes[index],
-                                  maxLength: 1,
-                                  textAlign: TextAlign.center,
-                                  keyboardType: TextInputType.number,
-                                  style: TextStyle(
-                                    fontSize: (screenWidth * 0.06).clamp(20.0, 28.0),
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
-                                  ),
-                                  decoration: InputDecoration(
-                                    counterText: '',
-                                    filled: true,
-                                    fillColor: Colors.grey[100],
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: BorderSide(color: Colors.grey[300]!),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
+                              return Row(
+                                children: [
+                                  SizedBox(
+                                    width: 64,
+                                    height: 64,
+                                    child: TextField(
+                                      controller: _controllers[index],
+                                      focusNode: _focusNodes[index],
+                                      maxLength: 1,
+                                      textAlign: TextAlign.center,
+                                      keyboardType: TextInputType.number,
+                                      style: TextStyle(
+                                        fontSize: (screenWidth * 0.06).clamp(
+                                          20.0,
+                                          28.0,
+                                        ),
+                                        fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
-                                        width: 2,
                                       ),
+                                      decoration: InputDecoration(
+                                        counterText: '',
+                                        filled: true,
+                                        fillColor: Colors.grey[100],
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          borderSide: const BorderSide(
+                                            color: AppColors.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      onChanged: (value) {
+                                        if (value.isNotEmpty && index < 3) {
+                                          _focusNodes[index + 1].requestFocus();
+                                        } else if (value.isEmpty && index > 0) {
+                                          _focusNodes[index - 1].requestFocus();
+                                        }
+                                      },
                                     ),
                                   ),
-                                  onChanged: (value) {
-                                    if (value.isNotEmpty && index < 3) {
-                                      _focusNodes[index + 1].requestFocus();
-                                    } else if (value.isEmpty && index > 0) {
-                                      _focusNodes[index - 1].requestFocus();
-                                    }
-                                  },
-                                ),
+                                  if (index < 3)
+                                    const SizedBox(
+                                      width: 16,
+                                    ), // jarak antar kotak
+                                ],
                               );
                             }),
                           ),
@@ -316,7 +339,10 @@ class _OtpPageState extends State<OtpPage> {
                             const SizedBox(height: 8),
                             Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
 
@@ -324,23 +350,26 @@ class _OtpPageState extends State<OtpPage> {
 
                           // Countdown timer
                           GestureDetector(
-                            onTap: (_secondsRemaining == 0 && !_isResending)
-                                ? _onResendOtp
-                                : null,
+                            onTap:
+                                (_secondsRemaining == 0 && !_isResending)
+                                    ? _onResendOtp
+                                    : null,
                             child: Text(
                               _isResending
                                   ? 'Resending...'
                                   : _secondsRemaining > 0
-                                      ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
-                                      : 'Resend code',
+                                  ? 'Resend code in 00:${_secondsRemaining.toString().padLeft(2, '0')}'
+                                  : 'Resend code',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: (_secondsRemaining > 0 || _isResending)
-                                    ? Colors.grey
-                                    : AppColors.primary,
-                                fontWeight: (_secondsRemaining > 0 || _isResending)
-                                    ? FontWeight.normal
-                                    : FontWeight.bold,
+                                color:
+                                    (_secondsRemaining > 0 || _isResending)
+                                        ? Colors.grey
+                                        : AppColors.primary,
+                                fontWeight:
+                                    (_secondsRemaining > 0 || _isResending)
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
                               ),
                             ),
                           ),
@@ -350,9 +379,9 @@ class _OtpPageState extends State<OtpPage> {
                           _isLoading
                               ? const Center(child: CircularProgressIndicator())
                               : ActionButton(
-                                  label: 'VERIFY & PROCEED',
-                                  onPressed: _onVerify,
-                                ),
+                                label: 'VERIFY & PROCEED',
+                                onPressed: _onVerify,
+                              ),
                         ],
                       ),
                     ),
