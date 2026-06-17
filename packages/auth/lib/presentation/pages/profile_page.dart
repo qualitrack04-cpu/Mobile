@@ -221,7 +221,7 @@ class _ProfilePageState extends State<ProfilePage> {
           CircleAvatar(
             radius: 48,
             backgroundColor: AppColors.borderLight,
-            backgroundImage:
+backgroundImage:
                 _photoPath.isNotEmpty
                     ? NetworkImage(
                         ApiService.fixImageUrl(_photoPath),
