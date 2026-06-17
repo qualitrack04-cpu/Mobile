@@ -593,7 +593,32 @@ class _FindingEditPageState extends State<FindingEditPage> {
             InteractiveViewer(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(ApiService.fixImageUrl(url), fit: BoxFit.contain),
+                child: Image.network(
+                  ApiService.fixImageUrl(url), 
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.broken_image, color: Colors.white54, size: 50),
+                        SizedBox(height: 10),
+                        Text('Gagal memuat gambar', style: TextStyle(color: Colors.white54)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
             Positioned(
@@ -692,6 +717,12 @@ class _FindingEditPageState extends State<FindingEditPage> {
                                 : Image.network(
                                     ApiService.fixImageUrl(url),
                                     fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      );
+                                    },
                                     errorBuilder: (_, __, ___) => Icon(
                                       Icons.broken_image_outlined,
                                       color: Colors.grey[400],

@@ -1245,7 +1245,23 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                           width: double.infinity,
                           height: 180,
                           fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stackTrace) => Container(
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: double.infinity,
+                              height: 180,
+                              color: Colors.grey[100],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
                             width: double.infinity,
                             height: 180,
                             color: Colors.grey[200],
@@ -1255,15 +1271,6 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                                 const Icon(Icons.broken_image, color: Colors.grey, size: 40),
                                 const SizedBox(height: 8),
                                 const Text('Gagal memuat gambar', style: TextStyle(color: Colors.grey)),
-                                // KITA TAMBAHKAN TEKS URL-NYA DI SINI UNTUK DEBUGGING
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    localImagePath ?? 'URL Kosong',
-                                    style: const TextStyle(color: Colors.red, fontSize: 11),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
