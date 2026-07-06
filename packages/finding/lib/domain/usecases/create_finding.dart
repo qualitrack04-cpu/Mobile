@@ -12,7 +12,8 @@ class CreateFinding {
     required String description,
     required String clauseRef,
     required String department,
-    String? auditorName,
+    required String reporter,
+    String? reporterId,
     String? sessionId,          // ✅ TAMBAH
     String? checklistItemId,    // ✅ TAMBAH
   }) async {
@@ -21,7 +22,8 @@ class CreateFinding {
       description: description,
       clauseRef: clauseRef,
       department: department,
-      auditorName: auditorName,
+      reporter: reporter,
+      reporterId: reporterId,
       sessionId: sessionId,             // ✅ TAMBAH
       checklistItemId: checklistItemId, // ✅ TAMBAH
     );

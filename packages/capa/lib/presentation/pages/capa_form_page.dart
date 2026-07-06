@@ -21,6 +21,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _actionController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
+  final _actionFocus = FocusNode();
   DateTime? _selectedDeadline = DateTime.now();
   String? _selectedFindingId;
   String? _selectedPicId;
@@ -32,9 +35,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
   String? _loadError;
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
           _selectedFindingId != null &&
-          _actionController.text.trim().isNotEmpty &&
+          _descriptionController.text.trim().length >= 10 &&
+          _actionController.text.trim().length >= 10 &&
           _selectedPicId != null &&
           _selectedDeadline != null;
 
@@ -45,7 +49,11 @@ class _CapaFormPageState extends State<CapaFormPage> {
       _selectedFindingId = widget.findingId;
     }
     _titleController.addListener(() => setState(() {}));
+    _descriptionController.addListener(() => setState(() {}));
     _actionController.addListener(() => setState(() {}));
+    _titleFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
+    _actionFocus.addListener(() => setState(() {}));
     _loadData();
   }
 
@@ -54,12 +62,15 @@ class _CapaFormPageState extends State<CapaFormPage> {
       _isLoadingData = true;
       _loadError = null;
     });
-    try {
-      final api = GetIt.instance<ApiService>();
 
-      // Load findings: GET /api/Finding/without-capa (endpoint khusus dari tim backend)
+    final api = GetIt.instance<ApiService>();
+    List<Map<String, String>> fetchedFindings = [];
+    List<Map<String, String>> fetchedUsers = [];
+    List<String> errors = [];
+
+    // Load findings
+    try {
       final fRes = await api.client.get('/api/Finding/without-capa');
-      // Handle response yang mungkin berupa array langsung atau wrapped {data: [...]}
       final dynamic fData = fRes.data;
       final findingsRaw = fData is List
           ? fData
@@ -67,32 +78,40 @@ class _CapaFormPageState extends State<CapaFormPage> {
               ? fData['data'] as List<dynamic>
               : <dynamic>[];
 
-      // Load semua users untuk PIC: GET /api/Auth/auditors (karena /users tidak ada)
-      final uRes = await api.client.get('/api/Auth/auditors');
-      final usersRaw = uRes.data['data'] as List<dynamic>;
-
-      setState(() {
-        _findings = findingsRaw.map((f) {
-          final clause = f['clauseRef'] as String? ?? '';
-          final desc = f['description'] as String? ?? '';
-          final label = clause.isNotEmpty ? '$clause - $desc' : desc;
-          return {
-            'id': f['id'] as String,
-            'title': label,
-          };
-        }).toList();
-
-        _users = usersRaw.map((u) => {
-          'id': u['id'] as String,
-          'name': u['fullName'] as String,
-        }).toList();
-
-        _isLoadingData = false;
-      });
+      fetchedFindings = findingsRaw.map((f) {
+        final clause = f['clauseRef'] as String? ?? '';
+        final desc = f['description'] as String? ?? '';
+        final label = clause.isNotEmpty ? '$clause - $desc' : desc;
+        return {
+          'id': f['id'] as String,
+          'title': label,
+        };
+      }).toList();
     } catch (e) {
+      errors.add('Gagal memuat findings');
+    }
+
+    // Load users (PIC Candidates)
+    try {
+      final uRes = await api.client.get('/api/Auth/pic-candidates');
+      final usersRaw = uRes.data['data'] as List<dynamic>? ?? [];
+
+      fetchedUsers = usersRaw.map((u) => {
+        'id': u['id'] as String,
+        'name': u['fullName'] as String,
+      }).toList();
+    } catch (e) {
+      errors.add('Gagal memuat users/PIC');
+    }
+
+    if (mounted) {
       setState(() {
+        _findings = fetchedFindings;
+        _users = fetchedUsers;
         _isLoadingData = false;
-        _loadError = 'Gagal memuat data: ${e.toString()}';
+        if (errors.isNotEmpty) {
+          _loadError = errors.join(' | ');
+        }
       });
     }
   }
@@ -102,6 +121,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _actionController.dispose();
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
+    _actionFocus.dispose();
     super.dispose();
   }
 
@@ -190,7 +212,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
                             _buildTextField(
                               label: 'TITLE',
                               controller: _titleController,
+                              focusNode: _titleFocus,
                               hint: 'Enter the capa title...',
+                              minLength: 5,
+                              maxLength: 200,
                             ),
                             _buildDivider(),
                             _buildFindingDropdown(),
@@ -198,15 +223,21 @@ class _CapaFormPageState extends State<CapaFormPage> {
                             _buildTextField(
                               label: 'DESCRIPTION',
                               controller: _descriptionController,
+                              focusNode: _descriptionFocus,
                               hint: 'Detail the non-conformance observed during the audit...',
                               maxLines: 4,
+                              minLength: 10,
+                              maxLength: 1000,
                             ),
                             _buildDivider(),
                             _buildTextField(
                               label: 'ACTION',
                               controller: _actionController,
-                              hint: 'Detail the non-conformance observed during the audit...',
+                              focusNode: _actionFocus,
+                              hint: 'Detail the corrective action to be taken...',
                               maxLines: 4,
+                              minLength: 10,
+                              maxLength: 1000,
                             ),
                             _buildDivider(),
                             _buildPicDropdown(),
@@ -236,8 +267,11 @@ class _CapaFormPageState extends State<CapaFormPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -256,7 +290,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -264,6 +301,35 @@ class _CapaFormPageState extends State<CapaFormPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          // AnimatedBuilder memiliki listener sendiri → update real-time tanpa bergantung setState parent
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
+              if (belowMin) {
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
+              } else if (maxLength != null) {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),

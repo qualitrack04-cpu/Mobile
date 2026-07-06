@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:capa/domain/usecases/get_capas.dart';
 import 'package:capa/domain/usecases/get_capa_detail.dart';
 import 'package:capa/domain/usecases/create_capa.dart';
@@ -70,7 +71,26 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
   // ✅ handler baru untuk update status dari card
   Future<void> _onUpdateCapaStatus(UpdateCapaStatusEvent event, Emitter<CapaState> emit) async {
     try {
-      await repository.updateCapaStatus(id: event.id, status: event.status);
+      if (event.status == 'Closed') {
+        final prefs = await SharedPreferences.getInstance();
+        String userId = prefs.getString('user_id') ?? '';
+        
+        // ASP.NET Core JSON parser strict require valid Guid format (36 chars with hyphens)
+        // If not valid, it throws: "The JSON value could not be converted to System.Nullable`1[System.Guid]"
+        if (userId.length != 36) {
+          userId = '00000000-0000-0000-0000-000000000001'; // Fallback valid guid to avoid crash
+        }
+
+        await closeoutCapa(
+          id: event.id,
+          isEffective: true,
+          verificationNotes: 'Auto-closed from list status update',
+          verifiedById: userId,
+        );
+      } else {
+        await repository.updateCapaStatus(id: event.id, status: event.status);
+      }
+      
       final capas = await getCapas();
       emit(CapaLoaded(capas: capas));
     } catch (e) {

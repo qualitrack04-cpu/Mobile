@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../bloc/audit_bloc.dart';
@@ -41,6 +42,20 @@ class _AuditListViewState extends State<_AuditListView> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _loadUserRole();
+  }
+
+  String _userRole = '';
+  String _userName = '';
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userRole = prefs.getString('user_role') ?? '';
+        _userName = prefs.getString('user_name') ?? '';
+      });
+    }
   }
 
   @override
@@ -54,10 +69,22 @@ class _AuditListViewState extends State<_AuditListView> {
   List<AuditEntity> _lastAudits = [];
   bool _isFirstLoad = true;
 
-  List<AuditEntity> _applyFilter(List<AuditEntity> audits, bool isPriority) {
-    final filtered = isPriority
-        ? audits.where((e) => e.isPriority).toList()
-        : List<AuditEntity>.from(audits);
+  List<AuditEntity> _applyFilter(List<AuditEntity> audits) {
+    final now =  DateTime.now();
+
+    final visibleAudits = audits.where((e) {
+      if (!e.isFinished) return true;
+      if (e.completedAt == null) return true;
+      return now.difference(e.completedAt!).inHours <= 24;
+    }).toList();
+
+    final filtered = _isPrioritySelected
+        ? visibleAudits.where((e) {
+            final todayDate = DateTime(now.year, now.month, now.day);
+            final bool isOverdue = !e.isFinished && e.date.isBefore(todayDate);
+            return e.isPriority || isOverdue;
+          }).toList()
+        : List<AuditEntity>.from(visibleAudits);
 
     filtered.sort((a, b) {
       if (a.isFinished == b.isFinished) return 0;
@@ -76,6 +103,7 @@ class _AuditListViewState extends State<_AuditListView> {
       backgroundColor: AppColors.background,
 
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.surface,
         elevation: 0,
         title: Text(
@@ -116,33 +144,35 @@ class _AuditListViewState extends State<_AuditListView> {
         ],
       ),
 
-      floatingActionButton: SizedBox(
-        width: fabSize,
-        height: fabSize,
-        child: FloatingActionButton(
-          backgroundColor: AppColors.primaryLight,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(fabSize * 0.25),
-          ),
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<AuditBloc>(),
-                  child: const AuditFormPage(),
+      floatingActionButton: _userRole.startsWith('Auditor')
+          ? null
+          : SizedBox(
+              width: fabSize,
+              height: fabSize,
+              child: FloatingActionButton(
+                backgroundColor: AppColors.primaryLight,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(fabSize * 0.25),
+                ),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<AuditBloc>(),
+                        child: const AuditFormPage(),
+                      ),
+                    ),
+                  );
+                },
+                child: Icon(
+                  Icons.add,
+                  size: fabSize * 0.45,
+                  color: Colors.white,
                 ),
               ),
-            );
-          },
-          child: Icon(
-            Icons.add,
-            size: fabSize * 0.45,
-            color: Colors.white,
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -265,7 +295,7 @@ class _AuditListViewState extends State<_AuditListView> {
           ),
         );
 
-        final displayList = isLoading ? skeletonList : _applyFilter(audits, isPriority);
+        final displayList = isLoading ? skeletonList : _applyFilter(audits);
 
         // ✅ FIX: Hanya tampilkan "No Audit Data" kalau sudah selesai loading
         // dan benar-benar kosong
@@ -302,7 +332,7 @@ class _AuditListViewState extends State<_AuditListView> {
                 return AuditCard(
                   audit: audit,
 
-                  onEdit: () async {
+                  onEdit: _userRole.startsWith('Auditor') ? null : () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -316,19 +346,22 @@ class _AuditListViewState extends State<_AuditListView> {
 
                   onChecklist: audit.isFinished
                       ? null
-                      : () async {
-                          await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: context.read<AuditBloc>(),
-                                child: AuditChecklistPage(audit: audit),
-                              ),
-                            ),
-                          );
-                        },
+                      // Auditor hanya bisa akses checklist audit yang dia jadi PIC-nya
+                      : (_userRole.startsWith('Auditor') && audit.auditorName != _userName)
+                          ? null
+                          : () async {
+                              await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: context.read<AuditBloc>(),
+                                    child: AuditChecklistPage(audit: audit),
+                                  ),
+                                ),
+                              );
+                            },
 
-                  onDelete: () async {
+                  onDelete: _userRole.startsWith('Auditor') ? null : () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(

@@ -23,6 +23,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final _descriptionController = TextEditingController();
   final _scrollController = ScrollController();
   final _formNotifier = ValueNotifier<int>(0);
+  final _titleFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
 
   List<AuditorEntity> _auditors = [];
   bool _isLoadingAuditors = true;
@@ -30,10 +32,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final Map<String, String> _departments = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control' : 'QC',
+    'Packaging' : 'Packaging'
   };
 
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
+  static const String _gmp = 'GMP';
 
   String? _selectedDepartment;
   DateTime? _selectedDate;
@@ -70,7 +75,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
+      _titleController.text.trim().length >= 5 &&
+      _descriptionController.text.trim().length >= 10 &&
       _selectedAuditorId != null &&
       _selectedDepartment != null &&
       _selectedDate != null &&
@@ -92,13 +98,19 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _descriptionController.text = audit.description;
       _selectedAuditorName = audit.auditorName;
       _selectedDepartment = _departments.entries
-          .where((e) => e.value == audit.department)
+          .where((e) => e.value == audit.department || e.key == audit.department)
           .map((e) => e.key)
           .firstOrNull;
+
+      // Fallback: Jika tidak cocok dengan map, tambahkan ke map agar dropdown tidak null
+      if (_selectedDepartment == null && audit.department.isNotEmpty) {
+        _departments[audit.department] = audit.department;
+        _selectedDepartment = audit.department;
+      }
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
-        (t) => t == _iso9001 || t == _iso14001,
+        (t) => t == _iso9001 || t == _iso14001 || t == _gmp,
         orElse: () => '',
       );
 
@@ -115,6 +127,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     // Trigger rebuild FAB setiap kali text field berubah
     _titleController.addListener(() => _formNotifier.value++);
     _descriptionController.addListener(() => _formNotifier.value++);
+    _titleFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
   }
 
   @override
@@ -123,6 +137,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _descriptionController.dispose();
     _scrollController.dispose();
     _formNotifier.dispose();
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
     super.dispose();
   }
 
@@ -307,6 +323,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     _buildTextField(
                       label: 'TITLE',
                       controller: _titleController,
+                      focusNode: _titleFocus,
                       hint: 'Input audit title',
                     ),
                     _buildAuditorDropdown(),
@@ -419,7 +436,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   'choose an auditor',
                   style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled),
                 ),
-                items: _auditors.where((a) => a.role == 'Auditor').map((auditor) {
+                items: _auditors.where((a) => a.role.startsWith('Auditor')).map((auditor) {
                   return DropdownMenuItem<String>(
                     value: auditor.id,
                     child: Column(
@@ -431,7 +448,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                           style: GoogleFonts.inter(fontSize: 13, color: Colors.black87),
                         ),
                         Text(
-                          auditor.role,
+                          auditor.role == 'Auditor' || auditor.role == 'AuditorInternal' ? 'Auditor Internal' : auditor.role,
                           style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
                         ),
                       ],
@@ -457,8 +474,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
   }) {
+    const int minLength = 5;
+    const int maxLength = 200;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -479,15 +500,44 @@ class _AuditFormPageState extends State<AuditFormPage> {
           const SizedBox(height: 12),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.next,
             scrollPadding: const EdgeInsets.only(bottom: 120),
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
               border: InputBorder.none,
               isDense: true,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              final int len = controller.text.length;
+              final bool belowMin = len < minLength;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
+              if (belowMin) {
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
+              } else {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
+                charHint = '$len/$maxLength characters';
+                hintColor = AppColors.textDisabled;
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
@@ -532,6 +582,18 @@ class _AuditFormPageState extends State<AuditFormPage> {
               _formNotifier.value++;
             }),
             title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primaryLight,
+          ),
+          RadioListTile<String>(
+            value: _gmp,
+            groupValue: _selectedIso,
+            onChanged: (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
+            title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryLight,
@@ -588,12 +650,17 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   Widget _buildDatePicker() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDate = (_selectedDate != null && _selectedDate!.isBefore(today))
+        ? _selectedDate!
+        : today;
     return InkWell(
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
-          initialDate: _selectedDate ?? DateTime.now(),
-          firstDate: DateTime.now(),
+          initialDate: _selectedDate ?? today,
+          firstDate: firstDate,
           lastDate: DateTime(2030),
           builder: (context, child) {
             return Theme(
@@ -653,6 +720,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   Widget _buildDescriptionField() {
+    const int minLength = 10;
+    const int maxLength = 500;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -673,7 +743,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           const SizedBox(height: 12),
           TextField(
             controller: _descriptionController,
+            focusNode: _descriptionFocus,
             maxLines: 2,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.done,
             scrollPadding: const EdgeInsets.only(bottom: 120),
@@ -682,6 +755,27 @@ class _AuditFormPageState extends State<AuditFormPage> {
               hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
               border: InputBorder.none,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([_descriptionController, _descriptionFocus]),
+            builder: (context, _) {
+              if (!_descriptionFocus.hasFocus) return const SizedBox.shrink();
+              final int len = _descriptionController.text.length;
+              final bool belowMin = len < minLength;
+              final String charHint;
+              final Color hintColor;
+              if (belowMin) {
+                charHint = '$len/$minLength characters';
+                hintColor = Colors.orange;
+              } else {
+                charHint = '$len/$maxLength characters';
+                hintColor = AppColors.textDisabled;
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),

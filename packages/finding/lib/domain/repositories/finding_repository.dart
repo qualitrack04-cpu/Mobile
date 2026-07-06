@@ -14,7 +14,8 @@ abstract class FindingRepository {
     required String description,
     required String clauseRef,
     required String department,
-    String? auditorName,
+    required String reporter,
+    String? reporterId,
     String? sessionId,          // ✅ TAMBAH
     String? checklistItemId,    // ✅ TAMBAH
   });
@@ -25,6 +26,8 @@ abstract class FindingRepository {
     required String description,
     required String clauseRef,
     required String department,
+    required String reporter,
+    String? reporterId,
   });
 
   Future<void> updateFindingStatus({

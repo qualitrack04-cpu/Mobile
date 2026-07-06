@@ -8,6 +8,7 @@ import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
@@ -31,22 +32,28 @@ class FindingFormPage extends StatefulWidget {
 
 class _FindingFormPageState extends State<FindingFormPage> {
   final _titleController = TextEditingController();
+  final _reporterController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _reporterFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
   String? _selectedDepartment;
-  FindingCategory _selectedCategory = FindingCategory.majorNC;
-
-  // ✅ Simpan path gambar asli dari device
+  FindingCategory? _selectedCategory;
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
   bool get _isFormValid =>
-      _titleController.text.trim().isNotEmpty &&
-      _descriptionController.text.trim().isNotEmpty &&
-      _selectedDepartment != null;
+      _titleController.text.trim().length >= 5 &&
+      _reporterController.text.trim().isNotEmpty &&
+      _descriptionController.text.trim().length >= 10 &&
+      _selectedDepartment != null &&
+      _selectedCategory != null;
 
   final Map<String, String> _departmentMap = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
+    'Quality Control': 'QC',
+    'Packaging': 'Packaging'
   };
 
   @override
@@ -65,15 +72,39 @@ class _FindingFormPageState extends State<FindingFormPage> {
         _selectedDepartment = widget.initialDepartment;
       }
     }
+    // Selalu isi reporter dengan auditorName jika tersedia
+    if (widget.auditorName != null && widget.auditorName!.isNotEmpty) {
+      _reporterController.text = widget.auditorName!;
+    } else {
+      _loadUserName();
+    }
     _titleController.addListener(() => setState(() {}));
+    _reporterController.addListener(() => setState(() {}));
     _descriptionController.addListener(() => setState(() {}));
+    _titleFocus.addListener(() => setState(() {}));
+    _reporterFocus.addListener(() => setState(() {}));
+    _descriptionFocus.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _reporterController.dispose();
+    _titleFocus.dispose();
+    _reporterFocus.dispose();
+    _descriptionFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name') ?? 'Unknown User';
+    if (mounted) {
+      setState(() {
+        _reporterController.text = name;
+      });
+    }
   }
 
   // ✅ Tampilkan pilihan: Kamera atau Galeri
@@ -255,8 +286,13 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'TITLE',
                         controller: _titleController,
+                        focusNode: _titleFocus,
                         hint: 'Enter the finding title...',
+                        minLength: 5,
+                        maxLength: 150,
                       ),
+                      _buildDivider(),
+                      _buildReporterField(),
                       _buildDivider(),
                       _buildCategoryDropdown(),
                       _buildDivider(),
@@ -265,8 +301,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
                       _buildTextField(
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
+                        focusNode: _descriptionFocus,
                         hint: 'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
+                        minLength: 10,
+                        maxLength: 1000,
                       ),
                       _buildDivider(),
                       _buildEvidenceSection(),
@@ -287,11 +326,46 @@ class _FindingFormPageState extends State<FindingFormPage> {
   Widget _buildDivider() =>
       const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
 
+  Widget _buildReporterField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'REPORTER',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _reporterController.text,
+                  style: const TextStyle(fontSize: 15, color: Colors.black87),
+                ),
+              ),
+              const Icon(Icons.lock_outline, size: 16, color: Colors.black26),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required String hint,
     int maxLines = 1,
+    int? minLength,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -307,7 +381,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            focusNode: focusNode,
             maxLines: maxLines,
+            maxLength: maxLength,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -315,6 +392,34 @@ class _FindingFormPageState extends State<FindingFormPage> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
+          ),
+          AnimatedBuilder(
+            animation: Listenable.merge([controller, focusNode]),
+            builder: (context, _) {
+              final int len = controller.text.length;
+              final bool belowMin = minLength != null && len < minLength;
+              
+              String charHint = '';
+              Color hintColor = Colors.transparent;
+
+              if (belowMin) {
+                charHint = len == 0 
+                  ? 'Required (Min. $minLength characters)'
+                  : 'Min. $minLength characters ($len/$minLength)';
+                hintColor = Colors.red;
+              } else if (maxLength != null) {
+                if (!focusNode.hasFocus) return const SizedBox.shrink();
+                charHint = '$len/$maxLength characters';
+                hintColor = Colors.black38;
+              } else {
+                return const SizedBox.shrink();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+              );
+            },
           ),
         ],
       ),
@@ -342,6 +447,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
             child: DropdownButton<FindingCategory>(
               value: _selectedCategory,
               isExpanded: true,
+              hint: const Text('Select Category',
+                  style: TextStyle(color: Colors.black26, fontSize: 14)),
               icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
               items: categories.entries.map((e) {
                 return DropdownMenuItem(
@@ -606,7 +713,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  void _onSubmit(BuildContext context) {
+  void _onSubmit(BuildContext context) async {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -626,14 +733,26 @@ class _FindingFormPageState extends State<FindingFormPage> {
           backgroundColor: Colors.orange));
       return;
     }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Category cannot be empty!'),
+          backgroundColor: Colors.orange));
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final reporterId = prefs.getString('user_id');
+
+    if (!context.mounted) return;
 
     context.read<FindingBloc>().add(
           CreateFindingEvent(
-            category: _selectedCategory,
+            category: _selectedCategory!,
             description: _descriptionController.text,
             clauseRef: _titleController.text,
             department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
-            auditorName: widget.auditorName,
+            reporter: _reporterController.text,
+            reporterId: reporterId,
             sessionId: widget.sessionId,           // ✅ TAMBAH
             checklistItemId: widget.checklistItemId, // ✅ TAMBAH
             evidencePaths: _evidenceImages.map((e) => e.path).toList(),

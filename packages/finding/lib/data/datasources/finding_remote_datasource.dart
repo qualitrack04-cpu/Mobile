@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FindingRemoteDatasource {
   final ApiService apiService;
@@ -65,9 +66,82 @@ class FindingRemoteDatasource {
     );
 
     final List<dynamic> data = response.data as List<dynamic>;
-    return data
+    final findings = data
         .map((json) => FindingModel.fromJson(json as Map<String, dynamic>))
         .toList();
+
+    try {
+      final capaResponse = await apiService.client.get('/api/Capa');
+      final capaData = capaResponse.data as List<dynamic>;
+      final now = DateTime.now();
+
+      // Map findingId -> Capa
+      final capaMap = <String, Map<String, dynamic>>{};
+      for (final capa in capaData) {
+        final fId = capa['findingId'] as String?;
+        if (fId != null) {
+          capaMap[fId] = capa as Map<String, dynamic>;
+        }
+      }
+
+      for (int i = 0; i < findings.length; i++) {
+        final finding = findings[i];
+        DateTime? closedTime = finding.capaClosedAt;
+        bool isCapaClosed = finding.isCapaClosed;
+
+        final capa = capaMap[finding.id];
+        if (capa != null) {
+          final statusRaw = capa['status'];
+          const statusIntMap = {0: 'Open', 1: 'In Progress', 2: 'Pending Verification', 3: 'Closed'};
+          const statusStrMap = {
+            'Open': 'Open',
+            'InProgress': 'In Progress',
+            'PendingVerification': 'Pending Verification',
+            'Closed': 'Closed',
+          };
+          final statusStr = statusRaw is int
+              ? (statusIntMap[statusRaw] ?? 'Open')
+              : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
+
+          isCapaClosed = (statusStr == 'Closed');
+
+          if (isCapaClosed) {
+            final verifiedAtStr = capa['closeOut']?['verifiedAt'] as String?;
+            final closedAtStr = capa['closedAt'] as String?;
+            
+            if (closedAtStr != null && closedAtStr.isNotEmpty) {
+              var dateStr = closedAtStr;
+              if (!dateStr.endsWith('Z')) dateStr += 'Z';
+              closedTime = DateTime.tryParse(dateStr);
+            } else if (verifiedAtStr != null && verifiedAtStr.isNotEmpty) {
+              var dateStr = verifiedAtStr;
+              if (!dateStr.endsWith('Z')) dateStr += 'Z';
+              closedTime = DateTime.tryParse(dateStr);
+            }
+          }
+        }
+
+        // Recreate the FindingModel with updated capa status
+        findings[i] = FindingModel(
+          id: finding.id,
+          sessionId: finding.sessionId,
+          category: finding.category,
+          description: finding.description,
+          clauseRef: finding.clauseRef,
+          foundAt: finding.foundAt,
+          status: finding.status,
+          department: finding.department,
+          reporter: finding.reporter,
+          reporterId: finding.reporterId,
+          isCapaClosed: isCapaClosed,
+          capaClosedAt: closedTime,
+        );
+      }
+    } catch (e) {
+      print('Error merging CAPA data into findings: $e');
+    }
+
+    return findings;
   }
 
   Future<FindingModel> getFindingDetail(String id) async {
@@ -80,7 +154,8 @@ class FindingRemoteDatasource {
     required String description,
     required String clauseRef,
     required String department,
-    String? auditorName,
+    required String reporter,
+    String? reporterId,
     String? sessionId,
     String? checklistItemId,
   }) async {
@@ -94,7 +169,8 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
-        'auditorName': auditorName ?? '',
+        'reporterName': reporter,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -106,6 +182,8 @@ class FindingRemoteDatasource {
     required String description,
     required String clauseRef,
     required String department,
+    required String reporter,
+    String? reporterId,
   }) async {
     final response = await apiService.client.put(
       '/api/Finding/$id',
@@ -115,6 +193,8 @@ class FindingRemoteDatasource {
         'category': category.toBackendString(),
         'description': description,
         'clauseRef': clauseRef,
+        'reporterName': reporter,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);

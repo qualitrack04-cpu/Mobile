@@ -61,7 +61,8 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         description: event.description,
         clauseRef: event.clauseRef,
         department: event.department,
-        auditorName: event.auditorName,
+        reporter: event.reporter,
+        reporterId: event.reporterId,
         sessionId: event.sessionId,             // ✅ TAMBAH
         checklistItemId: event.checklistItemId, // ✅ TAMBAH
       );
@@ -96,6 +97,8 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
         description: event.description,
         clauseRef: event.clauseRef,
         department: event.department,
+        reporter: event.reporter,
+        reporterId: event.reporterId,
       );
 
       // Upload new evidence photos if any

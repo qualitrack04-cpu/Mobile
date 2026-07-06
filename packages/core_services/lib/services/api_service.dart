@@ -2,11 +2,23 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://be.qualitrack.labs.it.pens.ac.id'; 
-  // Untuk device fisik: ganti dengan IP lokal, misal 'http://192.168.1.x:5000'
-  // Untuk production: ganti dengan URL server
+  static const String baseUrl = 'http://173.249.63.40:5144'; 
+  // Untuk server dika :'http://173.249.63.40:5144'
+  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
+
+  static String fixImageUrl(String url) {
+    if (url.startsWith('http://localhost:5144')) {
+      return url.replaceFirst('http://localhost:5144', baseUrl);
+    }
+    if (url.startsWith('/uploads')) {
+      return '$baseUrl$url';
+    }
+    return url;
+  }
 
   late final Dio _dio;
+
+  void Function()? onUnauthorized;
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -39,7 +51,11 @@ class ApiService {
           print('ERROR RESPONSE: ${error.response?.data}');
           print('STATUS CODE: ${error.response?.statusCode}');
           if (error.response?.statusCode == 401) {
-            // TODO: redirect ke halaman login
+            // Jangan trigger auto-logout jika 401 berasal dari percobaan login
+            if (!error.requestOptions.path.contains('/api/Auth/login')) {
+              // Server sudah nyala, trigger auto-logout
+              onUnauthorized?.call();
+            }
           }
           return handler.next(error);
         },

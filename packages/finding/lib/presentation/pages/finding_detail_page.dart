@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:finding/domain/entities/finding.dart';
-import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
 import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:core_services/services/api_service.dart';
 
 class FindingDetailPage extends StatelessWidget {
   final String findingId;
@@ -201,24 +201,21 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
-                  if (finding.auditorName != null &&
-                      finding.auditorName!.isNotEmpty) ...[
-                    _buildInfoRow(
-                      icon: Icons.person_outline,
-                      label: 'AUDITOR',
-                      value: finding.auditorName!,
-                    ),
-                    const SizedBox(height: 10),
-                  ],
+                  _buildInfoRow(
+                    icon: Icons.person_outline,
+                    label: 'Reporter',
+                    value: finding.reporter,
+                  ),
+                  const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.business_outlined,
-                    label: 'DEPT',
-                    value: finding.department == 'Produksi' ? 'Production' : finding.department,
+                    label: 'Dept',
+                    value: finding.department == 'Produksi' ? 'Production' : (finding.department == 'QC' ? 'Quality Control' : finding.department),
                   ),
                   const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.calendar_today_outlined,
-                    label: 'DATE',
+                    label: 'Date',
                     value:
                         '${finding.foundAt.toLocal().day} ${_getMonth(finding.foundAt.toLocal().month)} ${finding.foundAt.toLocal().year}',
                   ),
@@ -366,7 +363,7 @@ class _EvidenceThumbnail extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                url,
+                ApiService.fixImageUrl(url),
                 fit: BoxFit.cover,
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;
@@ -478,7 +475,7 @@ class _EvidenceGalleryPageState extends State<_EvidenceGalleryPage> {
           return InteractiveViewer(
             child: Center(
               child: Image.network(
-                url,
+                ApiService.fixImageUrl(url),
                 fit: BoxFit.contain,
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;

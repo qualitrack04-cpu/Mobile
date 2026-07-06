@@ -23,14 +23,20 @@ class AuditCard extends StatelessWidget {
     final bool isFinished = audit.isFinished;
     final bool isPriority = audit.isPriority;
     final double sw = MediaQuery.of(context).size.width;
-    final double hMargin = sw * 0.05; // ~18px di 360px, ~21px di 420px
+    final double hMargin = sw * 0.05;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final bool isOverdue = !isFinished && audit.date.isBefore(todayDate);
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: hMargin, vertical: 10),
-
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
+        border: isOverdue
+            ? Border.all(color: AppColors.danger, width: 1.5)
+            : null,
 
         boxShadow: [
           BoxShadow(
@@ -41,12 +47,11 @@ class AuditCard extends StatelessWidget {
         ],
       ),
 
-      // ✅ IntrinsicHeight: tinggi card mengikuti konten, tidak hardcoded
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildDateSection(isFinished, isPriority, sw),
+            _buildDateSection(isFinished, isPriority, sw, isOverdue),
 
             Expanded(
               child: Padding(
@@ -56,7 +61,7 @@ class AuditCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-                    _buildTitleRow(isFinished),
+                    _buildTitleRow(isFinished, isOverdue),
                     const SizedBox(height: 14),
                     _buildMetaRow(isFinished),
                     const SizedBox(height: 18),
@@ -71,18 +76,23 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection(bool isFinished, bool isPriority, double sw) {
+  Widget _buildDateSection(bool isFinished, bool isPriority, double sw, bool isOverdue) {
     Color sectionColor;
 
     if (audit.id.isEmpty) {
       sectionColor = Colors.grey.shade300; // Skeleton color
     } else if (isFinished) {
       sectionColor = AppColors.primaryMuted;
+    } else if (isOverdue) {
+      sectionColor = AppColors.danger;
     } else if (isPriority) {
       sectionColor = AppColors.primaryLight;
     } else {
       sectionColor = const Color(0xFF7D8494);
     }
+
+    // Hitung radius dalam agar lengkungannya pas dan tidak ada celah putih
+    final double innerRadius = isOverdue ? 16.5 : 18.0;
 
     return Container(
       // ✅ Hapus width & height hardcoded, pakai constraints minimum saja
@@ -91,9 +101,9 @@ class AuditCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: sectionColor,
 
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(18),
-          bottomLeft: Radius.circular(18),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(innerRadius),
+          bottomLeft: Radius.circular(innerRadius),
         ),
       ),
 
@@ -142,37 +152,60 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleRow(bool isFinished) {
+  Widget _buildTitleRow(bool isFinished, bool isOverdue) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-
       children: [
         Expanded(
-          child: Text(
-            audit.title,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isFinished
-                  ? const Color(0xFF7A93AA)
-                  : AppColors.primary,
-              height: 1.2,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (isOverdue) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF2F2), // Latar pink muda (Red 50)
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFBD5D5), // Border pink (Red 100)
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'Overdue',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFC81E1E), // Teks merah tua (Red 700)
+                    ),
+                  ),
+                ),
+              ],
+              Text(
+                audit.title,
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: isFinished
+                      ? const Color(0xFF7A93AA)
+                      : AppColors.primary,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
 
-        if (!isFinished && audit.id.isNotEmpty)
+        if (!isFinished && audit.id.isNotEmpty && onDelete != null)
           GestureDetector(
             onTap: onDelete,
-
             child: Container(
               padding: const EdgeInsets.all(6),
-
               decoration: BoxDecoration(
                 color: AppColors.dangerLight,
                 borderRadius: BorderRadius.circular(8),
               ),
-
               child: const Icon(
                 Icons.delete_outline,
                 color: AppColors.danger,
@@ -191,36 +224,45 @@ class AuditCard extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.apartment_outlined, size: 16, color: metaColor),
-        const SizedBox(width: 6),
-
-        Flexible(
-          child: Text(
-            audit.department == 'Produksi' ? 'Production' : audit.department,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: metaColor,
-              fontWeight: FontWeight.w500,
-            ),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.apartment_outlined, size: 16, color: metaColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  audit.department == 'Produksi' ? 'Production' : audit.department,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: metaColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-
-        const SizedBox(width: 18),
-
-        Icon(Icons.person_outline, size: 16, color: metaColor),
-        const SizedBox(width: 6),
-
+        const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            audit.auditorName,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: metaColor,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, size: 16, color: metaColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  audit.auditorName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: metaColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -268,43 +310,45 @@ class AuditCard extends StatelessWidget {
 
     return Row(
       children: [
-        // ✅ flex 2→3 supaya "Edit" tidak kepotong di layar sempit
-        Expanded(
-          flex: 3,
+        if (onEdit != null) ...[
+          // ✅ flex 2→3 supaya "Edit" tidak kepotong di layar sempit
+          Expanded(
+            flex: 3,
 
-          child: SizedBox(
-            height: 46,
+            child: SizedBox(
+              height: 46,
 
-            child: ElevatedButton(
-              onPressed: onEdit,
+              child: ElevatedButton(
+                onPressed: onEdit,
 
-              style: ElevatedButton.styleFrom(
-                elevation: 2,
-                backgroundColor: const Color(0xFFE9EEF3),
-                foregroundColor: Colors.black87,
-                // ✅ padding horizontal dikurangi supaya teks tidak terpotong
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  backgroundColor: const Color(0xFFE9EEF3),
+                  foregroundColor: Colors.black87,
+                  // ✅ padding horizontal dikurangi supaya teks tidak terpotong
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
 
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
 
-              child: Text(
-                'Edit',
-                // ✅ font size dikecilkan sedikit & maxLines: 1 + ellipsis
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                child: Text(
+                  'Edit',
+                  // ✅ font size dikecilkan sedikit & maxLines: 1 + ellipsis
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
+        ],
 
         Expanded(
           flex: 5,
@@ -319,6 +363,8 @@ class AuditCard extends StatelessWidget {
                 elevation: 3,
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.grey.shade500,
                 // ✅ padding dikurangi supaya teks tidak terpotong di layar sempit
                 padding: const EdgeInsets.symmetric(horizontal: 8),
 
