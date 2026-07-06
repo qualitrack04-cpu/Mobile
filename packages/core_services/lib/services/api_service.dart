@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://173.249.63.40:5144'; 
-  // Untuk railway :'https://backendqualitrack-production.up.railway.app'
+  // Untuk server dika :'http://173.249.63.40:5144'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 
   static String fixImageUrl(String url) {
