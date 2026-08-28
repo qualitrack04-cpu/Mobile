@@ -103,7 +103,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       children: [
                         _buildProfileHeader(),
-                        const SizedBox(height: 24),
                         _buildInfoCard(),
                         _buildQualityScore(),
                         _buildSuccessRate(),
@@ -213,7 +212,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileHeader() {
     return Padding(
-      padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
@@ -266,7 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildInfoCard() {
     return Padding(
-      padding: const EdgeInsets.only(left: 5, right: 5, bottom: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
         child: Column(
@@ -289,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildInfoField({required String label, required String value}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -324,7 +323,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildQualityScore() {
     return Padding(
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 5),
+      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsetsGeometry.symmetric(
