@@ -106,6 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 24),
                         _buildInfoCard(),
                         _buildQualityScore(),
+                        _buildSuccessRate(),
                       ],
                     ),
                   ),
@@ -326,7 +327,10 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 5),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsetsGeometry.symmetric(horizontal: 18, vertical: 18),
+        padding: const EdgeInsetsGeometry.symmetric(
+          horizontal: 20,
+          vertical: 20,
+        ),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(10),
@@ -338,32 +342,39 @@ class _ProfilePageState extends State<ProfilePage> {
             Text(
               'Quality Score',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 20),
             Center(
-              child: Container(
+              child: SizedBox(
                 width: 160,
                 height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: Color(0xFFF59E0B),
-                      width: 12,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '92%',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textPrimary,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: CircularProgressIndicator(
+                        value: 0.92,
+                        strokeWidth: 12,
+                        color: const Color(0xFFF59E0B),
+                        backgroundColor: AppColors.borderLight,
+                      ),
                     ),
-                  ),
+
+                    Text(
+                      '92%',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -375,6 +386,62 @@ class _ProfilePageState extends State<ProfilePage> {
                   fontSize: 16,
                   color: AppColors.textSecondary,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuccessRate() {
+    return Padding(
+      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.textPrimary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Success Rate',
+              style: GoogleFonts.inter(color: AppColors.surface, fontSize: 18),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '90%',
+                  style: GoogleFonts.inter(
+                    color: AppColors.surface,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '18/20',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textDisabled,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: LinearProgressIndicator(
+                value: 0.9,
+                minHeight: 10,
+                backgroundColor: AppColors.textMuted,
+                color: const Color(0xFFF59E0B),
               ),
             ),
           ],
