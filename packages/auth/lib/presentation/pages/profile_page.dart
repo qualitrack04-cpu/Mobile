@@ -47,7 +47,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String _formatRole(String role) {
-    if (role == 'Auditor' || role == 'AuditorInternal') return 'Auditor Internal';
+    if (role == 'Auditor' || role == 'AuditorInternal')
+      return 'Auditor Internal';
     if (role.isEmpty) return '-';
     return role
         .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
@@ -104,6 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         _buildProfileHeader(),
                         const SizedBox(height: 24),
                         _buildInfoCard(),
+                        _buildQualityScore(),
                       ],
                     ),
                   ),
@@ -209,82 +211,84 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildProfileHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 48,
-            backgroundColor: AppColors.borderLight,
-backgroundImage:
-                _photoPath.isNotEmpty
-                    ? NetworkImage(
-                        ApiService.fixImageUrl(_photoPath),
+    return Padding(
+      padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: AppColors.borderLight,
+              backgroundImage:
+                  _photoPath.isNotEmpty
+                      ? NetworkImage(ApiService.fixImageUrl(_photoPath))
+                      : null,
+              child:
+                  _photoPath.isEmpty
+                      ? Icon(
+                        Icons.person,
+                        size: 52,
+                        color: AppColors.primaryMuted,
                       )
-                    : null,
-            child:
-                _photoPath.isEmpty
-                    ? Icon(
-                      Icons.person,
-                      size: 52,
-                      color: AppColors.primaryMuted,
-                    )
-                    : null,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            _name.isEmpty ? '-' : _name,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+                      : null,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _formatRole(_role).toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-              letterSpacing: 1.5,
+            const SizedBox(height: 14),
+            Text(
+              _name.isEmpty ? '-' : _name,
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              _formatRole(_role).toUpperCase(),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildInfoCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildInfoField(
-            label: 'Username',
-            value: _name.isEmpty ? '-' : _name,
-          ),
-          Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(label: 'Email', value: _email.isEmpty ? '-' : _email),
-          Divider(height: 1, color: AppColors.borderLight),
-          _buildInfoField(label: 'Role', value: _formatRole(_role)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(left: 5, right: 5, bottom: 5),
+      child: Container(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(18)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoField(
+              label: 'Username',
+              value: _name.isEmpty ? '-' : _name,
+            ),
+            _buildInfoField(
+              label: 'Email',
+              value: _email.isEmpty ? '-' : _email,
+            ),
+            _buildInfoField(label: 'Role', value: _formatRole(_role)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildInfoField({required String label, required String value}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -299,11 +303,10 @@ backgroundImage:
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.borderLight),
             ),
             child: Text(
               value,
@@ -314,6 +317,68 @@ backgroundImage:
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQualityScore() {
+    return Padding(
+      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 5),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsetsGeometry.symmetric(horizontal: 18, vertical: 18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderLight, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quality Score',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: Color(0xFFF59E0B),
+                      width: 12,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '92%',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Text(
+                'Excellent',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
