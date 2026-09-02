@@ -22,6 +22,29 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
   bool _showMenu = false;
 
+  // Dummy data — nanti diganti dari API
+  final List<RecentActivityItem> _activities = [
+    RecentActivityItem(
+      type: 'success',
+      title: 'Closed Audit #AQ-4092 - Manufacturing Site A',
+      subtitle: 'CAPA dan Finding berhasil diselesaikan',
+      timestamp: DateTime.now().subtract(const Duration(hours: 5, minutes: 15)),
+    ),
+    RecentActivityItem(
+      type: 'update',
+      title: 'Updated CAPA Implementation Plan for Log #X22',
+      subtitle: 'Status CAPA diperbarui',
+      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2, minutes: 40)),
+    ),
+    RecentActivityItem(
+      type: 'critical',
+      title: 'Major Non-Conformity Identified - Audit #NC-551',
+      subtitle: 'Card overdue berhasil diselesaikan',
+      timestamp: DateTime(2023, 11, 12),
+    ),
+  ];
+  final bool _activitiesLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +129,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         _buildInfoCard(),
                         _buildQualityScore(),
                         _buildSuccessRate(),
+                        _buildAuditStats(17, 1),
+                        _buildRecentActivity(),
                       ],
                     ),
                   ),
@@ -449,6 +474,296 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildAuditStats(int onTime, int overdue) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 5,
+      vertical: 10,
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            value: onTime,
+            label: 'ON TIME',
+            icon: Icons.alarm_on_outlined,
+            iconColor: const Color(0xFF16A34A),
+          ),
+        ),
+
+        const SizedBox(width: 14),
+
+        Expanded(
+          child: _buildStatCard(
+            value: overdue,
+            label: 'OVERDUE',
+            icon: Icons.event_busy_outlined,
+            iconColor: const Color(0xFFF04424),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildStatCard({
+  required int value,
+  required String label,
+  required IconData icon,
+  required Color iconColor,
+}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 20,
+      vertical: 24,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: AppColors.borderLight,
+        width: 1,
+      ),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value.toString(),
+              style: GoogleFonts.inter(
+                fontSize: 32,
+                color: AppColors.textPrimary,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+
+        Icon(
+          icon,
+          size: 42,
+          color: iconColor,
+        ),
+      ],
+    ),
+  );
+}
+
+  // ─────────────────────────────────────────────
+  // Recent Activity
+  // ─────────────────────────────────────────────
+  Widget _buildRecentActivity() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderLight, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recent Activity',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_activitiesLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_activities.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.history_rounded,
+                        size: 40,
+                        color: AppColors.borderLight,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Belum ada aktivitas',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textDisabled,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _activities.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  return _buildActivityItem(_activities[index]);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(RecentActivityItem item) {
+    // Konfigurasi per tipe
+    final config = _activityConfig(item.type);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Icon circle
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: config['bgColor'] as Color,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              config['icon'] as IconData,
+              size: 20,
+              color: config['iconColor'] as Color,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Title + subtitle + time
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatActivityTime(item.timestamp),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Badge
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: config['badgeBg'] as Color,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              config['label'] as String,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: config['badgeText'] as Color,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _activityConfig(String type) {
+    switch (type) {
+      case 'success':
+        return {
+          'icon': Icons.check_circle_outline_rounded,
+          'iconColor': AppColors.success,
+          'bgColor': AppColors.successLight,
+          'label': 'SUCCESS',
+          'badgeBg': AppColors.successLight,
+          'badgeText': AppColors.success,
+        };
+      case 'critical':
+        return {
+          'icon': Icons.warning_amber_rounded,
+          'iconColor': AppColors.danger,
+          'bgColor': AppColors.dangerLight,
+          'label': 'CRITICAL',
+          'badgeBg': AppColors.dangerLight,
+          'badgeText': AppColors.danger,
+        };
+      case 'update':
+      default:
+        return {
+          'icon': Icons.edit_note_rounded,
+          'iconColor': const Color(0xFF2563EB),
+          'bgColor': const Color(0xFFEFF6FF),
+          'label': 'UPDATE',
+          'badgeBg': const Color(0xFFEFF6FF),
+          'badgeText': const Color(0xFF2563EB),
+        };
+    }
+  }
+
+  String _formatActivityTime(DateTime? dt) {
+    if (dt == null) return '-';
+    final now = DateTime.now();
+    final local = dt.toLocal();
+    final diff = now.difference(local);
+
+    if (diff.inDays == 0) {
+      // Today — tampilkan jam
+      final h = local.hour.toString().padLeft(2, '0');
+      final m = local.minute.toString().padLeft(2, '0');
+      return 'Today, $h:$m ${local.hour < 12 ? "AM" : "PM"}';
+    } else if (diff.inDays == 1) {
+      final h = local.hour.toString().padLeft(2, '0');
+      final m = local.minute.toString().padLeft(2, '0');
+      return 'Yesterday, $h:$m ${local.hour < 12 ? "AM" : "PM"}';
+    } else {
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${months[local.month]} ${local.day}, ${local.year}';
+    }
+  }
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -506,4 +821,22 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
     );
   }
+}
+
+// ────────────────────────────────────────────────
+// Model lokal: RecentActivityItem
+// Nanti bisa dipindah ke service saat API sudah siap
+// ────────────────────────────────────────────────
+class RecentActivityItem {
+  final String type;        // 'success' | 'update' | 'critical'
+  final String title;
+  final String subtitle;
+  final DateTime? timestamp;
+
+  const RecentActivityItem({
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    this.timestamp,
+  });
 }
