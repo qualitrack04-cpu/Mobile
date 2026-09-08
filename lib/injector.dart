@@ -2,6 +2,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:core_services/services/auth_service.dart';
+import 'package:core_services/services/quality_score_service.dart';
+import 'package:core_services/services/profile_service.dart';
 
 // Finding
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
@@ -84,6 +86,8 @@ Future<void> init() async {
   // ===== AUDIT =====
   sl.registerLazySingleton(() => ApiService());
   sl.registerLazySingleton(() => AuthService(apiService: sl()));
+  sl.registerLazySingleton(() => QualityScoreService(apiService: sl()));
+  sl.registerLazySingleton(() => ProfileService(apiService: sl()));
   sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => AuditorRemoteDatasource(apiService: sl()));

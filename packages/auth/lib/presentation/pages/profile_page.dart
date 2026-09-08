@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
 import 'package:core_services/services/api_service.dart';
+import 'package:core_services/services/quality_score_service.dart';
+import 'package:core_services/services/profile_service.dart';
 import 'package:get_it/get_it.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
@@ -14,7 +16,8 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
   String _name = '';
   String _email = '';
   String _role = '';
@@ -22,33 +25,87 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
   bool _showMenu = false;
 
-  // Dummy data — nanti diganti dari API
-  final List<RecentActivityItem> _activities = [
-    RecentActivityItem(
-      type: 'success',
-      title: 'Closed Audit #AQ-4092 - Manufacturing Site A',
-      subtitle: 'CAPA dan Finding berhasil diselesaikan',
-      timestamp: DateTime.now().subtract(const Duration(hours: 5, minutes: 15)),
-    ),
-    RecentActivityItem(
-      type: 'update',
-      title: 'Updated CAPA Implementation Plan for Log #X22',
-      subtitle: 'Status CAPA diperbarui',
-      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2, minutes: 40)),
-    ),
-    RecentActivityItem(
-      type: 'critical',
-      title: 'Major Non-Conformity Identified - Audit #NC-551',
-      subtitle: 'Card overdue berhasil diselesaikan',
-      timestamp: DateTime(2023, 11, 12),
-    ),
-  ];
-  final bool _activitiesLoading = false;
+  // Quality Score dari API
+  double _qualityScore = 0;
+  bool _qualityScoreLoading = true;
+  late AnimationController _scoreAnimController;
+  late Animation<double> _scoreAnim;
+
+  // KPI dari API
+  UserKpi? _kpi;
+  bool _kpiLoading = true;
+
+  // Recent Activity dari API
+  List<UserRecentActivity> _activities = [];
+  bool _activitiesLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _scoreAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _scoreAnim = Tween<double>(begin: 0, end: 0).animate(
+      CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
+    );
     _loadUserData();
+    _loadQualityScore();
+    _loadKpi();
+    _loadRecentActivities();
+  }
+
+  @override
+  void dispose() {
+    _scoreAnimController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadQualityScore() async {
+    final service = GetIt.instance<QualityScoreService>();
+    final score = await service.getLatestQualityScore();
+    if (mounted) {
+      setState(() {
+        _qualityScore = score ?? 0;
+        _qualityScoreLoading = false;
+      });
+      // Mulai animasi lingkaran dari 0 ke nilai aktual
+      _scoreAnim = Tween<double>(begin: 0, end: _qualityScore / 100).animate(
+        CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
+      );
+      _scoreAnimController.forward(from: 0);
+    }
+  }
+
+  Future<void> _loadKpi() async {
+    final service = GetIt.instance<ProfileService>();
+    final kpi = await service.getKpi();
+    if (mounted) {
+      setState(() {
+        _kpi = kpi;
+        _kpiLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadRecentActivities() async {
+    final service = GetIt.instance<ProfileService>();
+    final activities = await service.getRecentActivity();
+    if (mounted) {
+      setState(() {
+        _activities = activities;
+        _activitiesLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([
+      _loadUserData(),
+      _loadQualityScore(),
+      _loadKpi(),
+      _loadRecentActivities(),
+    ]);
   }
 
   Future<void> _loadUserData() async {
@@ -121,17 +178,21 @@ class _ProfilePageState extends State<ProfilePage> {
               ? const Center(child: CircularProgressIndicator())
               : Stack(
                 children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildProfileHeader(),
-                        _buildInfoCard(),
-                        _buildQualityScore(),
-                        _buildSuccessRate(),
-                        _buildAuditStats(17, 1),
-                        _buildRecentActivity(),
-                      ],
+                  RefreshIndicator(
+                    onRefresh: _refreshAll,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _buildProfileHeader(),
+                          _buildInfoCard(),
+                          _buildQualityScore(),
+                          _buildSuccessRate(),
+                          _buildAuditStats(),
+                          _buildRecentActivity(),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -346,12 +407,27 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// Hitung warna & label berdasarkan nilai score
+  Color _scoreColor(double score) {
+    if (score >= 85) return const Color(0xFF16A34A);  // hijau
+    if (score >= 70) return const Color(0xFFF59E0B);  // kuning
+    if (score >= 50) return const Color(0xFFF97316);  // oranye
+    return const Color(0xFFEF4444);                   // merah
+  }
+
+  String _scoreLabel(double score) {
+    if (score >= 85) return 'Excellent';
+    if (score >= 70) return 'Good';
+    if (score >= 50) return 'Fair';
+    return 'Poor';
+  }
+
   Widget _buildQualityScore() {
     return Padding(
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsetsGeometry.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 20,
         ),
@@ -373,44 +449,87 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 20),
             Center(
-              child: SizedBox(
-                width: 160,
-                height: 160,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
+              child: _qualityScoreLoading
+                  ? const SizedBox(
                       width: 160,
                       height: 160,
-                      child: CircularProgressIndicator(
-                        value: 0.92,
-                        strokeWidth: 12,
-                        color: const Color(0xFFF59E0B),
-                        backgroundColor: AppColors.borderLight,
-                      ),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : AnimatedBuilder(
+                      animation: _scoreAnim,
+                      builder: (context, _) {
+                        final animValue = _scoreAnim.value;
+                        final displayScore = (animValue * 100).toStringAsFixed(0);
+                        final color = _scoreColor(_qualityScore);
+                        return SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                width: 160,
+                                height: 160,
+                                child: CircularProgressIndicator(
+                                  value: animValue,
+                                  strokeWidth: 12,
+                                  color: color,
+                                  backgroundColor: AppColors.borderLight,
+                                  strokeCap: StrokeCap.round,
+                                ),
+                              ),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '$displayScore%',
+                                    style: GoogleFonts.inter(
+                                      color: color,
+                                      fontSize: 38,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Quality Score',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textMuted,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-
-                    Text(
-                      '92%',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textPrimary,
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
             const SizedBox(height: 20),
             Center(
-              child: Text(
-                'Excellent',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              child: _qualityScoreLoading
+                  ? const SizedBox.shrink()
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _scoreColor(_qualityScore),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _scoreLabel(_qualityScore),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: _scoreColor(_qualityScore),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -419,8 +538,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSuccessRate() {
+    final rate = _kpi?.onTimeCompletionRate ?? 0.0;
+    final percentText = '${(rate * 100).toStringAsFixed(0)}%';
+    final onTime = _kpi?.totalCapaClosedOnTime ?? 0;
+    final totalClosed = _kpi?.totalCapaClosed ?? 0;
+    final ratioText = '$onTime/$totalClosed';
+
     return Padding(
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 5, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -441,16 +566,25 @@ class _ProfilePageState extends State<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
+                _kpiLoading
+                    ? const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Text(
+                        percentText,
+                        style: GoogleFonts.inter(
+                          color: AppColors.surface,
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                 Text(
-                  '90%',
-                  style: GoogleFonts.inter(
-                    color: AppColors.surface,
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '18/20',
+                  ratioText,
                   style: GoogleFonts.inter(
                     color: AppColors.textDisabled,
                     fontSize: 12,
@@ -462,7 +596,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: LinearProgressIndicator(
-                value: 0.9,
+                value: _kpiLoading ? 0.0 : rate.clamp(0.0, 1.0),
                 minHeight: 10,
                 backgroundColor: AppColors.textMuted,
                 color: const Color(0xFFF59E0B),
@@ -474,37 +608,39 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildAuditStats(int onTime, int overdue) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 5,
-      vertical: 10,
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            value: onTime,
-            label: 'ON TIME',
-            icon: Icons.alarm_on_outlined,
-            iconColor: const Color(0xFF16A34A),
-          ),
-        ),
+  Widget _buildAuditStats([int? customOnTime, int? customOverdue]) {
+    final onTime = customOnTime ?? _kpi?.totalCapaClosedOnTime ?? 0;
+    final totalClosed = _kpi?.totalCapaClosed ?? 0;
+    final overdue = customOverdue ?? (totalClosed - onTime).clamp(0, 999999);
 
-        const SizedBox(width: 14),
-
-        Expanded(
-          child: _buildStatCard(
-            value: overdue,
-            label: 'OVERDUE',
-            icon: Icons.event_busy_outlined,
-            iconColor: const Color(0xFFF04424),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 5,
+        vertical: 10,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              value: onTime,
+              label: 'ON TIME',
+              icon: Icons.alarm_on_outlined,
+              iconColor: const Color(0xFF16A34A),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 14),
+          Expanded(
+            child: _buildStatCard(
+              value: overdue,
+              label: 'OVERDUE',
+              icon: Icons.event_busy_outlined,
+              iconColor: const Color(0xFFF04424),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
 Widget _buildStatCard({
   required int value,
@@ -634,9 +770,9 @@ Widget _buildStatCard({
     );
   }
 
-  Widget _buildActivityItem(RecentActivityItem item) {
+  Widget _buildActivityItem(UserRecentActivity item) {
     // Konfigurasi per tipe
-    final config = _activityConfig(item.type);
+    final config = _activityConfig(item);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -659,17 +795,25 @@ Widget _buildStatCard({
           ),
           const SizedBox(width: 12),
 
-          // Title + subtitle + time
+          // Title + description + time
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title,
+                  config['title'] as String,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  item.description,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -695,7 +839,7 @@ Widget _buildStatCard({
             child: Text(
               config['label'] as String,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: config['badgeText'] as Color,
                 letterSpacing: 0.5,
@@ -707,35 +851,51 @@ Widget _buildStatCard({
     );
   }
 
-  Map<String, dynamic> _activityConfig(String type) {
-    switch (type) {
-      case 'success':
-        return {
-          'icon': Icons.check_circle_outline_rounded,
-          'iconColor': AppColors.success,
-          'bgColor': AppColors.successLight,
-          'label': 'SUCCESS',
-          'badgeBg': AppColors.successLight,
-          'badgeText': AppColors.success,
-        };
-      case 'critical':
+  Map<String, dynamic> _activityConfig(UserRecentActivity item) {
+    switch (item.activityType) {
+      case 'CapaVerified':
+        final isEffective = !item.description.toLowerCase().contains('tidak');
+        if (isEffective) {
+          return {
+            'icon': Icons.check_circle_outline_rounded,
+            'iconColor': AppColors.success,
+            'bgColor': AppColors.successLight,
+            'label': 'VERIFIED',
+            'badgeBg': AppColors.successLight,
+            'badgeText': AppColors.success,
+            'title': 'CAPA Verified',
+          };
+        } else {
+          return {
+            'icon': Icons.cancel_outlined,
+            'iconColor': AppColors.danger,
+            'bgColor': AppColors.dangerLight,
+            'label': 'UNVERIFIED',
+            'badgeBg': AppColors.dangerLight,
+            'badgeText': AppColors.danger,
+            'title': 'CAPA Unverified',
+          };
+        }
+      case 'FindingReported':
         return {
           'icon': Icons.warning_amber_rounded,
-          'iconColor': AppColors.danger,
-          'bgColor': AppColors.dangerLight,
-          'label': 'CRITICAL',
-          'badgeBg': AppColors.dangerLight,
-          'badgeText': AppColors.danger,
+          'iconColor': const Color(0xFFF59E0B),
+          'bgColor': const Color(0xFFFEF3C7),
+          'label': 'FINDING',
+          'badgeBg': const Color(0xFFFEF3C7),
+          'badgeText': const Color(0xFFB45309),
+          'title': 'Finding Reported',
         };
-      case 'update':
+      case 'CapaAction':
       default:
         return {
-          'icon': Icons.edit_note_rounded,
+          'icon': Icons.task_alt_rounded,
           'iconColor': const Color(0xFF2563EB),
           'bgColor': const Color(0xFFEFF6FF),
-          'label': 'UPDATE',
+          'label': 'ACTION',
           'badgeBg': const Color(0xFFEFF6FF),
           'badgeText': const Color(0xFF2563EB),
+          'title': 'CAPA Action',
         };
     }
   }
@@ -821,22 +981,4 @@ Widget _buildStatCard({
           ),
     );
   }
-}
-
-// ────────────────────────────────────────────────
-// Model lokal: RecentActivityItem
-// Nanti bisa dipindah ke service saat API sudah siap
-// ────────────────────────────────────────────────
-class RecentActivityItem {
-  final String type;        // 'success' | 'update' | 'critical'
-  final String title;
-  final String subtitle;
-  final DateTime? timestamp;
-
-  const RecentActivityItem({
-    required this.type,
-    required this.title,
-    required this.subtitle,
-    this.timestamp,
-  });
 }
