@@ -25,6 +25,8 @@ dependencies:
     path: packages/capa
   core_services:
     path: packages/core_services
+  spc:
+    path: packages/spc
   open_filex: ^4.3.2
   image_picker: ^1.0.7
 
