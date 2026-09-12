@@ -21,6 +21,8 @@ dependencies:
     path: ../capa
   auth:
     path: ../auth
+  spc: 
+    path: ../spc
   google_fonts: ^8.1.0
   core_services:
     path: ../core_services

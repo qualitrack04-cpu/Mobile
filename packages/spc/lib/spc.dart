@@ -1,5 +1,3 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'domain/entities/spc_analysis.dart';
+export 'presentation/pages/history_page.dart';
+export 'presentation/pages/spc_page.dart';

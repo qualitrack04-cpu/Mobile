@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:spc/spc.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -169,9 +170,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     backgroundColor: AppColors.primaryLight,
                     backgroundImage:
                         _photoPath.isNotEmpty
-                            ? NetworkImage(
-                                ApiService.fixImageUrl(_photoPath),
-                              )
+                            ? NetworkImage(ApiService.fixImageUrl(_photoPath))
                             : null,
                     child:
                         _photoPath.isEmpty
@@ -267,6 +266,11 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 12),
               _buildAuditReportList(reports, screenWidth),
               const SizedBox(height: 32),
+
+              _buildSectionTitle('SPC ANALYSIS'),
+              const SizedBox(height: 12),
+              _buildSpcCard(context),
+              const SizedBox(height: 24),
             ],
           ),
         );
@@ -368,7 +372,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: double.infinity,
                         height: 38,
                         child: ElevatedButton(
-                          onPressed: () => _viewPdf(report.sessionId, report.planTitle),
+                          onPressed:
+                              () =>
+                                  _viewPdf(report.sessionId, report.planTitle),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(
                               0xFF00104A,
@@ -431,7 +437,8 @@ class _DashboardPageState extends State<DashboardPage> {
             top: 12,
             right: 12,
             child: GestureDetector(
-              onTap: () => _downloadAndSavePdf(report.sessionId, report.planTitle),
+              onTap:
+                  () => _downloadAndSavePdf(report.sessionId, report.planTitle),
               child: Container(
                 width: 32,
                 height: 32,
@@ -469,7 +476,9 @@ class _DashboardPageState extends State<DashboardPage> {
       final bytes = response.data;
       // Simpan ke direktori temporary (bukan Download)
       final tempDir = await getTemporaryDirectory();
-      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final safeTitle = planTitle
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(' ', '_');
       final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
       await file.writeAsBytes(bytes);
 
@@ -513,9 +522,11 @@ class _DashboardPageState extends State<DashboardPage> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      final safeTitle = planTitle.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final safeTitle = planTitle
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(' ', '_');
       final baseFileName = 'AuditReport_$safeTitle';
-      
+
       File file = File('${dir!.path}/$baseFileName.pdf');
       int counter = 1;
       while (await file.exists()) {
@@ -1215,6 +1226,42 @@ class _DashboardPageState extends State<DashboardPage> {
     ];
     return months[month - 1];
   }
+}
+
+Widget _buildSpcCard(BuildContext context) {
+  return Material(
+    color: AppColors.surface,
+    borderRadius: BorderRadius.circular(8),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SpcPage()),
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'View SPC Analysis',
+              style: GoogleFonts.inter(
+                color: AppColors.action,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward, size: 16, color: AppColors.action),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class PdfThumbnailWidget extends StatefulWidget {
