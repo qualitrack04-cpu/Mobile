@@ -7,9 +7,8 @@ import 'spc_card.dart';
 
 /// Kartu tren analisis SPC: judul, pemilih periode, chart, dan legend.
 ///
-/// Chart-nya digambar manual dengan widget bawaan Flutter supaya package ini
-/// tidak perlu dependensi chart. Kalau nanti butuh tooltip, animasi, atau
-/// sumbu dinamis, ganti bagian [_TrendChart] dengan library chart.
+/// Pemilih periode sengaja tetap tampil saat loading maupun error, supaya
+/// pengguna bisa mengganti periode tanpa harus menunggu atau keluar halaman.
 class SpcTrendCard extends StatelessWidget {
   const SpcTrendCard({
     super.key,
@@ -17,12 +16,18 @@ class SpcTrendCard extends StatelessWidget {
     required this.selectedPeriod,
     required this.periodOptions,
     required this.onPeriodChanged,
+    this.isLoading = false,
+    this.errorMessage,
+    this.onRetry,
   });
 
   final List<SpcAnalysisTrend> data;
-  final String selectedPeriod;
-  final List<String> periodOptions;
-  final ValueChanged<String> onPeriodChanged;
+  final SpcPeriod selectedPeriod;
+  final List<SpcPeriod> periodOptions;
+  final ValueChanged<SpcPeriod> onPeriodChanged;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +70,76 @@ class SpcTrendCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          _TrendChart(data: data),
-          const SizedBox(height: 16),
-          const _TrendLegend(),
+          _buildChartArea(),
         ],
       ),
+    );
+  }
+
+  Widget _buildChartArea() {
+    const double areaHeight = _TrendChart.totalHeight;
+
+    if (isLoading) {
+      return const SizedBox(
+        height: areaHeight,
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      );
+    }
+
+    if (errorMessage != null) {
+      return SizedBox(
+        height: areaHeight,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_off_outlined,
+                size: 28,
+                color: AppColors.textDisabled,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              if (onRetry != null)
+                TextButton(
+                  onPressed: onRetry,
+                  child: Text(
+                    'Coba lagi',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.action,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        _TrendChart(data: data),
+        const SizedBox(height: 16),
+        const _TrendLegend(),
+      ],
     );
   }
 }
@@ -81,23 +151,23 @@ class _PeriodSelector extends StatelessWidget {
     required this.onChanged,
   });
 
-  final String value;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
+  final SpcPeriod value;
+  final List<SpcPeriod> options;
+  final ValueChanged<SpcPeriod> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
+    return PopupMenuButton<SpcPeriod>(
       initialValue: value,
       offset: const Offset(0, 36),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onSelected: onChanged,
       itemBuilder: (context) => options
           .map(
-            (option) => PopupMenuItem<String>(
+            (option) => PopupMenuItem<SpcPeriod>(
               value: option,
               child: Text(
-                option,
+                option.label,
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppColors.textPrimary,
@@ -116,7 +186,7 @@ class _PeriodSelector extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              value,
+              value.label,
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -141,32 +211,59 @@ class _TrendChart extends StatelessWidget {
 
   final List<SpcAnalysisTrend> data;
 
-  static const List<int> _axisTicks = [20, 15, 10, 5, 0];
   static const double _chartHeight = 180;
-  static const double _maxY = 20;
   static const double _labelHeight = 16;
   static const double _barWidth = 22;
+  static const double totalHeight = _chartHeight + _labelHeight + 8;
 
   /// Jumlah bar yang muat di layar. Kalau data lebih banyak dari ini,
   /// area chart bisa digeser ke samping.
   static const int _visibleBars = 6;
 
+  /// Banyaknya jarak antar garis grid. Label sumbu = jumlah ini + 1.
+  static const int _intervalCount = 4;
+
+  /// Jarak antar garis grid, dibulatkan ke angka yang enak dibaca.
+  double get _interval {
+    double maxTotal = 0;
+    for (final trend in data) {
+      if (trend.total > maxTotal) maxTotal = trend.total;
+    }
+    if (maxTotal <= 0) return 1;
+
+    final raw = maxTotal / _intervalCount;
+    const steps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
+    for (final step in steps) {
+      if (raw <= step) return step.toDouble();
+    }
+    return (raw / 1000).ceilToDouble() * 1000;
+  }
+
+  double get _maxY => _interval * _intervalCount;
+
+  List<int> get _axisTicks => List.generate(
+        _intervalCount + 1,
+        (i) => (_maxY - i * _interval).round(),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final ticks = _axisTicks;
+    final maxY = _maxY;
+
     return SizedBox(
-      height: _chartHeight + _labelHeight + 8,
+      height: totalHeight,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Sumbu Y sengaja di luar area geser supaya tetap diam.
-          _buildYAxis(),
+          _buildYAxis(ticks),
           const SizedBox(width: 8),
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final int slotCount = data.length < _visibleBars
-                    ? data.length
-                    : _visibleBars;
+                final int slotCount =
+                    data.length < _visibleBars ? data.length : _visibleBars;
                 final double slotWidth = slotCount == 0
                     ? constraints.maxWidth
                     : constraints.maxWidth / slotCount;
@@ -182,7 +279,7 @@ class _TrendChart extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: List.generate(
-                          _axisTicks.length,
+                          ticks.length,
                           (_) => Container(
                             height: 1,
                             color: AppColors.borderLight,
@@ -206,7 +303,7 @@ class _TrendChart extends StatelessWidget {
                                       width: slotWidth,
                                       child: Align(
                                         alignment: Alignment.bottomCenter,
-                                        child: _buildBar(trend),
+                                        child: _buildBar(trend, maxY),
                                       ),
                                     ),
                                   )
@@ -250,16 +347,16 @@ class _TrendChart extends StatelessWidget {
 
   /// Label sumbu Y digeser setengah tinggi teks ke atas supaya titik
   /// tengahnya sejajar dengan garis grid.
-  Widget _buildYAxis() {
+  Widget _buildYAxis(List<int> ticks) {
     return SizedBox(
-      width: 22,
+      width: 24,
       height: _chartHeight + _labelHeight,
       child: Transform.translate(
         offset: const Offset(0, -_labelHeight / 2),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
-          children: _axisTicks
+          children: ticks
               .map(
                 (tick) => SizedBox(
                   height: _labelHeight,
@@ -278,7 +375,7 @@ class _TrendChart extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(SpcAnalysisTrend trend) {
+  Widget _buildBar(SpcAnalysisTrend trend, double maxY) {
     // Urutan dari atas ke bawah, kebalikan dari urutan tumpukan visual.
     final segments = <MapEntry<SpcStatus, double>>[
       MapEntry(SpcStatus.unstable, trend.unstable),
@@ -296,7 +393,7 @@ class _TrendChart extends StatelessWidget {
           children: segments
               .map(
                 (segment) => Container(
-                  height: (segment.value / _maxY) * _chartHeight,
+                  height: (segment.value / maxY) * _chartHeight,
                   color: segment.key.color,
                 ),
               )

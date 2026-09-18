@@ -1,12 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/spc_analysis.dart';
+import '../bloc/spc_history_bloc.dart';
+import '../bloc/spc_history_event.dart';
+import '../bloc/spc_history_state.dart';
+import '../bloc/spc_state.dart';
 import '../widgets/recent_analysis.dart';
 import '../widgets/spc_card.dart';
+import '../widgets/spc_section_placeholder.dart';
 
 /// Daftar seluruh analisis SPC, dengan filter status dan periode.
+///
+/// Penyaringan dilakukan server lewat query parameter di GET /api/Spc/history,
+/// bukan di sisi mobile, supaya tidak perlu mengunduh seluruh data.
 class AnalysesHistoryPage extends StatefulWidget {
   const AnalysesHistoryPage({super.key});
 
@@ -15,74 +25,19 @@ class AnalysesHistoryPage extends StatefulWidget {
 }
 
 class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
-  /// Label periode beserta jumlah bulan ke belakang. Null berarti tanpa batas.
-  static const Map<String, int?> _periods = {
-    'All Time': null,
-    '3 Month': 3,
-    '6 Month': 6,
-    '1 Year': 12,
-  };
+  late final SpcHistoryBloc _bloc;
 
-  /// Null berarti semua status.
-  SpcStatus? _selectedStatus;
-  String _selectedPeriod = 'All Time';
+  @override
+  void initState() {
+    super.initState();
+    _bloc = GetIt.I<SpcHistoryBloc>();
+    _bloc.add(const LoadAnalysesHistory());
+  }
 
-  // ---------------------------------------------------------------------
-  // Data sementara. Hapus blok ini begitu SpcBloc terpasang.
-  // ---------------------------------------------------------------------
-  final List<SpcAnalysisSummary> _analyses = [
-    SpcAnalysisSummary(
-      id: '1',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.capable,
-    ),
-    SpcAnalysisSummary(
-      id: '2',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.notCapable,
-    ),
-    SpcAnalysisSummary(
-      id: '3',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.unstable,
-    ),
-    SpcAnalysisSummary(
-      id: '4',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.marginal,
-    ),
-    SpcAnalysisSummary(
-      id: '5',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.notCapable,
-    ),
-    SpcAnalysisSummary(
-      id: '6',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.capable,
-    ),
-  ];
-  // --------------------------------------------------- akhir data sementara
-
-  List<SpcAnalysisSummary> get _filteredAnalyses {
-    final int? months = _periods[_selectedPeriod];
-    final DateTime? cutoff = months == null
-        ? null
-        : DateTime.now().subtract(Duration(days: months * 30));
-
-    return _analyses.where((analysis) {
-      final matchStatus =
-          _selectedStatus == null || analysis.status == _selectedStatus;
-      final matchPeriod =
-          cutoff == null || analysis.analyzedAt.isAfter(cutoff);
-      return matchStatus && matchPeriod;
-    }).toList();
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
   }
 
   void _onOpenAnalysis(SpcAnalysisSummary analysis) {
@@ -91,48 +46,83 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final results = _filteredAnalyses;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.primary),
-        title: Text(
-          'Analyses History',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
+    return BlocProvider<SpcHistoryBloc>.value(
+      value: _bloc,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          centerTitle: false,
+          iconTheme: const IconThemeData(color: AppColors.primary),
+          title: Text(
+            'Analyses History',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
           ),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-          _buildFilterBar(),
-          const SizedBox(height: 16),
-          if (results.isEmpty)
-            _buildEmptyState()
-          else
-            ...results.map(
-              (analysis) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SpcAnalysisTile(
-                  analysis: analysis,
-                  onTap: () => _onOpenAnalysis(analysis),
-                ),
+        body: BlocBuilder<SpcHistoryBloc, SpcHistoryState>(
+          builder: (context, state) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                _bloc.add(const LoadAnalysesHistory());
+              },
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                children: [
+                  _buildFilterBar(state),
+                  const SizedBox(height: 16),
+                  _buildList(state),
+                  const SizedBox(height: 16),
+                ],
               ),
-            ),
-          const SizedBox(height: 16),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildList(SpcHistoryState state) {
+    if (state.isLoading) {
+      return const SpcSectionPlaceholder.loading();
+    }
+
+    if (state.status == SectionStatus.failure) {
+      return SpcSectionPlaceholder.message(
+        message: state.errorMessage ?? 'Gagal memuat riwayat analisis.',
+        icon: Icons.cloud_off_outlined,
+        onRetry: () => _bloc.add(const LoadAnalysesHistory()),
+      );
+    }
+
+    if (state.analyses.isEmpty) {
+      return const SpcSectionPlaceholder.message(
+        message: 'Tidak ada analisis yang cocok dengan filter ini.',
+        icon: Icons.filter_alt_off_outlined,
+      );
+    }
+
+    return Column(
+      children: state.analyses
+          .map(
+            (analysis) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SpcAnalysisTile(
+                analysis: analysis,
+                onTap: () => _onOpenAnalysis(analysis),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildFilterBar(SpcHistoryState state) {
     return SpcCard(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -141,41 +131,26 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
             child: _FilterDropdown<SpcStatus?>(
               label: 'Analysis Status',
               icon: Icons.filter_alt_outlined,
-              value: _selectedStatus,
-              displayText: _selectedStatus?.shortLabel ?? 'All status',
+              value: state.statusFilter,
+              displayText: state.statusFilter?.shortLabel ?? 'All status',
               options: <SpcStatus?>[null, ...SpcStatus.values],
               optionLabel: (status) => status?.shortLabel ?? 'All status',
-              onChanged: (value) => setState(() => _selectedStatus = value),
+              onChanged: (value) => _bloc.add(ChangeHistoryStatus(value)),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _FilterDropdown<String>(
+            child: _FilterDropdown<SpcPeriod>(
               label: 'Period',
               icon: Icons.calendar_today_outlined,
-              value: _selectedPeriod,
-              displayText: _selectedPeriod,
-              options: _periods.keys.toList(),
-              optionLabel: (period) => period,
-              onChanged: (value) => setState(() => _selectedPeriod = value),
+              value: state.period,
+              displayText: state.period.label,
+              options: SpcPeriod.values,
+              optionLabel: (period) => period.label,
+              onChanged: (value) => _bloc.add(ChangeHistoryPeriod(value)),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return SpcCard(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-      child: Center(
-        child: Text(
-          'No analyses match this filter.',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: AppColors.textDisabled,
-          ),
-        ),
       ),
     );
   }
@@ -208,10 +183,7 @@ class _FilterDropdown<T> extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            color: AppColors.textMuted,
-          ),
+          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
         ),
         const SizedBox(height: 6),
         PopupMenuButton<T>(

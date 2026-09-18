@@ -1,12 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/spc_analysis.dart';
+import '../bloc/spc_bloc.dart';
+import '../bloc/spc_event.dart';
+import '../bloc/spc_state.dart';
 import '../widgets/add_spc.dart';
 import '../widgets/recent_analysis.dart';
+import '../widgets/spc_section_placeholder.dart';
 import '../widgets/spc_trend.dart';
 import 'history_page.dart';
+import 'new_spc_page.dart';
+import 'analysis_result_page.dart';
 
 /// Halaman utama fitur SPC Analysis.
 class SpcPage extends StatefulWidget {
@@ -17,146 +25,63 @@ class SpcPage extends StatefulWidget {
 }
 
 class _SpcPageState extends State<SpcPage> {
-  /// Label periode beserta jumlah bulan yang ditampilkan.
-  static const Map<String, int> _periods = {
-    '3 Month': 3,
-    '6 Month': 6,
-    '1 Year': 12,
-  };
+  static const SpcPeriod _initialPeriod = SpcPeriod.threeMonths;
 
-  String _selectedPeriod = '3 Month';
+  /// Bloc dibuat sebagai field, bukan lewat BlocProvider(create:), supaya
+  /// handler bisa dipanggil dari initState tanpa butuh BuildContext yang
+  /// sudah punya provider di atasnya.
+  late final SpcBloc _bloc;
 
-  /// Data tren dipotong sesuai periode terpilih, diambil dari bulan terbaru.
-  List<SpcAnalysisTrend> get _visibleTrends {
-    final int months = _periods[_selectedPeriod] ?? _trends.length;
-    if (_trends.length <= months) return _trends;
-    return _trends.sublist(_trends.length - months);
+  @override
+  void initState() {
+    super.initState();
+    _bloc = GetIt.I<SpcBloc>();
+    _loadTrends(_initialPeriod);
+    _loadRecent();
   }
 
-  // ---------------------------------------------------------------------
-  // Data sementara. Hapus blok ini begitu SpcBloc terpasang.
-  // ---------------------------------------------------------------------
-  static const List<SpcAnalysisTrend> _trends = [
-    SpcAnalysisTrend(
-      monthLabel: 'Nov',
-      capable: 6,
-      marginal: 2,
-      notCapable: 2,
-      unstable: 1,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Des',
-      capable: 8,
-      marginal: 1.5,
-      notCapable: 2,
-      unstable: 1,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Jan',
-      capable: 9,
-      marginal: 2,
-      notCapable: 1.5,
-      unstable: 1.5,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Feb',
-      capable: 7,
-      marginal: 2.5,
-      notCapable: 2,
-      unstable: 2,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Mar',
-      capable: 10,
-      marginal: 1,
-      notCapable: 2,
-      unstable: 1,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Apr',
-      capable: 8.5,
-      marginal: 2,
-      notCapable: 1.5,
-      unstable: 2,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Mei',
-      capable: 7,
-      marginal: 0.5,
-      notCapable: 3,
-      unstable: 1.5,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Jun',
-      capable: 10,
-      marginal: 1,
-      notCapable: 1.5,
-      unstable: 1.5,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Jul',
-      capable: 9.5,
-      marginal: 2,
-      notCapable: 1,
-      unstable: 1.5,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Aug',
-      capable: 11,
-      marginal: 1.5,
-      notCapable: 1,
-      unstable: 1.5,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Sep',
-      capable: 4,
-      marginal: 3,
-      notCapable: 0,
-      unstable: 4,
-    ),
-    SpcAnalysisTrend(
-      monthLabel: 'Okt',
-      capable: 11,
-      marginal: 1.5,
-      notCapable: 1.5,
-      unstable: 1,
-    ),
-  ];
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
+  }
 
-  final List<SpcAnalysisSummary> _recentAnalyses = [
-    SpcAnalysisSummary(
-      id: '1',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.capable,
-    ),
-    SpcAnalysisSummary(
-      id: '2',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.unstable,
-    ),
-    SpcAnalysisSummary(
-      id: '3',
-      title: 'Wall Thickness - Product B',
-      analyzedAt: DateTime(2026, 10, 12, 23, 59),
-      status: SpcStatus.notCapable,
-    ),
-  ];
-  // --------------------------------------------------- akhir data sementara
+  void _loadTrends(SpcPeriod period) {
+    _bloc.add(LoadSpcTrends(period: period));
+  }
 
-  void _onCreateAnalysis() {
-    // TODO: arahkan ke halaman form input SPC.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('New SPC Analysis belum tersedia')),
+  void _loadRecent() {
+    _bloc.add(const LoadRecentAnalyses());
+  }
+
+  Future<void> _onCreateAnalysis() async {
+    final result = await Navigator.push<SpcAnalysisResult>(
+      context,
+      MaterialPageRoute(builder: (_) => const NewSpcAnalysisPage()),
+    );
+    if (!mounted || result == null) return;
+
+    // Analisis baru memengaruhi chart maupun daftar, jadi keduanya dimuat
+    // ulang. Periode chart dipertahankan seperti pilihan pengguna.
+    _loadTrends(_bloc.state.period);
+    _loadRecent();
+
+    // Langsung tampilkan hasilnya. Halaman form sudah dilepas dari stack,
+    // jadi tombol back dari sini kembali ke halaman SPC.
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AnalysisResultPage(result: result)),
     );
   }
 
-  void _onViewAllAnalyses() {
-    Navigator.push(
+  Future<void> _onViewAllAnalyses() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AnalysesHistoryPage()),
     );
+    // Daftar dimuat ulang saat kembali, karena analisis bisa saja dibuka
+    // atau berubah di halaman sebelah.
+    if (mounted) _loadRecent();
   }
 
   void _onOpenAnalysis(SpcAnalysisSummary analysis) {
@@ -165,50 +90,107 @@ class _SpcPageState extends State<SpcPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.primary),
-        title: Text(
-          'SPC Analysis',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
+    return BlocProvider<SpcBloc>.value(
+      value: _bloc,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          centerTitle: false,
+          iconTheme: const IconThemeData(color: AppColors.primary),
+          title: Text(
+            'SPC Analysis',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            final period = _bloc.state.period;
+            _loadTrends(period);
+            _loadRecent();
+          },
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            children: [
+              _buildTrendSection(),
+              const SizedBox(height: 16),
+              NewSpcAnalysisCard(onTap: _onCreateAnalysis),
+              const SizedBox(height: 24),
+              _buildRecentHeader(),
+              const SizedBox(height: 12),
+              _buildRecentSection(),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-          SpcTrendCard(
-            data: _visibleTrends,
-            selectedPeriod: _selectedPeriod,
-            periodOptions: _periods.keys.toList(),
-            onPeriodChanged: (value) {
-              setState(() => _selectedPeriod = value);
-            },
-          ),
-          const SizedBox(height: 16),
-          NewSpcAnalysisCard(onTap: _onCreateAnalysis),
-          const SizedBox(height: 24),
-          _buildRecentHeader(),
-          const SizedBox(height: 12),
-          ..._recentAnalyses.map(
-            (analysis) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: SpcAnalysisTile(
-                analysis: analysis,
-                onTap: () => _onOpenAnalysis(analysis),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildTrendSection() {
+    return BlocBuilder<SpcBloc, SpcState>(
+      buildWhen: (a, b) =>
+          a.trendStatus != b.trendStatus ||
+          a.trends != b.trends ||
+          a.period != b.period,
+      builder: (context, state) {
+        return SpcTrendCard(
+          data: state.trends,
+          selectedPeriod: state.period,
+          periodOptions: SpcPeriod.chartOptions,
+          isLoading: state.isTrendLoading,
+          errorMessage: state.trendError,
+          onRetry: () => _loadTrends(state.period),
+          onPeriodChanged: _loadTrends,
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentSection() {
+    return BlocBuilder<SpcBloc, SpcState>(
+      buildWhen: (a, b) =>
+          a.recentStatus != b.recentStatus ||
+          a.recentAnalyses != b.recentAnalyses,
+      builder: (context, state) {
+        if (state.isRecentLoading) {
+          return const SpcSectionPlaceholder.loading();
+        }
+
+        if (state.recentStatus == SectionStatus.failure) {
+          return SpcSectionPlaceholder.message(
+            message: state.recentError ?? 'Gagal memuat analisis terbaru.',
+            icon: Icons.cloud_off_outlined,
+            onRetry: _loadRecent,
+          );
+        }
+
+        if (state.recentAnalyses.isEmpty) {
+          return const SpcSectionPlaceholder.message(
+            message: 'Belum ada analisis SPC.',
+            icon: Icons.inbox_outlined,
+          );
+        }
+
+        return Column(
+          children: state.recentAnalyses
+              .map(
+                (analysis) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SpcAnalysisTile(
+                    analysis: analysis,
+                    onTap: () => _onOpenAnalysis(analysis),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 
