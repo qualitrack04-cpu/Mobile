@@ -15,12 +15,25 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const AuditListPage(),
-    const FindingListPage(),
-    const CapaListPage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pages = [
+      DashboardPage(
+        onOpenAuditPlan: () {
+          setState(() {
+            _currentIndex = 1;
+          });
+        },
+      ),
+      const AuditListPage(),
+      const FindingListPage(),
+      const CapaListPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -159,10 +159,93 @@ class CompletedAuditReport {
   }
 }
 
+class QualityTrendPoint {
+  final int month;
+  final int year;
+  final String monthName;
+  final double score;
+
+  QualityTrendPoint({
+    required this.month,
+    required this.year,
+    required this.monthName,
+    required this.score,
+  });
+
+  factory QualityTrendPoint.fromJson(Map<String, dynamic> json) {
+    return QualityTrendPoint(
+      month: json['month'] ?? 0,
+      year: json['year'] ?? 0,
+      monthName: json['monthName'] ?? '',
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class QualityTrendResponse {
+  final double currentScore;
+  final double previousScore;
+  final double change;
+  final List<QualityTrendPoint> data;
+
+  QualityTrendResponse({
+    required this.currentScore,
+    required this.previousScore,
+    required this.change,
+    required this.data,
+  });
+
+  factory QualityTrendResponse.fromJson(Map<String, dynamic> json) {
+    final list = json['data'] as List? ?? [];
+
+    return QualityTrendResponse(
+      currentScore:
+          (json['currentScore'] as num?)?.toDouble() ?? 0.0,
+      previousScore:
+          (json['previousScore'] as num?)?.toDouble() ?? 0.0,
+      change:
+          (json['change'] as num?)?.toDouble() ?? 0.0,
+      data: list
+          .map(
+            (e) => QualityTrendPoint.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
 class DashboardService {
   final ApiService apiService;
 
   DashboardService({required this.apiService});
+
+  Future<QualityTrendResponse> getQualityTrend({
+    required int months,
+  }) async {
+    try {
+      final res = await apiService.client.get(
+        '/api/Dashboard/quality-trend',
+        queryParameters: {
+          'months': months,
+        },
+      );
+
+      return QualityTrendResponse.fromJson(
+        res.data as Map<String, dynamic>,
+      );
+    } catch (e) {
+      print('Error getQualityTrend: $e');
+
+      return QualityTrendResponse(
+        currentScore: 0,
+        previousScore: 0,
+        change: 0,
+        data: [],
+      );
+    }
+  }
 
   // Fungsi 4: Ambil Laporan Audit Selesai
   Future<List<CompletedAuditReport>> getCompletedReports() async {
