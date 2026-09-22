@@ -42,4 +42,8 @@ class SpcRepositoryImpl implements SpcRepository {
       description: description,
     );
   }
+  @override
+  Future<SpcAnalysisResult> getDetail(String id) {
+    return datasource.getById(id);
+  }
 }

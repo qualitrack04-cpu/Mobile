@@ -16,4 +16,5 @@ abstract class SpcRepository {
     String? unit,
     String? description,
   });
+  Future<SpcAnalysisResult> getDetail(String id);
 }

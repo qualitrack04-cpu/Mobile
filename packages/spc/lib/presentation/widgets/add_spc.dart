@@ -48,7 +48,7 @@ class NewSpcAnalysisCard extends StatelessWidget {
               color: AppColors.action,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 26),
+            child: const Icon(Icons.add, color: AppColors.surface, size: 26),
           ),
         ],
       ),

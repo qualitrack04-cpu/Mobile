@@ -12,6 +12,7 @@ import '../bloc/spc_state.dart';
 import '../widgets/recent_analysis.dart';
 import '../widgets/spc_card.dart';
 import '../widgets/spc_section_placeholder.dart';
+import 'analysis_detail_page.dart';
 
 /// Daftar seluruh analisis SPC, dengan filter status dan periode.
 ///
@@ -41,7 +42,12 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
   }
 
   void _onOpenAnalysis(SpcAnalysisSummary analysis) {
-    // TODO: arahkan ke halaman detail analisis.
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnalysisDetailPage(analysisId: analysis.id),
+      ),
+    );
   }
 
   @override
@@ -94,7 +100,7 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
 
     if (state.status == SectionStatus.failure) {
       return SpcSectionPlaceholder.message(
-        message: state.errorMessage ?? 'Gagal memuat riwayat analisis.',
+        message: state.errorMessage ?? 'Failed to load analysis history.',
         icon: Icons.cloud_off_outlined,
         onRetry: () => _bloc.add(const LoadAnalysesHistory()),
       );

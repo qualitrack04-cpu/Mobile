@@ -99,4 +99,13 @@ class SpcRemoteDatasource {
       throw Exception(_parseError(e, 'Gagal menganalisis data SPC.'));
     }
   }
+    /// GET /api/Spc/{id}
+  Future<SpcResultModel> getById(String id) async {
+    try {
+      final response = await apiService.client.get('/api/Spc/$id');
+      return SpcResultModel.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception(_parseError(e, 'Gagal mengambil detail analisis.'));
+    }
+  }
 }
