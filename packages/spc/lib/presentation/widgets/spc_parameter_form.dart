@@ -7,15 +7,7 @@ import 'spc_card.dart';
 
 /// Satuan yang bisa dipilih. Backend menerima string bebas, daftar ini
 /// hanya untuk menyeragamkan input.
-const List<String> kSpcUnits = [
-  'mm',
-  'g',
-  'kg',
-  'mL',
-  'L',
-  '°C',
-  '%',
-];
+const List<String> kSpcUnits = ['mm', 'g', 'kg', 'mL', 'L', '°C', '%'];
 
 /// Kartu berisi seluruh isian parameter analisis.
 ///
@@ -78,7 +70,9 @@ class SpcParameterForm extends StatelessWidget {
                       decoration: _inputDecoration('0.00'),
                       style: _inputStyle,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return null;
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Target wajib diisi';
+                        }
                         return double.tryParse(value.trim()) == null
                             ? 'Angka tidak valid'
                             : null;
@@ -86,32 +80,40 @@ class SpcParameterForm extends StatelessWidget {
                     ),
                   ),
                 ),
-                const VerticalDivider(
-                  width: 1,
-                  color: AppColors.borderLight,
-                ),
+                const VerticalDivider(width: 1, color: AppColors.borderLight),
                 Expanded(
                   child: _Section(
                     label: 'Unit',
-                    child: DropdownButtonFormField<String>(
-                      initialValue: selectedUnit,
-                      isExpanded: true,
-                      decoration: _inputDecoration('Select Unit'),
-                      style: _inputStyle,
-                      hint: Text('Select Unit', style: _hintStyle),
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppColors.textSecondary,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        focusColor: AppColors.filterActive.withValues(
+                          alpha: 0.25,
+                        ),
+                        hoverColor: AppColors.filterActive,
+                        highlightColor: AppColors.filterActive,
                       ),
-                      items: kSpcUnits
-                          .map(
-                            (unit) => DropdownMenuItem(
-                              value: unit,
-                              child: Text(unit, style: _inputStyle),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: enabled ? onUnitChanged : null,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: selectedUnit,
+                        isExpanded: true,
+                        dropdownColor: AppColors.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        decoration: _inputDecoration('Select Unit'),
+                        style: _inputStyle,
+                        hint: Text('Select Unit', style: _hintStyle),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: AppColors.textSecondary,
+                        ),
+                        items: kSpcUnits
+                            .map(
+                              (unit) => DropdownMenuItem(
+                                value: unit,
+                                child: Text(unit, style: _inputStyle),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: enabled ? onUnitChanged : null,
+                      ),
                     ),
                   ),
                 ),
@@ -128,50 +130,24 @@ class SpcParameterForm extends StatelessWidget {
                     labelSuffix: '(Lower Spec Limit)',
                     child: TextFormField(
                       controller: lslController,
+                      readOnly: true,
                       enabled: enabled,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      inputFormatters: [_numberFormatter],
                       decoration: _inputDecoration('0.00'),
                       style: _inputStyle,
-                      validator: _requiredNumber,
                     ),
                   ),
                 ),
-                const VerticalDivider(
-                  width: 1,
-                  color: AppColors.borderLight,
-                ),
+                const VerticalDivider(width: 1, color: AppColors.borderLight),
                 Expanded(
                   child: _Section(
                     label: 'USL',
                     labelSuffix: '(Upper Spec Limit)',
                     child: TextFormField(
                       controller: uslController,
+                      readOnly: true,
                       enabled: enabled,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      inputFormatters: [_numberFormatter],
                       decoration: _inputDecoration('0.00'),
                       style: _inputStyle,
-                      validator: (value) {
-                        final base = _requiredNumber(value);
-                        if (base != null) return base;
-
-                        // Aturan yang sama diperiksa backend. Diperiksa di
-                        // sini juga supaya pengguna tidak perlu menunggu
-                        // upload selesai hanya untuk ditolak.
-                        final lsl = double.tryParse(lslController.text.trim());
-                        final usl = double.parse(value!.trim());
-                        if (lsl != null && lsl >= usl) {
-                          return 'USL harus lebih besar dari LSL';
-                        }
-                        return null;
-                      },
                     ),
                   ),
                 ),
@@ -188,8 +164,9 @@ class SpcParameterForm extends StatelessWidget {
     return double.tryParse(value.trim()) == null ? 'Angka tidak valid' : null;
   }
 
-  static final _numberFormatter =
-      FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*'));
+  static final _numberFormatter = FilteringTextInputFormatter.allow(
+    RegExp(r'^-?\d*\.?\d*'),
+  );
 
   static final TextStyle _inputStyle = GoogleFonts.inter(
     fontSize: 14,
@@ -218,11 +195,7 @@ class SpcParameterForm extends StatelessWidget {
 
 /// Satu sel isian: label kecil di atas, field di bawahnya.
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.label,
-    required this.child,
-    this.labelSuffix,
-  });
+  const _Section({required this.label, required this.child, this.labelSuffix});
 
   final String label;
   final String? labelSuffix;

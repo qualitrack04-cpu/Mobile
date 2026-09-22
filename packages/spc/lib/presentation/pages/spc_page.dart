@@ -15,6 +15,7 @@ import '../widgets/spc_trend.dart';
 import 'history_page.dart';
 import 'new_spc_page.dart';
 import 'analysis_result_page.dart';
+import 'analysis_detail_page.dart';
 
 /// Halaman utama fitur SPC Analysis.
 class SpcPage extends StatefulWidget {
@@ -61,13 +62,9 @@ class _SpcPageState extends State<SpcPage> {
     );
     if (!mounted || result == null) return;
 
-    // Analisis baru memengaruhi chart maupun daftar, jadi keduanya dimuat
-    // ulang. Periode chart dipertahankan seperti pilihan pengguna.
     _loadTrends(_bloc.state.period);
     _loadRecent();
 
-    // Langsung tampilkan hasilnya. Halaman form sudah dilepas dari stack,
-    // jadi tombol back dari sini kembali ke halaman SPC.
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => AnalysisResultPage(result: result)),
@@ -85,7 +82,12 @@ class _SpcPageState extends State<SpcPage> {
   }
 
   void _onOpenAnalysis(SpcAnalysisSummary analysis) {
-    // TODO: arahkan ke halaman detail analisis.
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnalysisDetailPage(analysisId: analysis.id),
+      ),
+    );
   }
 
   @override
@@ -164,7 +166,8 @@ class _SpcPageState extends State<SpcPage> {
 
         if (state.recentStatus == SectionStatus.failure) {
           return SpcSectionPlaceholder.message(
-            message: state.recentError ?? 'Gagal memuat analisis terbaru.',
+            message:
+                state.recentError ?? 'Failed to load the latest analysis..',
             icon: Icons.cloud_off_outlined,
             onRetry: _loadRecent,
           );
@@ -172,7 +175,7 @@ class _SpcPageState extends State<SpcPage> {
 
         if (state.recentAnalyses.isEmpty) {
           return const SpcSectionPlaceholder.message(
-            message: 'Belum ada analisis SPC.',
+            message: 'There is no SPC analysis yet..',
             icon: Icons.inbox_outlined,
           );
         }

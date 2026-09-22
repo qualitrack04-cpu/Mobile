@@ -22,7 +22,7 @@ import 'analysis_result_page.dart';
 // Ubah jadi false begitu API sudah bisa diakses. Tidak ada kode lain
 // yang perlu disentuh — jalur bloc, usecase, dan datasource tetap utuh.
 // =====================================================================
-const bool kUseMockAnalysisResult = true;
+const bool kUseMockAnalysisResult = false;
 
 /// Form membuat analisis SPC baru.
 ///
@@ -54,11 +54,13 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
   void initState() {
     super.initState();
     _bloc = GetIt.I<NewAnalysisBloc>();
+    _targetController.addListener(_syncSpecLimits);
   }
 
   @override
   void dispose() {
     _parameterNameController.dispose();
+    _targetController.removeListener(_syncSpecLimits);
     _targetController.dispose();
     _lslController.dispose();
     _uslController.dispose();
@@ -313,5 +315,27 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
               ),
       ),
     );
+  }
+    /// Toleransi spesifikasi: USL = target + 0.5, LSL = target - 0.5.
+  static const double _tolerance = 0.5;
+
+  void _syncSpecLimits() {
+    final target = double.tryParse(_targetController.text.trim());
+    if (target == null) {
+      _lslController.clear();
+      _uslController.clear();
+      return;
+    }
+    _lslController.text = _format(target - _tolerance);
+    _uslController.text = _format(target + _tolerance);
+  }
+
+  /// Dibulatkan 4 digit lalu nol di belakang dibuang, supaya 10.1 - 0.5
+  /// tampil 9.6, bukan 9.599999999999.
+  String _format(double value) {
+    return value
+        .toStringAsFixed(4)
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
   }
 }
