@@ -217,3 +217,38 @@ class SpcAnalysisResult extends Equatable {
         unit,
       ];
 }
+class SpcStatusSummary extends Equatable {
+  final int capable;
+  final int marginal;
+  final int notCapable;
+  final int unstable;
+ 
+  /// Panjang rentang dalam hari, untuk label seperti "Last 30 days".
+  final int days;
+ 
+  const SpcStatusSummary({
+    required this.capable,
+    required this.marginal,
+    required this.notCapable,
+    required this.unstable,
+    required this.days,
+  });
+ 
+  int get total => capable + marginal + notCapable + unstable;
+ 
+  int countOf(SpcStatus status) {
+    switch (status) {
+      case SpcStatus.capable:
+        return capable;
+      case SpcStatus.marginal:
+        return marginal;
+      case SpcStatus.notCapable:
+        return notCapable;
+      case SpcStatus.unstable:
+        return unstable;
+    }
+  }
+ 
+  @override
+  List<Object?> get props => [capable, marginal, notCapable, unstable, days];
+}

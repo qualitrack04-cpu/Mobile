@@ -52,6 +52,7 @@ import 'package:spc/presentation/bloc/new_analysis_bloc.dart';
 import 'package:spc/presentation/bloc/spc_bloc.dart';
 import 'package:spc/presentation/bloc/spc_history_bloc.dart';
 import 'package:spc/domain/usecases/get_analysis_detail.dart';
+import 'package:spc/domain/usecases/get_spc_status_summary.dart';
 
 final sl = GetIt.instance;
 
@@ -167,4 +168,5 @@ Future<void> init() async {
     () => NewAnalysisBloc(analyzeSpc: sl()),
   );
     sl.registerLazySingleton(() => GetAnalysisDetail(repository: sl()));
+    sl.registerLazySingleton(() => GetSpcStatusSummary(repository: sl()));
 }
