@@ -61,6 +61,9 @@ class _DashboardPageState extends State<DashboardPage> {
   DateTime _calendarMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
 
+  // Dinaikkan setiap refresh supaya kartu SPC ikut memuat ulang datanya.
+  int _spcRefreshToken = 0;
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +118,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _calendarMonth = DateTime.now();
       _selectedDate = DateTime.now();
+      _spcRefreshToken++;
 
       // =============================
       // AUDIT SUMMARY
@@ -357,7 +361,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
               _buildSectionTitle('SPC ANALYSIS'),
               const SizedBox(height: 12),
-              _buildSpcCard(context),
+              SpcDashboardCard(refreshToken: _spcRefreshToken),
               const SizedBox(height: 24),
             ],
           ),
@@ -2365,41 +2369,6 @@ Widget _buildNoUpcomingAudit() {
   }
 }
 
-Widget _buildSpcCard(BuildContext context) {
-  return Material(
-    color: AppColors.surface,
-    borderRadius: BorderRadius.circular(8),
-    child: InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SpcPage()),
-        );
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: double.infinity,
-        height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'View SPC Analysis',
-              style: GoogleFonts.inter(
-                color: AppColors.action,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, size: 16, color: AppColors.action),
-          ],
-        ),
-      ),
-    ),
-  );
-}
 class _UpcomingAuditItem {
   final String scheduleId;
   final String title;

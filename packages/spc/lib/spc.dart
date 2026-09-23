@@ -23,3 +23,5 @@ export 'presentation/pages/analysis_result_page.dart';
 export 'presentation/pages/spc_page.dart';
 export 'presentation/pages/analysis_detail_page.dart';
 export 'domain/usecases/get_analysis_detail.dart';
+export 'domain/usecases/get_spc_status_summary.dart';
+export 'presentation/widgets/spc_dashboard_card.dart';
