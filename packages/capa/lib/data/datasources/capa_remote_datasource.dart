@@ -141,7 +141,8 @@ class CapaRemoteDatasource {
       final body = {
         'isEffective': isEffective,
         'verificationNotes': verificationNotes,
-        'verifiedById': verifiedById,
+        if (verifiedById.isNotEmpty && verifiedById.toLowerCase() != 'null')
+          'verifiedById': verifiedById,
       };
       await apiService.client.post('/api/Capa/$id/closeout', data: body);
     } catch (e) {

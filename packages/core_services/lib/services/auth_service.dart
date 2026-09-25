@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:core_services/services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:core_services/user_role.dart';
 
 class AuthService {
   final ApiService apiService;
@@ -21,12 +24,22 @@ class AuthService {
       );
       final data = response.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', data['token'] as String);
+      final token = data['token'] as String;
+      final responseUserId = data['userId']?.toString();
+      final userId = responseUserId != null &&
+              responseUserId.isNotEmpty &&
+              responseUserId != 'null'
+          ? responseUserId
+          : _userIdFromToken(token);
+
+      await prefs.setString('auth_token', token);
       await prefs.setString('user_role', data['role'] as String);
       await prefs.setString('user_name', data['fullName'] as String);
-      await prefs.setString('user_id', data['userId'].toString());
+      if (userId != null) {
+        await prefs.setString('user_id', userId);
+      }
       await prefs.setString('user_email', email);
-      
+
       // Ambil data profil (termasuk URL foto)
       try {
         await fetchProfile();
@@ -34,6 +47,30 @@ class AuthService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  String? _userIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      ) as Map<String, dynamic>;
+
+      for (final entry in payload.entries) {
+        final key = entry.key.toLowerCase();
+        if (key == 'sub' ||
+            key == 'nameid' ||
+            key.endsWith('/nameidentifier')) {
+          final value = entry.value?.toString();
+          if (value != null && value.isNotEmpty) return value;
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   // POST /api/Auth/register
@@ -66,7 +103,9 @@ class AuthService {
           throw Exception(data);
         }
       }
-      throw Exception('Registrasi gagal. Cek kembali data Anda atau hubungi admin.');
+      throw Exception(
+        'Registrasi gagal. Cek kembali data Anda atau hubungi admin.',
+      );
     } catch (e) {
       throw Exception('Terjadi kesalahan saat registrasi.');
     }
@@ -109,7 +148,7 @@ class AuthService {
   }
 
   // POST /api/Auth/forgot-password/verify-otp
-// POST /api/Auth/forgot-password/verify-otp
+  // POST /api/Auth/forgot-password/verify-otp
   Future<String> verifyForgotPasswordOtp({
     required String email,
     required String otp,
@@ -190,15 +229,16 @@ class AuthService {
     };
   }
 
-  Future<void> updateProfile({
-    required String name,
-  }) async {
+  Future<UserRole> getCurrentRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return UserRole.fromApi(prefs.getString('user_role'));
+  }
+
+  Future<void> updateProfile({required String name}) async {
     try {
       await apiService.client.put(
         '/api/Auth/update-profile',
-        data: {
-          'fullName': name,
-        },
+        data: {'fullName': name},
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
@@ -216,7 +256,9 @@ class AuthService {
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
-        throw Exception(data is Map ? data['message'] : 'Gagal mengirim OTP ke email baru');
+        throw Exception(
+          data is Map ? data['message'] : 'Gagal mengirim OTP ke email baru',
+        );
       }
       throw Exception('Gagal mengirim OTP ke email baru');
     }
@@ -230,7 +272,7 @@ class AuthService {
       );
       final data = response.data as Map<String, dynamic>;
       final newEmail = data['newEmail'] as String;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', newEmail);
     } catch (e) {
@@ -246,9 +288,7 @@ class AuthService {
     try {
       await apiService.client.post(
         '/api/Auth/change-password',
-        data: {
-          'newPassword': newPassword,
-        },
+        data: {'newPassword': newPassword},
       );
     } catch (e) {
       throw Exception('Gagal mengganti password di server');
@@ -264,7 +304,7 @@ class AuthService {
       await prefs.setString('user_name', data['fullName'] ?? '');
       await prefs.setString('user_email', data['email'] ?? '');
       await prefs.setString('user_role', data['role'] ?? '');
-      
+
       final photoUrl = data['profilePhotoUrl'] as String? ?? '';
       debugPrint('[fetchProfile] profilePhotoUrl = $photoUrl');
       await prefs.setString('user_photo', photoUrl);
@@ -283,10 +323,10 @@ class AuthService {
         '/api/Auth/upload-profile-photo',
         data: formData,
       );
-      
+
       final data = response.data as Map<String, dynamic>;
       final url = data['url'] as String;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_photo', url);
     } catch (e) {

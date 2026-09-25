@@ -10,6 +10,7 @@ import 'package:finding/presentation/pages/finding_detail_page.dart';
 import 'package:finding/presentation/pages/finding_edit_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/core_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,7 +37,7 @@ class _FindingListView extends StatefulWidget {
 class _FindingListViewState extends State<_FindingListView> {
   List<Finding> _lastFindings = [];
   bool _isFirstLoad = true;
-  String _userRole = '';
+  UserRole _role = UserRole.unknown;
   String _userName = '';
   String _userId = '';
 
@@ -50,7 +51,7 @@ class _FindingListViewState extends State<_FindingListView> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _userRole = prefs.getString('user_role') ?? '';
+        _role = UserRole.fromApi(prefs.getString('user_role'));
         _userName = prefs.getString('user_name') ?? '';
         _userId = prefs.getString('user_id') ?? '';
       });
@@ -164,7 +165,7 @@ class _FindingListViewState extends State<_FindingListView> {
                               ...sortedFindings.map(
                                 (finding) => _FindingCard(
                                   finding: finding,
-                                  userRole: _userRole,
+                                  role: _role,
                                   userName: _userName,
                                   userId: _userId,
                                 ),
@@ -176,10 +177,11 @@ class _FindingListViewState extends State<_FindingListView> {
 
                     // FAB tambah finding baru
                       // FAB tambah finding baru
-                      Positioned(
-                        bottom: 16,
-                        right: 16,
-                        child: Builder(
+                      if (_role.canCreateFinding)
+                        Positioned(
+                          bottom: 16,
+                          right: 16,
+                          child: Builder(
                           builder: (context) {
                             final screenWidth =
                                 MediaQuery.of(context).size.width;
@@ -240,13 +242,13 @@ class _FindingListViewState extends State<_FindingListView> {
 
 class _FindingCard extends StatelessWidget {
   final Finding finding;
-  final String userRole;
+  final UserRole role;
   final String userName;
   final String userId;
 
   const _FindingCard({
     required this.finding,
-    required this.userRole,
+    required this.role,
     required this.userName,
     required this.userId,
   });
@@ -311,7 +313,9 @@ class _FindingCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // ✅ Tombol Edit — tampilkan jika QM atau (Auditor dan reporter name sama dengan user_name)
-                  if (!userRole.startsWith('Auditor') || (userRole.startsWith('Auditor') && finding.reporter == userName))
+                  // Quality Manager boleh mengubah finding siapa pun;
+                  // role lain hanya finding yang dia laporkan sendiri.
+                  if (role.canEditOthersFinding || finding.reporter == userName)
                     GestureDetector(
                       onTap: () async {
                         final bloc = context.read<FindingBloc>();

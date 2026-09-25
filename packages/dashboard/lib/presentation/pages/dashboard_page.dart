@@ -23,10 +23,7 @@ import 'package:audit/presentation/pages/audit_checklist_page.dart';
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onOpenAuditPlan;
 
-  const DashboardPage({
-    super.key,
-    this.onOpenAuditPlan,
-  });
+  const DashboardPage({super.key, this.onOpenAuditPlan});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -37,11 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   String _selectedTrendPeriod = '3 Month';
 
-  final List<String> _trendPeriods = [
-    '3 Month',
-    '6 Month',
-    '1 Year',
-  ];
+  final List<String> _trendPeriods = ['3 Month', '6 Month', '1 Year'];
 
   // 4 future untuk 4 API berbeda
   late Future<AuditSummary> _summaryFuture;
@@ -72,26 +65,19 @@ class _DashboardPageState extends State<DashboardPage> {
     _refresh();
   }
 
-  String _userRole = 'Auditor';
+  UserRole _role = UserRole.unknown;
   String _userName = '';
   String _photoPath = '';
 
   Future<void> _loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
-    final roleStr = prefs.getString('user_role') ?? 'Auditor';
     final photoPath = prefs.getString('user_photo') ?? '';
     final userName = prefs.getString('user_name') ?? '';
+    final role = UserRole.fromApi(prefs.getString('user_role'));
 
     if (mounted) {
       setState(() {
-        if (roleStr == 'QualityManager') {
-          _userRole = 'Quality Manager';
-        } else if (roleStr == 'Auditor' || roleStr == 'AuditorInternal') {
-          _userRole = 'Auditor Internal';
-        } else {
-          _userRole = roleStr;
-        }
-
+        _role = role;
         _userName = userName;
         _photoPath = photoPath;
       });
@@ -123,9 +109,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // =============================
       // AUDIT SUMMARY
       // =============================
-      _summaryFuture = _dashboardService
-          .getAuditSummary()
-          .then((data) {
+      _summaryFuture = _dashboardService.getAuditSummary().then((data) {
         _lastSummary = data;
         return data;
       });
@@ -133,9 +117,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // =============================
       // COMPLIANCE SCORE
       // =============================
-      _scoreFuture = _dashboardService
-          .getComplianceScores()
-          .then((data) {
+      _scoreFuture = _dashboardService.getComplianceScores().then((data) {
         _lastScore = data;
         return data;
       });
@@ -149,16 +131,14 @@ class _DashboardPageState extends State<DashboardPage> {
             year: _calendarMonth.year,
           )
           .then((data) {
-        _lastSchedule = data;
-        return data;
-      });
+            _lastSchedule = data;
+            return data;
+          });
 
       // =============================
       // COMPLETED REPORT
       // =============================
-      _reportsFuture = _dashboardService
-          .getCompletedReports()
-          .then((data) {
+      _reportsFuture = _dashboardService.getCompletedReports().then((data) {
         _lastReports = data;
         return data;
       });
@@ -168,13 +148,11 @@ class _DashboardPageState extends State<DashboardPage> {
       // TAHAP 6
       // =============================
       _trendFuture = _dashboardService
-          .getQualityTrend(
-            months: _getTrendMonths(),
-          )
+          .getQualityTrend(months: _getTrendMonths())
           .then((data) {
-        _lastTrend = data;
-        return data;
-      });
+            _lastTrend = data;
+            return data;
+          });
     });
   }
 
@@ -329,10 +307,7 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 24),
 
               // 2. Quality Trend
-              _buildQualityTrend(
-                screenWidth,
-                trend,
-              ),
+              _buildQualityTrend(screenWidth, trend),
               const SizedBox(height: 24),
 
               // 3. Audit Schedule
@@ -698,7 +673,7 @@ class _DashboardPageState extends State<DashboardPage> {
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Text(
-            'Hello, $_userRole! 👋',
+            'Hello, ${_role.label}! 👋',
             style: GoogleFonts.inter(
               fontSize:
                   32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
@@ -719,10 +694,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildQualityTrend(
-  double screenWidth,
-  QualityTrendResponse trend,
-  ) {
+  Widget _buildQualityTrend(double screenWidth, QualityTrendResponse trend) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -758,9 +730,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(7),
-                  border: Border.all(
-                    color: AppColors.primaryMuted,
-                  ),
+                  border: Border.all(color: AppColors.primaryMuted),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -774,12 +744,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
-                    items: _trendPeriods.map((period) {
-                      return DropdownMenuItem<String>(
-                        value: period,
-                        child: Text(period),
-                      );
-                    }).toList(),
+                    items:
+                        _trendPeriods.map((period) {
+                          return DropdownMenuItem<String>(
+                            value: period,
+                            child: Text(period),
+                          );
+                        }).toList(),
                     onChanged: (value) {
                       if (value == null) return;
 
@@ -789,9 +760,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                         // Ambil ulang Quality Trend dari backend
                         _trendFuture = _dashboardService
-                            .getQualityTrend(
-                              months: _getTrendMonths(),
-                            )
+                            .getQualityTrend(months: _getTrendMonths())
                             .then((data) {
                               _lastTrend = data;
                               return data;
@@ -829,9 +798,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: trend.change >= 0
-                          ? Colors.green
-                          : Colors.red,
+                    color: trend.change >= 0 ? Colors.green : Colors.red,
                   ),
                 ),
               ),
@@ -850,32 +817,21 @@ class _DashboardPageState extends State<DashboardPage> {
 
           const SizedBox(height: 18),
 
-          SizedBox(
-            height: 160,
-            child: _buildQualityLineChart(trend),
-          ),
+          SizedBox(height: 160, child: _buildQualityLineChart(trend)),
         ],
       ),
     );
   }
 
-  Widget _buildQualityLineChart(
-  QualityTrendResponse trend,
-  ) {
-    final months = trend.data
-    .map((item) => item.monthName)
-    .toList();
+  Widget _buildQualityLineChart(QualityTrendResponse trend) {
+    final months = trend.data.map((item) => item.monthName).toList();
 
-    final spots = trend.data
-    .asMap()
-    .entries
-    .map(
-      (entry) => FlSpot(
-        entry.key.toDouble(),
-        entry.value.score,
-      ),
-    )
-    .toList();
+    final spots =
+        trend.data
+            .asMap()
+            .entries
+            .map((entry) => FlSpot(entry.key.toDouble(), entry.value.score))
+            .toList();
 
     const lineColor = Color(0xFF1689E8);
     const gridColor = Color(0xFFE5E7EB);
@@ -884,9 +840,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return LineChart(
       LineChartData(
         minX: 0,
-        maxX: trend.data.isEmpty
-            ? 0
-            : (trend.data.length - 1).toDouble(),
+        maxX: trend.data.isEmpty ? 0 : (trend.data.length - 1).toDouble(),
         minY: 0,
         maxY: 100,
 
@@ -898,22 +852,14 @@ class _DashboardPageState extends State<DashboardPage> {
           drawVerticalLine: false,
           horizontalInterval: 25,
           getDrawingHorizontalLine: (value) {
-            return const FlLine(
-              color: gridColor,
-              strokeWidth: 1,
-            );
+            return const FlLine(color: gridColor, strokeWidth: 1);
           },
         ),
 
         // Garis bagian atas = garis 100%
         borderData: FlBorderData(
           show: true,
-          border: const Border(
-            top: BorderSide(
-              color: gridColor,
-              width: 1,
-            ),
-          ),
+          border: const Border(top: BorderSide(color: gridColor, width: 1)),
         ),
 
         // =========================
@@ -921,15 +867,11 @@ class _DashboardPageState extends State<DashboardPage> {
         // =========================
         titlesData: FlTitlesData(
           topTitles: const AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: false,
-            ),
+            sideTitles: SideTitles(showTitles: false),
           ),
 
           rightTitles: const AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: false,
-            ),
+            sideTitles: SideTitles(showTitles: false),
           ),
 
           // =========================
@@ -1019,12 +961,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // =========================
             dotData: FlDotData(
               show: true,
-              getDotPainter: (
-                spot,
-                percent,
-                barData,
-                index,
-              ) {
+              getDotPainter: (spot, percent, barData, index) {
                 return FlDotCirclePainter(
                   radius: 3.5,
                   color: const Color(0xFF087FD0),
@@ -1046,11 +983,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   lineColor.withOpacity(0.10),
                   lineColor.withOpacity(0.00),
                 ],
-                stops: const [
-                  0.0,
-                  0.45,
-                  1.0,
-                ],
+                stops: const [0.0, 0.45, 1.0],
               ),
             ),
           ),
@@ -1347,17 +1280,11 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-  List<_UpcomingAuditItem> _getUpcomingAudits(
-    AuditScheduleResponse schedule,
-  ) {
+
+  List<_UpcomingAuditItem> _getUpcomingAudits(AuditScheduleResponse schedule) {
     final now = DateTime.now();
 
-    final today = DateTime(
-      
-      now.year,
-      now.month,
-      now.day,
-    );
+    final today = DateTime(now.year, now.month, now.day);
 
     final List<_UpcomingAuditItem> result = [];
 
@@ -1377,9 +1304,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _UpcomingAuditItem(
               scheduleId: department.scheduleId,
               title: department.planTitle,
-              department: _normalizeDepartment(
-                department.department,
-              ),
+              department: _normalizeDepartment(department.department),
               standard: department.standard,
               date: auditDate,
             ),
@@ -1388,535 +1313,223 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-  // Tanggal terdekat tampil paling atas
-  result.sort(
-    (a, b) => a.date.compareTo(b.date),
-  );
+    // Tanggal terdekat tampil paling atas
+    result.sort((a, b) => a.date.compareTo(b.date));
 
-  return result;
-}
-
-String _normalizeDepartment(String department) {
-  final value = department.toLowerCase();
-
-  if (value == 'produksi' || value == 'production') {
-    return 'Production';
+    return result;
   }
 
-  if (value == 'qc' ||
-      value == 'quality control' ||
-      value == 'quality manager') {
-    return 'Quality Control';
+  String _normalizeDepartment(String department) {
+    final value = department.toLowerCase();
+
+    if (value == 'produksi' || value == 'production') {
+      return 'Production';
+    }
+
+    if (value == 'qc' ||
+        value == 'quality control' ||
+        value == 'quality manager') {
+      return 'Quality Control';
+    }
+
+    if (value == 'packaging') {
+      return 'Packaging';
+    }
+
+    if (value == 'warehouse') {
+      return 'Warehouse';
+    }
+
+    return department;
   }
 
-  if (value == 'packaging') {
-    return 'Packaging';
+  Color _departmentColor(String department) {
+    switch (department) {
+      case 'Production':
+        return const Color(0xFFE75480);
+
+      case 'Packaging':
+        return const Color(0xFF9570E1);
+
+      case 'Warehouse':
+        return const Color(0xFF1DD8B6);
+
+      case 'Quality Control':
+        return const Color(0xFF4AB4FF);
+
+      default:
+        return AppColors.primary;
+    }
   }
 
-  if (value == 'warehouse') {
-    return 'Warehouse';
-  }
+  Widget _buildUpcomingAudits(
+    AuditScheduleResponse schedule,
+    double screenWidth,
+  ) {
+    final upcomingAudits = _getUpcomingAudits(schedule);
 
-  return department;
-}
-
-Color _departmentColor(String department) {
-  switch (department) {
-    case 'Production':
-      return const Color(0xFFE75480);
-
-    case 'Packaging':
-      return const Color(0xFF9570E1);
-
-    case 'Warehouse':
-      return const Color(0xFF1DD8B6);
-
-    case 'Quality Control':
-      return const Color(0xFF4AB4FF);
-
-    default:
-      return AppColors.primary;
-  }
-}
-
-Widget _buildUpcomingAudits(
-  AuditScheduleResponse schedule,
-  double screenWidth,
-) {
-  final upcomingAudits = _getUpcomingAudits(schedule);
-
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.04),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // =========================
-        // HEADER
-        // =========================
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Upcoming audits',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-
-                const SizedBox(height: 2),
-
-                Text(
-                  '${upcomingAudits.length} audits due in the next 5 days',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-
-            // =========================
-            // VIEW ALL
-            // =========================
-            TextButton(
-              onPressed: widget.onOpenAuditPlan,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(50, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: Text(
-                'View all',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF2764F4),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        // =========================
-        // JIKA TIDAK ADA AUDIT
-        // =========================
-        if (upcomingAudits.isEmpty)
-          _buildNoUpcomingAudit()
-        else ...[
-          // =========================
-          // AUDIT PALING DEKAT
-          // Card paling atas
-          // =========================
-          _buildFeaturedAudit(
-            upcomingAudits.first,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-
-          // =========================
-          // AUDIT BERIKUTNYA
-          // =========================
-          if (upcomingAudits.length > 1) ...[
-            const SizedBox(height: 10),
-
-            ...upcomingAudits
-                .skip(1)
-                .take(3)
-                .map(
-                  (audit) => _buildUpcomingAuditRow(audit),
-                ),
-          ],
         ],
-
-        const SizedBox(height: 10),
-
-        // =========================
-        // LEGEND DEPARTMENT
-        // =========================
-        _buildAuditLegend(),
-      ],
-    ),
-  );
-}
-
-Widget _buildFeaturedAudit(
-  _UpcomingAuditItem audit,
-) {
-  final daysLeft = _daysLeft(audit.date);
-  final color = _departmentColor(audit.department);
-
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: () {
-        _openAuditChecklist(audit);
-      },
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.10),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // =========================
+          // HEADER
+          // =========================
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    audit.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    'Upcoming audits',
                     style: GoogleFonts.inter(
-                      fontSize: 14,
-                      height: 1.25,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF172033),
+                      color: AppColors.primary,
                     ),
                   ),
 
-                  const SizedBox(height: 9),
-
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 13,
-                        color: AppColors.textSecondary,
-                      ),
-
-                      const SizedBox(width: 5),
-
-                      Text(
-                        _formatAuditDate(audit.date),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '$daysLeft',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                      height: 1,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
 
                   Text(
-                    daysLeft == 1 ? 'day left' : 'days left',
+                    '${upcomingAudits.length} audits due in the next 5 days',
                     style: GoogleFonts.inter(
-                      fontSize: 7,
-                      color: color,
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
-            ),
+
+              // =========================
+              // VIEW ALL
+              // =========================
+              TextButton(
+                onPressed: widget.onOpenAuditPlan,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(50, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'View all',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF2764F4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // =========================
+          // JIKA TIDAK ADA AUDIT
+          // =========================
+          if (upcomingAudits.isEmpty)
+            _buildNoUpcomingAudit()
+          else ...[
+            // =========================
+            // AUDIT PALING DEKAT
+            // Card paling atas
+            // =========================
+            _buildFeaturedAudit(upcomingAudits.first),
+
+            // =========================
+            // AUDIT BERIKUTNYA
+            // =========================
+            if (upcomingAudits.length > 1) ...[
+              const SizedBox(height: 10),
+
+              ...upcomingAudits
+                  .skip(1)
+                  .take(3)
+                  .map((audit) => _buildUpcomingAuditRow(audit)),
+            ],
           ],
-        ),
-      ),
-    ),
-  );
-}
 
-String _formatAuditDate(DateTime date) {
-  const weekdays = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
+          const SizedBox(height: 10),
 
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  return '${weekdays[date.weekday - 1]}, '
-      '${date.day} '
-      '${months[date.month - 1]}';
-}
-
-int _daysLeft(DateTime auditDate) {
-  final now = DateTime.now();
-
-  final today = DateTime(
-    now.year,
-    now.month,
-    now.day,
-  );
-
-  final target = DateTime(
-    auditDate.year,
-    auditDate.month,
-    auditDate.day,
-  );
-
-  return target.difference(today).inDays;
-}
-
-Future<void> _openAuditChecklist(
-  _UpcomingAuditItem item,
-) async {
-  try {
-    final auditBloc = GetIt.instance<AuditBloc>();
-
-    // Ambil data audit lengkap
-    final audits = await auditBloc.repository.getAudits();
-
-    AuditEntity? selectedAudit;
-
-    for (final audit in audits) {
-      if (audit.scheduleId == item.scheduleId) {
-        selectedAudit = audit;
-        break;
-      }
-    }
-
-    // Audit tidak ditemukan
-    if (selectedAudit == null) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Audit data not found'),
-        ),
-      );
-
-      return;
-    }
-
-    // Audit sudah selesai
-    if (selectedAudit.isFinished) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This audit has already been completed'),
-        ),
-      );
-
-      return;
-    }
-
-    // Auditor hanya boleh membuka audit yang menjadi PIC-nya
-    if (_userRole.startsWith('Auditor') &&
-        selectedAudit.auditorName != _userName) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'You are not assigned to this audit',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    if (!mounted) return;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: auditBloc,
-          child: AuditChecklistPage(
-            audit: selectedAudit!,
-          ),
-        ),
-      ),
-    );
-  } catch (e) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Failed to open audit: $e',
-        ),
+          // =========================
+          // LEGEND DEPARTMENT
+          // =========================
+          _buildAuditLegend(),
+        ],
       ),
     );
   }
-}
 
-Widget _buildUpcomingAuditRow(
-  _UpcomingAuditItem audit,
-) {
-  final color = _departmentColor(audit.department);
-  final daysLeft = _daysLeft(audit.date);
+  Widget _buildFeaturedAudit(_UpcomingAuditItem audit) {
+    final daysLeft = _daysLeft(audit.date);
+    final color = _departmentColor(audit.department);
 
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  return Column(
-    children: [
-      InkWell(
-        borderRadius: BorderRadius.circular(10),
-
-        // ================================
-        // KLIK ROW → BUKA CHECKLIST
-        // ================================
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: () {
           _openAuditChecklist(audit);
         },
-
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 10,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // =====================
-              // DATE BOX
-              // =====================
-              Container(
-                width: 38,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${audit.date.day}',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        height: 1,
-                        fontWeight: FontWeight.w500,
-                        color: color,
-                      ),
-                    ),
-
-                    const SizedBox(height: 3),
-
-                    Text(
-                      months[audit.date.month - 1],
-                      style: GoogleFonts.inter(
-                        fontSize: 8,
-                        color: color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // =====================
-              // CONTENT
-              // =====================
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       audit.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
                         color: const Color(0xFF172033),
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 9),
 
                     Row(
                       children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 13,
+                          color: AppColors.textSecondary,
                         ),
 
                         const SizedBox(width: 5),
 
-                        Flexible(
-                          child: Text(
-                            '${audit.department}  ·  '
-                            '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              color: AppColors.textSecondary,
-                            ),
+                        Text(
+                          _formatAuditDate(audit.date),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -1925,116 +1538,393 @@ Widget _buildUpcomingAuditRow(
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
 
-              // ================================
-              // PANAH
-              // ================================
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: Colors.blueGrey.shade400,
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (daysLeft == 0)
+                      Text(
+                        'today',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      )
+                    else ...[
+                      Text(
+                        '$daysLeft',
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        daysLeft == 1 ? 'day left' : 'days left',
+                        style: GoogleFonts.inter(fontSize: 7, color: color),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
 
-      const Divider(
-        height: 1,
-        thickness: 1,
-        color: Color(0xFFF0F2F5),
-      ),
-    ],
-  );
-}
+  String _formatAuditDate(DateTime date) {
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-Widget _buildAuditLegend() {
-  final departments = {
-    'Production': const Color(0xFFE75480),
-    'Packaging': const Color(0xFF9570E1),
-    'Warehouse': const Color(0xFF1DD8B6),
-    'Quality Control': const Color(0xFF4AB4FF),
-  };
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
-  return FittedBox(
-    fit: BoxFit.scaleDown,
-    alignment: Alignment.centerLeft,
-    child: Row(
-      children: departments.entries.map((entry) {
-        return Padding(
-          padding: const EdgeInsets.only(right: 11),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: entry.value,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                entry.key.toUpperCase(),
-                style: GoogleFonts.inter(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
+    return '${weekdays[date.weekday - 1]}, '
+        '${date.day} '
+        '${months[date.month - 1]}';
+  }
+
+  int _daysLeft(DateTime auditDate) {
+    final now = DateTime.now();
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    final target = DateTime(auditDate.year, auditDate.month, auditDate.day);
+
+    return target.difference(today).inDays;
+  }
+
+  Future<void> _openAuditChecklist(_UpcomingAuditItem item) async {
+    try {
+      if (!_role.canRunChecklist) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You do not have access to audit checklists'),
           ),
         );
-      }).toList(),
-    ),
-  );
-}
+        return;
+      }
+      final auditBloc = GetIt.instance<AuditBloc>();
 
-Widget _buildNoUpcomingAudit() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.symmetric(
-      vertical: 28,
-    ),
-    decoration: BoxDecoration(
-      color: const Color(0xFFF8FAFC),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      children: [
-        Icon(
-          Icons.event_available_outlined,
-          size: 30,
-          color: AppColors.textDisabled,
+      // Ambil data audit lengkap
+      final audits = await auditBloc.repository.getAudits();
+
+      AuditEntity? selectedAudit;
+
+      for (final audit in audits) {
+        if (audit.scheduleId == item.scheduleId) {
+          selectedAudit = audit;
+          break;
+        }
+      }
+
+      // Audit tidak ditemukan
+      if (selectedAudit == null) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Audit data not found')));
+
+        return;
+      }
+
+      // Audit sudah selesai
+      if (selectedAudit.isFinished) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This audit has already been completed'),
+          ),
+        );
+
+        return;
+      }
+
+      if (_role == UserRole.auditorInternal &&
+          selectedAudit.auditorName != _userName) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You are not assigned to this audit')),
+        );
+
+        return;
+      }
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => BlocProvider.value(
+                value: auditBloc,
+                child: AuditChecklistPage(audit: selectedAudit!),
+              ),
         ),
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-        const SizedBox(height: 8),
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to open audit: $e')));
+    }
+  }
 
-        Text(
-          'No upcoming audits',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF172033),
+  Widget _buildUpcomingAuditRow(_UpcomingAuditItem audit) {
+    final color = _departmentColor(audit.department);
+    final daysLeft = _daysLeft(audit.date);
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    return Column(
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(10),
+
+          // ================================
+          // KLIK ROW → BUKA CHECKLIST
+          // ================================
+          onTap: () {
+            _openAuditChecklist(audit);
+          },
+
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              children: [
+                // =====================
+                // DATE BOX
+                // =====================
+                Container(
+                  width: 38,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${audit.date.day}',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          height: 1,
+                          fontWeight: FontWeight.w500,
+                          color: color,
+                        ),
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      Text(
+                        months[audit.date.month - 1],
+                        style: GoogleFonts.inter(fontSize: 8, color: color),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // =====================
+                // CONTENT
+                // =====================
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        audit.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF172033),
+                        ),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      Row(
+                        children: [
+                          Container(
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+
+                          const SizedBox(width: 5),
+
+                          Flexible(
+                            child: Text(
+                              '${audit.department}  ·  ${daysLeft == 0
+                                  ? 'today'
+                                  : '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // ================================
+                // PANAH
+                // ================================
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: Colors.blueGrey.shade400,
+                ),
+              ],
+            ),
           ),
         ),
 
-        const SizedBox(height: 3),
+        const Divider(height: 1, thickness: 1, color: Color(0xFFF0F2F5)),
+      ],
+    );
+  }
 
-        Text(
-          'No audits scheduled for the next 5 days',
-          style: GoogleFonts.inter(
-            fontSize: 9,
+  Widget _buildAuditLegend() {
+    final departments = {
+      'Production': const Color(0xFFE75480),
+      'Packaging': const Color(0xFF9570E1),
+      'Warehouse': const Color(0xFF1DD8B6),
+      'Quality Control': const Color(0xFF4AB4FF),
+    };
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        children:
+            departments.entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 11),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: entry.value,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      entry.key.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildNoUpcomingAudit() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.event_available_outlined,
+            size: 30,
             color: AppColors.textDisabled,
           ),
-        ),
-      ],
-    ),
-  );
-}
+
+          const SizedBox(height: 8),
+
+          Text(
+            'No upcoming audits',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF172033),
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          Text(
+            'No audits scheduled for the next 5 days',
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              color: AppColors.textDisabled,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildCalendar(AuditScheduleResponse schedule, double screenWidth) {
     // 1. Nama hari (Senin - Minggu)
@@ -2383,7 +2273,6 @@ class _UpcomingAuditItem {
     required this.standard,
     required this.date,
   });
-
 }
 
 class PdfThumbnailWidget extends StatefulWidget {

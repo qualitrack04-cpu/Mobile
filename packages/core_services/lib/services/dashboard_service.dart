@@ -283,11 +283,55 @@ Future<ComplianceScoreResponse> getComplianceScores() async {
 // Fungsi 3: Ambil Jadwal Audit per Bulan
 Future<AuditScheduleResponse> getAuditSchedule({required int month, required int year}) async {
   try {
-    final res = await apiService.client.get(
-      '/api/Dashboard/audit-schedule',
-      queryParameters: {'month': month, 'year': year},
+    final responses = await Future.wait([
+      apiService.client.get(
+        '/api/Dashboard/audit-schedule',
+        queryParameters: {'month': month, 'year': year},
+      ),
+      apiService.client.get('/api/AuditPlan'),
+    ]);
+
+    final scheduleResponse = AuditScheduleResponse.fromJson(
+      responses[0].data as Map<String, dynamic>,
     );
-    return AuditScheduleResponse.fromJson(res.data as Map<String, dynamic>);
+    final auditPlans = responses[1].data['data'] as List? ?? [];
+    final completedScheduleIds = <String>{};
+
+    for (final plan in auditPlans) {
+      final schedules = (plan as Map<String, dynamic>)['schedules'] as List? ?? [];
+      for (final schedule in schedules) {
+        final scheduleData = schedule as Map<String, dynamic>;
+        if (scheduleData['isFinished'] == true) {
+          final scheduleId = scheduleData['id']?.toString();
+          if (scheduleId != null && scheduleId.isNotEmpty) {
+            completedScheduleIds.add(scheduleId);
+          }
+        }
+      }
+    }
+
+    if (completedScheduleIds.isEmpty) return scheduleResponse;
+
+    final filteredDays = scheduleResponse.data
+        .map(
+          (day) => AuditScheduleDay(
+            day: day.day,
+            departments: day.departments
+                .where(
+                  (department) =>
+                      !completedScheduleIds.contains(department.scheduleId),
+                )
+                .toList(),
+          ),
+        )
+        .where((day) => day.departments.isNotEmpty)
+        .toList();
+
+    return AuditScheduleResponse(
+      month: scheduleResponse.month,
+      year: scheduleResponse.year,
+      data: filteredDays,
+    );
   } catch (e) {
     print('Error getAuditSchedule: $e');
     return AuditScheduleResponse(month: month, year: year, data: []);

@@ -8,6 +8,7 @@ import 'package:capa/presentation/pages/capa_form_page.dart';
 import 'package:capa/presentation/pages/capa_detail_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core_services/core_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,7 +35,9 @@ class _CapaListView extends StatefulWidget {
 class _CapaListViewState extends State<_CapaListView> {
   List<Capa> _lastCapas = [];
   bool _isFirstLoad = true;
-  String _userRole = '';
+  UserRole _role = UserRole.unknown;
+  String _userId = '';
+  String _userName = '';
 
   @override
   void initState() {
@@ -46,7 +49,9 @@ class _CapaListViewState extends State<_CapaListView> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _userRole = prefs.getString('user_role') ?? '';
+        _role = UserRole.fromApi(prefs.getString('user_role'));
+        _userId = prefs.getString('user_id') ?? '';
+        _userName = prefs.getString('user_name') ?? '';
       });
     }
   }
@@ -171,10 +176,14 @@ class _CapaListViewState extends State<_CapaListView> {
                         ...displayList.asMap().entries.map((entry) {
                           final index = entry.key;
                           final capa = entry.value;
-                          return _CapaCard(
-                            key: capa.id.isEmpty ? ValueKey('skeleton_$index') : ValueKey(capa.id),
+                                                    return _CapaCard(
+                            key: capa.id.isEmpty
+                                ? ValueKey('skeleton_$index')
+                                : ValueKey(capa.id),
                             capa: capa,
-                            userRole: _userRole,
+                            role: _role,
+                            userId: _userId,
+                            userName: _userName,
                           );
                         }),
                     ],
@@ -183,7 +192,9 @@ class _CapaListViewState extends State<_CapaListView> {
               ),
 
               // FAB
-              Positioned(
+              // FAB
+              if (_role.canManageCapa)
+                Positioned(
                   bottom: 16,
                   right: 16,
                   child: Builder(
@@ -240,8 +251,17 @@ class _CapaListViewState extends State<_CapaListView> {
 
 class _CapaCard extends StatefulWidget {
   final Capa capa;
-  final String userRole;
-  const _CapaCard({super.key, required this.capa, required this.userRole});
+  final UserRole role;
+  final String userId;
+  final String userName;
+
+  const _CapaCard({
+    super.key,
+    required this.capa,
+    required this.role,
+    required this.userId,
+    required this.userName,
+  });
 
   @override
   State<_CapaCard> createState() => _CapaCardState();
@@ -263,6 +283,26 @@ class _CapaCardState extends State<_CapaCard> {
     super.initState();
     _currentStatus = widget.capa.status;
   }
+  /// PIC dicocokkan lewat ID atau nama user yang sedang login.
+  bool get _isMyCapa {
+    final picId = widget.capa.picId;
+    final sameId = picId.isNotEmpty &&
+        widget.userId.isNotEmpty &&
+        widget.userId.toLowerCase() != 'null' &&
+        picId.toLowerCase() == widget.userId.toLowerCase();
+    final normalizeName = (String value) =>
+        value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+    final sameName = widget.capa.picName.isNotEmpty &&
+        widget.userName.isNotEmpty &&
+        normalizeName(widget.capa.picName) == normalizeName(widget.userName);
+
+    return sameId || sameName;
+  }
+
+  /// Status boleh diubah oleh Quality Manager, atau oleh PIC-nya sendiri.
+  bool get _canChangeStatus =>
+      widget.role.canManageCapa ||
+      (widget.role.canFillOwnCapa && _isMyCapa);
 
   @override
   Widget build(BuildContext context) {
@@ -409,7 +449,7 @@ class _CapaCardState extends State<_CapaCard> {
         textColor = Colors.black38;
     }
 
-    if (widget.userRole.startsWith('Auditor') || _currentStatus == 'Closed') {
+    if (!_canChangeStatus || _currentStatus == 'Closed') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
