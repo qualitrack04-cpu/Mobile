@@ -37,7 +37,7 @@ class SpcCard extends StatelessWidget {
       return Container(
         padding: padding,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Colors.white,
           borderRadius: borderRadius,
           boxShadow: shadow,
         ),
@@ -47,6 +47,7 @@ class SpcCard extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
       borderRadius: borderRadius,
       child: InkWell(
         onTap: onTap,
@@ -54,6 +55,7 @@ class SpcCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: borderRadius,
             boxShadow: shadow,
           ),

@@ -790,7 +790,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _formatRole(widget.role).toUpperCase(),
+                      UserRole.fromApi(widget.role).label.toUpperCase(),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

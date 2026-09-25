@@ -187,10 +187,12 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           _buildProfileHeader(),
                           _buildInfoCard(),
-                          _buildQualityScore(),
-                          _buildSuccessRate(),
-                          _buildAuditStats(),
-                          _buildRecentActivity(),
+                          if (UserRole.fromApi(_role) != UserRole.qualityManager) ...[
+                            _buildQualityScore(),
+                            _buildSuccessRate(),
+                            _buildAuditStats(),
+                            _buildRecentActivity(),
+                          ],
                         ],
                       ),
                     ),
@@ -335,7 +337,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             const SizedBox(height: 4),
             Text(
-              _formatRole(_role).toUpperCase(),
+              UserRole.fromApi(_role).label.toUpperCase(),
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -365,7 +367,10 @@ class _ProfilePageState extends State<ProfilePage>
               label: 'Email',
               value: _email.isEmpty ? '-' : _email,
             ),
-            _buildInfoField(label: 'Role', value: _formatRole(_role)),
+            _buildInfoField(
+              label: 'Role',
+              value: UserRole.fromApi(_role).label,
+            ),
           ],
         ),
       ),

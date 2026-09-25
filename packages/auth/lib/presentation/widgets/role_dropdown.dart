@@ -34,9 +34,8 @@ class RoleDropdown extends StatelessWidget {
           child: Text('Admin', style: TextStyle(color: Colors.grey)),
         ),
         DropdownMenuItem(
-          enabled: false,
-          value: null,
-          child: Text('Auditee', style: TextStyle(color: Colors.grey)),
+          value: 'Auditee',
+          child: Text('Auditee'),
         ),
       ],
       onChanged: onChanged,
