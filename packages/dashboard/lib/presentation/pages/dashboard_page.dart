@@ -57,6 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // Dinaikkan setiap refresh supaya kartu SPC ikut memuat ulang datanya.
   int _spcRefreshToken = 0;
   bool _isShowingAuditAccessNotice = false;
+  bool _isOpeningAuditChecklist = false;
 
   @override
   void initState() {
@@ -1308,6 +1309,7 @@ class _DashboardPageState extends State<DashboardPage> {
               title: department.planTitle,
               department: _normalizeDepartment(department.department),
               standard: department.standard,
+              auditorName: department.auditorName,
               date: auditDate,
             ),
           );
@@ -1621,61 +1623,32 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _openAuditChecklist(_UpcomingAuditItem item) async {
+    if (_isOpeningAuditChecklist) return;
+
+    _isOpeningAuditChecklist = true;
     try {
-      if (!_role.canRunChecklist) {
-        _showAuditAccessNotice(
-          'You do not have access to audit checklists',
-        );
-        return;
-      }
-      final auditBloc = GetIt.instance<AuditBloc>();
+      final selectedAudit = AuditEntity(
+        id: item.scheduleId,
+        scheduleId: item.scheduleId,
+        title: item.title,
+        auditorName: item.auditorName,
+        isoTemplates: item.standard.isEmpty ? [] : [item.standard],
+        department: item.department,
+        date: item.date,
+        description: '',
+        isPriority: false,
+        isFinished: false,
+      );
 
-      // Ambil data audit lengkap
-      final audits = await auditBloc.repository.getAudits();
-
-      AuditEntity? selectedAudit;
-
-      for (final audit in audits) {
-        if (audit.scheduleId == item.scheduleId) {
-          selectedAudit = audit;
-          break;
-        }
-      }
-
-      // Audit tidak ditemukan
-      if (selectedAudit == null) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Audit data not found')));
-
-        return;
-      }
-
-      // Audit sudah selesai
-      if (selectedAudit.isFinished) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This audit has already been completed'),
-          ),
-        );
-
-        return;
-      }
-
-      if (_role == UserRole.auditorInternal &&
-          selectedAudit.auditorName != _userName) {
-        if (!mounted) return;
-
-        _showAuditAccessNotice('You are not assigned to this audit');
+      if (!_role.canRunChecklist ||
+          selectedAudit.auditorName.trim() != _userName.trim()) {
+        _showAuditAccessNotice('You do not have access to this audit');
 
         return;
       }
 
       if (!mounted) return;
+      final auditBloc = GetIt.instance<AuditBloc>();
 
       await Navigator.push(
         context,
@@ -1683,7 +1656,7 @@ class _DashboardPageState extends State<DashboardPage> {
           builder:
               (_) => BlocProvider.value(
                 value: auditBloc,
-                child: AuditChecklistPage(audit: selectedAudit!),
+                child: AuditChecklistPage(audit: selectedAudit),
               ),
         ),
       );
@@ -1693,6 +1666,8 @@ class _DashboardPageState extends State<DashboardPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to open audit: $e')));
+    } finally {
+      _isOpeningAuditChecklist = false;
     }
   }
 
@@ -1811,9 +1786,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                           Flexible(
                             child: Text(
-                              '${audit.department}  ·  ${daysLeft == 0
-                                  ? 'today'
-                                  : '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left'}',
+                              '${audit.department}  ·  ${daysLeft == 0 ? 'today' : '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left'}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
@@ -1856,40 +1829,46 @@ class _DashboardPageState extends State<DashboardPage> {
       'Quality Control': const Color(0xFF4AB4FF),
     };
 
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        children:
-            departments.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 11),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: entry.value,
-                        shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fontSize = constraints.maxWidth < 300 ? 6.5 : 8.0;
+
+        return Row(
+          children:
+              departments.entries.map((entry) {
+                return Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: entry.value,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      entry.key.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        fontSize: 7,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.2,
-                        color: AppColors.textMuted,
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            entry.key.toUpperCase(),
+                            maxLines: 1,
+                            style: GoogleFonts.inter(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+        );
+      },
     );
   }
 
@@ -2272,6 +2251,7 @@ class _UpcomingAuditItem {
   final String title;
   final String department;
   final String standard;
+  final String auditorName;
   final DateTime date;
 
   const _UpcomingAuditItem({
@@ -2279,6 +2259,7 @@ class _UpcomingAuditItem {
     required this.title,
     required this.department,
     required this.standard,
+    required this.auditorName,
     required this.date,
   });
 }

@@ -64,17 +64,7 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _loadQualityScore() async {
     final service = GetIt.instance<QualityScoreService>();
     final score = await service.getLatestQualityScore();
-    if (mounted) {
-      setState(() {
-        _qualityScore = score ?? 0;
-        _qualityScoreLoading = false;
-      });
-      // Mulai animasi lingkaran dari 0 ke nilai aktual
-      _scoreAnim = Tween<double>(begin: 0, end: _qualityScore / 100).animate(
-        CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
-      );
-      _scoreAnimController.forward(from: 0);
-    }
+    _updateQualityScore(_kpi?.qualityScore ?? score ?? 0);
   }
 
   Future<void> _loadKpi() async {
@@ -85,12 +75,27 @@ class _ProfilePageState extends State<ProfilePage>
         _kpi = kpi;
         _kpiLoading = false;
       });
+      if (kpi?.qualityScore != null) {
+        _updateQualityScore(kpi!.qualityScore!);
+      }
     }
+  }
+
+  void _updateQualityScore(double score) {
+    if (!mounted) return;
+
+    _qualityScore = score.clamp(0, 100).toDouble();
+    _qualityScoreLoading = false;
+    _scoreAnim = Tween<double>(begin: 0, end: _qualityScore / 100).animate(
+      CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
+    );
+    _scoreAnimController.forward(from: 0);
+    setState(() {});
   }
 
   Future<void> _loadRecentActivities() async {
     final service = GetIt.instance<ProfileService>();
-    final activities = await service.getRecentActivity();
+    final activities = await service.getRecentActivity(limit: 5);
     if (mounted) {
       setState(() {
         _activities = activities;
@@ -187,7 +192,8 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           _buildProfileHeader(),
                           _buildInfoCard(),
-                          if (UserRole.fromApi(_role) != UserRole.qualityManager) ...[
+                          if (UserRole.fromApi(_role) !=
+                              UserRole.qualityManager) ...[
                             _buildQualityScore(),
                             _buildSuccessRate(),
                             _buildAuditStats(),
@@ -414,10 +420,10 @@ class _ProfilePageState extends State<ProfilePage>
 
   /// Hitung warna & label berdasarkan nilai score
   Color _scoreColor(double score) {
-    if (score >= 85) return const Color(0xFF16A34A);  // hijau
-    if (score >= 70) return const Color(0xFFF59E0B);  // kuning
-    if (score >= 50) return const Color(0xFFF97316);  // oranye
-    return const Color(0xFFEF4444);                   // merah
+    if (score >= 85) return const Color(0xFF16A34A); // hijau
+    if (score >= 70) return const Color(0xFFF59E0B); // kuning
+    if (score >= 50) return const Color(0xFFF97316); // oranye
+    return const Color(0xFFEF4444); // merah
   }
 
   String _scoreLabel(double score) {
@@ -432,10 +438,7 @@ class _ProfilePageState extends State<ProfilePage>
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 20,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(10),
@@ -454,87 +457,89 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             const SizedBox(height: 20),
             Center(
-              child: _qualityScoreLoading
-                  ? const SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : AnimatedBuilder(
-                      animation: _scoreAnim,
-                      builder: (context, _) {
-                        final animValue = _scoreAnim.value;
-                        final displayScore = (animValue * 100).toStringAsFixed(0);
-                        final color = _scoreColor(_qualityScore);
-                        return SizedBox(
-                          width: 160,
-                          height: 160,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 160,
-                                height: 160,
-                                child: CircularProgressIndicator(
-                                  value: animValue,
-                                  strokeWidth: 12,
-                                  color: color,
-                                  backgroundColor: AppColors.borderLight,
-                                  strokeCap: StrokeCap.round,
+                child: _qualityScoreLoading
+                    ? const SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : AnimatedBuilder(
+                        animation: _scoreAnim,
+                        builder: (context, _) {
+                          final animValue = _scoreAnim.value;
+                          final displayScore = (animValue * 100)
+                              .toStringAsFixed(1);
+                          final color = _scoreColor(_qualityScore);
+                          return SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 160,
+                                  height: 160,
+                                  child: CircularProgressIndicator(
+                                    value: animValue,
+                                    strokeWidth: 12,
+                                    color: color,
+                                    backgroundColor: AppColors.borderLight,
+                                    strokeCap: StrokeCap.round,
+                                  ),
                                 ),
-                              ),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '$displayScore%',
-                                    style: GoogleFonts.inter(
-                                      color: color,
-                                      fontSize: 38,
-                                      fontWeight: FontWeight.bold,
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '$displayScore%',
+                                      style: GoogleFonts.inter(
+                                        color: color,
+                                        fontSize: 38,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    'Quality Score',
-                                    style: GoogleFonts.inter(
-                                      color: AppColors.textMuted,
-                                      fontSize: 10,
+                                    Text(
+                                      'Quality Score',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textMuted,
+                                        fontSize: 10,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
             ),
             const SizedBox(height: 20),
             Center(
-              child: _qualityScoreLoading
-                  ? const SizedBox.shrink()
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _scoreColor(_qualityScore),
-                            shape: BoxShape.circle,
+              child:
+                  _qualityScoreLoading
+                      ? const SizedBox.shrink()
+                      : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _scoreColor(_qualityScore),
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _scoreLabel(_qualityScore),
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _scoreColor(_qualityScore),
+                          const SizedBox(width: 6),
+                          Text(
+                            _scoreLabel(_qualityScore),
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: _scoreColor(_qualityScore),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
             ),
           ],
         ),
@@ -544,7 +549,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildSuccessRate() {
     final rate = _kpi?.onTimeRate ?? _kpi?.onTimeCompletionRate ?? 0.0;
-    final percentText = '${(rate * 100).toStringAsFixed(0)}%';
+    final percentText = '${(rate * 100).toStringAsFixed(1)}%';
     final onTime =
         _kpi?.totalCompletedOnTime ?? _kpi?.totalCapaClosedOnTime ?? 0;
     final totalClosed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
@@ -574,21 +579,21 @@ class _ProfilePageState extends State<ProfilePage>
               children: [
                 _kpiLoading
                     ? const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
-                        ),
-                      )
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
                     : Text(
                         percentText,
-                        style: GoogleFonts.inter(
-                          color: AppColors.surface,
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      style: GoogleFonts.inter(
+                        color: AppColors.surface,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
                 Text(
                   ratioText,
                   style: GoogleFonts.inter(
@@ -616,21 +621,18 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildAuditStats([int? customOnTime, int? customOverdue]) {
     final onTime =
-      customOnTime ??
-      _kpi?.totalCompletedOnTime ??
-      _kpi?.totalCapaClosedOnTime ??
-      0;
+        customOnTime ??
+        _kpi?.totalCompletedOnTime ??
+        _kpi?.totalCapaClosedOnTime ??
+        0;
     final totalClosed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
     final overdue =
-      customOverdue ??
-      _kpi?.totalOverdue ??
-      (totalClosed - onTime).clamp(0, 999999);
+        customOverdue ??
+        _kpi?.totalOverdue ??
+        (totalClosed - onTime).clamp(0, 999999);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 5,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       child: Row(
         children: [
           Expanded(
@@ -655,61 +657,51 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-Widget _buildStatCard({
-  required int value,
-  required String label,
-  required IconData icon,
-  required Color iconColor,
-}) {
-  return Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 24,
-    ),
-    decoration: BoxDecoration(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(
-        color: AppColors.borderLight,
-        width: 1,
+  Widget _buildStatCard({
+    required int value,
+    required String label,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderLight, width: 1),
       ),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value.toString(),
-              style: GoogleFonts.inter(
-                fontSize: 32,
-                color: AppColors.textPrimary,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 32,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 4),
+              const SizedBox(height: 4),
 
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMuted,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
 
-        Icon(
-          icon,
-          size: 42,
-          color: iconColor,
-        ),
-      ],
-    ),
-  );
-}
+          Icon(icon, size: 42, color: iconColor),
+        ],
+      ),
+    );
+  }
 
   // ─────────────────────────────────────────────
   // Recent Activity
@@ -923,12 +915,13 @@ Widget _buildStatCard({
           'title': 'CAPA Action',
         };
       default:
-        final fallbackTitle = item.activityType.isEmpty
-            ? 'Activity'
-            : item.activityType.replaceAllMapped(
-                RegExp(r'(?<!^)([A-Z])'),
-                (match) => ' ${match.group(1)}',
-              );
+        final fallbackTitle =
+            item.activityType.isEmpty
+                ? 'Activity'
+                : item.activityType.replaceAllMapped(
+                  RegExp(r'(?<!^)([A-Z])'),
+                  (match) => ' ${match.group(1)}',
+                );
         return {
           'icon': Icons.history_rounded,
           'iconColor': const Color(0xFF6B7280),
@@ -958,8 +951,19 @@ Widget _buildStatCard({
       return 'Yesterday, $h:$m ${local.hour < 12 ? "AM" : "PM"}';
     } else {
       const months = [
-        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${months[local.month]} ${local.day}, ${local.year}';
     }
