@@ -7,6 +7,14 @@ class UserKpi {
   final int totalCapaClosedOnTime;
   final int totalFindingsReported;
   final double onTimeCompletionRate; // 0.0 - 1.0
+  final int? totalAssigned;
+  final int? totalCompleted;
+  final int? totalCompletedOnTime;
+  final int? totalOverdue;
+  final int? totalStalled;
+  final double? onTimeRate;
+  final double? complianceScore;
+  final double? qualityScore;
 
   UserKpi({
     required this.totalCapaAssigned,
@@ -15,17 +23,41 @@ class UserKpi {
     required this.totalCapaClosedOnTime,
     required this.totalFindingsReported,
     required this.onTimeCompletionRate,
+    this.totalAssigned,
+    this.totalCompleted,
+    this.totalCompletedOnTime,
+    this.totalOverdue,
+    this.totalStalled,
+    this.onTimeRate,
+    this.complianceScore,
+    this.qualityScore,
   });
 
   factory UserKpi.fromJson(Map<String, dynamic> json) {
     return UserKpi(
-      totalCapaAssigned: json['totalCapaAssigned'] as int? ?? 0,
-      totalCapaClosed: json['totalCapaClosed'] as int? ?? 0,
-      totalCapaOpenInProgress: json['totalCapaOpenInProgress'] as int? ?? 0,
-      totalCapaClosedOnTime: json['totalCapaClosedOnTime'] as int? ?? 0,
+      totalCapaAssigned:
+        (json['totalCapaAssigned'] ?? json['totalAssigned']) as int? ?? 0,
+      totalCapaClosed:
+        (json['totalCapaClosed'] ?? json['totalCompleted']) as int? ?? 0,
+      totalCapaOpenInProgress:
+        (json['totalCapaOpenInProgress'] ?? json['totalStalled']) as int? ?? 0,
+      totalCapaClosedOnTime:
+        (json['totalCapaClosedOnTime'] ?? json['totalCompletedOnTime'])
+          as int? ??
+        0,
       totalFindingsReported: json['totalFindingsReported'] as int? ?? 0,
       onTimeCompletionRate:
-          (json['onTimeCompletionRate'] as num?)?.toDouble() ?? 0.0,
+        ((json['onTimeCompletionRate'] ?? json['onTimeRate']) as num?)
+          ?.toDouble() ??
+        0.0,
+      totalAssigned: json['totalAssigned'] as int?,
+      totalCompleted: json['totalCompleted'] as int?,
+      totalCompletedOnTime: json['totalCompletedOnTime'] as int?,
+      totalOverdue: json['totalOverdue'] as int?,
+      totalStalled: json['totalStalled'] as int?,
+      onTimeRate: (json['onTimeRate'] as num?)?.toDouble(),
+      complianceScore: (json['complianceScore'] as num?)?.toDouble(),
+      qualityScore: (json['qualityScore'] as num?)?.toDouble(),
     );
   }
 
