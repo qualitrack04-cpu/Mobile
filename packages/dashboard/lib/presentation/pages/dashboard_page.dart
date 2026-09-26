@@ -56,6 +56,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // Dinaikkan setiap refresh supaya kartu SPC ikut memuat ulang datanya.
   int _spcRefreshToken = 0;
+  bool _isShowingAuditAccessNotice = false;
 
   @override
   void initState() {
@@ -316,28 +317,29 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildUpcomingAudits(schedule, screenWidth),
               const SizedBox(height: 24),
 
-              // 4. summary card
-              _buildSectionTitle('SUMMARY CARD'),
-              const SizedBox(height: 12),
-              _buildAuditSummary(summary, screenWidth),
-              const SizedBox(height: 24),
-
-              // 5. Compliance Score
+              // 4. Compliance Score
               _buildSectionTitle('COMPLIANCE SCORE'),
               const SizedBox(height: 12),
               _buildComplianceScore(score, screenWidth),
               const SizedBox(height: 24),
 
-              // 6. Audit Report
-              _buildSectionTitle('AUDIT REPORT'),
+              // 5. summary card
+              _buildSectionTitle('SUMMARY CARD'),
               const SizedBox(height: 12),
-              _buildAuditReportList(reports, screenWidth),
-              const SizedBox(height: 32),
+              _buildAuditSummary(summary, screenWidth),
+              const SizedBox(height: 24),
 
+              // 6. SPC
               _buildSectionTitle('SPC ANALYSIS'),
               const SizedBox(height: 12),
               SpcDashboardCard(refreshToken: _spcRefreshToken),
               const SizedBox(height: 24),
+
+              // 7. Audit Report
+              _buildSectionTitle('AUDIT REPORT'),
+              const SizedBox(height: 12),
+              _buildAuditReportList(reports, screenWidth),
+              const SizedBox(height: 32),
             ],
           ),
         );
@@ -1621,10 +1623,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _openAuditChecklist(_UpcomingAuditItem item) async {
     try {
       if (!_role.canRunChecklist) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You do not have access to audit checklists'),
-          ),
+        _showAuditAccessNotice(
+          'You do not have access to audit checklists',
         );
         return;
       }
@@ -1670,9 +1670,7 @@ class _DashboardPageState extends State<DashboardPage> {
           selectedAudit.auditorName != _userName) {
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You are not assigned to this audit')),
-        );
+        _showAuditAccessNotice('You are not assigned to this audit');
 
         return;
       }
@@ -1696,6 +1694,16 @@ class _DashboardPageState extends State<DashboardPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to open audit: $e')));
     }
+  }
+
+  void _showAuditAccessNotice(String message) {
+    if (_isShowingAuditAccessNotice || !mounted) return;
+
+    _isShowingAuditAccessNotice = true;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)))
+        .closed
+        .whenComplete(() => _isShowingAuditAccessNotice = false);
   }
 
   Widget _buildUpcomingAuditRow(_UpcomingAuditItem audit) {

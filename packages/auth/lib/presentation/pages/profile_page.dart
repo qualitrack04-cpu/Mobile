@@ -543,10 +543,11 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildSuccessRate() {
-    final rate = _kpi?.onTimeCompletionRate ?? 0.0;
+    final rate = _kpi?.onTimeRate ?? _kpi?.onTimeCompletionRate ?? 0.0;
     final percentText = '${(rate * 100).toStringAsFixed(0)}%';
-    final onTime = _kpi?.totalCapaClosedOnTime ?? 0;
-    final totalClosed = _kpi?.totalCapaClosed ?? 0;
+    final onTime =
+        _kpi?.totalCompletedOnTime ?? _kpi?.totalCapaClosedOnTime ?? 0;
+    final totalClosed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
     final ratioText = '$onTime/$totalClosed';
 
     return Padding(
@@ -614,9 +615,16 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildAuditStats([int? customOnTime, int? customOverdue]) {
-    final onTime = customOnTime ?? _kpi?.totalCapaClosedOnTime ?? 0;
-    final totalClosed = _kpi?.totalCapaClosed ?? 0;
-    final overdue = customOverdue ?? (totalClosed - onTime).clamp(0, 999999);
+    final onTime =
+      customOnTime ??
+      _kpi?.totalCompletedOnTime ??
+      _kpi?.totalCapaClosedOnTime ??
+      0;
+    final totalClosed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
+    final overdue =
+      customOverdue ??
+      _kpi?.totalOverdue ??
+      (totalClosed - onTime).clamp(0, 999999);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -891,8 +899,20 @@ Widget _buildStatCard({
           'badgeText': const Color(0xFFB45309),
           'title': 'Finding Reported',
         };
+      case 'Audit':
+      case 'AuditSubmitted':
+      case 'AuditUpdated':
+      case 'AuditCompleted':
+        return {
+          'icon': Icons.fact_check_rounded,
+          'iconColor': const Color(0xFF2563EB),
+          'bgColor': const Color(0xFFEFF6FF),
+          'label': 'AUDIT',
+          'badgeBg': const Color(0xFFEFF6FF),
+          'badgeText': const Color(0xFF2563EB),
+          'title': 'Audit Activity',
+        };
       case 'CapaAction':
-      default:
         return {
           'icon': Icons.task_alt_rounded,
           'iconColor': const Color(0xFF2563EB),
@@ -901,6 +921,22 @@ Widget _buildStatCard({
           'badgeBg': const Color(0xFFEFF6FF),
           'badgeText': const Color(0xFF2563EB),
           'title': 'CAPA Action',
+        };
+      default:
+        final fallbackTitle = item.activityType.isEmpty
+            ? 'Activity'
+            : item.activityType.replaceAllMapped(
+                RegExp(r'(?<!^)([A-Z])'),
+                (match) => ' ${match.group(1)}',
+              );
+        return {
+          'icon': Icons.history_rounded,
+          'iconColor': const Color(0xFF6B7280),
+          'bgColor': const Color(0xFFF3F4F6),
+          'label': 'INFO',
+          'badgeBg': const Color(0xFFF3F4F6),
+          'badgeText': const Color(0xFF6B7280),
+          'title': fallbackTitle,
         };
     }
   }
