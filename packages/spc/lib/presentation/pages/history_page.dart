@@ -108,7 +108,7 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
 
     if (state.analyses.isEmpty) {
       return const SpcSectionPlaceholder.message(
-        message: 'Tidak ada analisis yang cocok dengan filter ini.',
+        message: 'No analysis match these filters.',
         icon: Icons.filter_alt_off_outlined,
       );
     }
