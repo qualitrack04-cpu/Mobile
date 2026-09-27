@@ -1308,6 +1308,7 @@ class _DashboardPageState extends State<DashboardPage> {
               scheduleId: department.scheduleId,
               title: department.planTitle,
               department: _normalizeDepartment(department.department),
+              rawDepartment: department.department,
               standard: department.standard,
               auditorName: department.auditorName,
               date: auditDate,
@@ -1633,15 +1634,20 @@ class _DashboardPageState extends State<DashboardPage> {
         title: item.title,
         auditorName: item.auditorName,
         isoTemplates: item.standard.isEmpty ? [] : [item.standard],
-        department: item.department,
+        department: item.rawDepartment,
         date: item.date,
         description: '',
         isPriority: false,
         isFinished: false,
       );
 
-      if (!_role.canRunChecklist ||
-          selectedAudit.auditorName.trim() != _userName.trim()) {
+      final bool isAssignedAuditor =
+          selectedAudit.auditorName.trim() == _userName.trim();
+      final bool hasAccess =
+          _role == UserRole.qualityManager ||
+          (_role.canRunChecklist && isAssignedAuditor);
+
+      if (!hasAccess) {
         _showAuditAccessNotice('You do not have access to this audit');
 
         return;
@@ -2250,6 +2256,7 @@ class _UpcomingAuditItem {
   final String scheduleId;
   final String title;
   final String department;
+  final String rawDepartment;
   final String standard;
   final String auditorName;
   final DateTime date;
@@ -2258,6 +2265,7 @@ class _UpcomingAuditItem {
     required this.scheduleId,
     required this.title,
     required this.department,
+    required this.rawDepartment,
     required this.standard,
     required this.auditorName,
     required this.date,

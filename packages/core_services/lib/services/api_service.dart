@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://173.249.63.40:5144'; 
+  // Untuk server dika :'http://173.249.63.40:5144'
+  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
+  
   static final RegExp _indonesianErrorTerms = RegExp(
     r'\b(gagal|tidak|belum|sudah|silakan|mohon|pastikan|ditemukan|terdaftar|tersedia|wajib|harus|salah|kadaluarsa|kedaluwarsa|berhasil|terjadi|dapat|mengirim|mengambil|menyimpan|mengunggah|mengupload|masukkan|periksa|coba lagi|ditolak|dibatalkan|dihapus|digunakan)\b',
     caseSensitive: false,
