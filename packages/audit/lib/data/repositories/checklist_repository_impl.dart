@@ -18,7 +18,7 @@ class ChecklistRepositoryImpl implements ChecklistRepository {
         department: department,
       );
     } catch (e) {
-      throw Exception('Gagal mengambil data checklist: $e');
+      throw Exception('Failed to load checklist data: $e');
     }
   }
 
@@ -33,7 +33,7 @@ class ChecklistRepositoryImpl implements ChecklistRepository {
         checklistId: checklistId,
       );
     } catch (e) {
-      throw Exception('Gagal membuat sesi audit: $e');
+      throw Exception('Failed to create the audit session: $e');
     }
   }
 
@@ -48,7 +48,7 @@ class ChecklistRepositoryImpl implements ChecklistRepository {
         checklists: checklists,
       );
     } catch (e) {
-      throw Exception('Gagal menyimpan hasil checklist: $e');
+      throw Exception('Failed to save checklist responses: $e');
     }
   }
-}
+}

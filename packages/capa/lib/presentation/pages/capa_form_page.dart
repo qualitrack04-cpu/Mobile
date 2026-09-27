@@ -36,11 +36,11 @@ class _CapaFormPageState extends State<CapaFormPage> {
 
   bool get _isFormValid =>
       _titleController.text.trim().length >= 5 &&
-          _selectedFindingId != null &&
-          _descriptionController.text.trim().length >= 10 &&
-          _actionController.text.trim().length >= 10 &&
-          _selectedPicId != null &&
-          _selectedDeadline != null;
+      _selectedFindingId != null &&
+      _descriptionController.text.trim().length >= 10 &&
+      _actionController.text.trim().length >= 10 &&
+      _selectedPicId != null &&
+      _selectedDeadline != null;
 
   @override
   void initState() {
@@ -72,23 +72,22 @@ class _CapaFormPageState extends State<CapaFormPage> {
     try {
       final fRes = await api.client.get('/api/Finding/without-capa');
       final dynamic fData = fRes.data;
-      final findingsRaw = fData is List
-          ? fData
-          : (fData is Map && fData['data'] is List)
+      final findingsRaw =
+          fData is List
+              ? fData
+              : (fData is Map && fData['data'] is List)
               ? fData['data'] as List<dynamic>
               : <dynamic>[];
 
-      fetchedFindings = findingsRaw.map((f) {
-        final clause = f['clauseRef'] as String? ?? '';
-        final desc = f['description'] as String? ?? '';
-        final label = clause.isNotEmpty ? '$clause - $desc' : desc;
-        return {
-          'id': f['id'] as String,
-          'title': label,
-        };
-      }).toList();
+      fetchedFindings =
+          findingsRaw.map((f) {
+            final clause = f['clauseRef'] as String? ?? '';
+            final desc = f['description'] as String? ?? '';
+            final label = clause.isNotEmpty ? '$clause - $desc' : desc;
+            return {'id': f['id'] as String, 'title': label};
+          }).toList();
     } catch (e) {
-      errors.add('Gagal memuat findings');
+      errors.add('Failed to load findings.');
     }
 
     // Load users (PIC Candidates)
@@ -96,12 +95,17 @@ class _CapaFormPageState extends State<CapaFormPage> {
       final uRes = await api.client.get('/api/Auth/pic-candidates');
       final usersRaw = uRes.data['data'] as List<dynamic>? ?? [];
 
-      fetchedUsers = usersRaw.map((u) => {
-        'id': u['id'] as String,
-        'name': u['fullName'] as String,
-      }).toList();
+      fetchedUsers =
+          usersRaw
+              .map(
+                (u) => {
+                  'id': u['id'] as String,
+                  'name': u['fullName'] as String,
+                },
+              )
+              .toList();
     } catch (e) {
-      errors.add('Gagal memuat users/PIC');
+      errors.add('Failed to load users and assignees.');
     }
 
     if (mounted) {
@@ -179,20 +183,33 @@ class _CapaFormPageState extends State<CapaFormPage> {
                 Container(
                   width: double.infinity,
                   color: Colors.red.shade50,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _loadError!,
-                          style: const TextStyle(color: Colors.red, fontSize: 13),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                       TextButton(
                         onPressed: _loadData,
-                        child: const Text('Coba lagi', style: TextStyle(fontSize: 13)),
+                        child: const Text(
+                          'Try again',
+                          style: TextStyle(fontSize: 13),
+                        ),
                       ),
                     ],
                   ),
@@ -224,7 +241,8 @@ class _CapaFormPageState extends State<CapaFormPage> {
                               label: 'DESCRIPTION',
                               controller: _descriptionController,
                               focusNode: _descriptionFocus,
-                              hint: 'Detail the non-conformance observed during the audit...',
+                              hint:
+                                  'Detail the non-conformance observed during the audit...',
                               maxLines: 4,
                               minLength: 10,
                               maxLength: 1000,
@@ -234,7 +252,8 @@ class _CapaFormPageState extends State<CapaFormPage> {
                               label: 'ACTION',
                               controller: _actionController,
                               focusNode: _actionFocus,
-                              hint: 'Detail the corrective action to be taken...',
+                              hint:
+                                  'Detail the corrective action to be taken...',
                               maxLines: 4,
                               minLength: 10,
                               maxLength: 1000,
@@ -293,7 +312,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
             focusNode: focusNode,
             maxLines: maxLines,
             maxLength: maxLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -308,14 +329,15 @@ class _CapaFormPageState extends State<CapaFormPage> {
             builder: (context, _) {
               final int len = controller.text.length;
               final bool belowMin = minLength != null && len < minLength;
-              
+
               String charHint = '';
               Color hintColor = Colors.transparent;
 
               if (belowMin) {
-                charHint = len == 0 
-                  ? 'Required (Min. $minLength characters)'
-                  : 'Min. $minLength characters ($len/$minLength)';
+                charHint =
+                    len == 0
+                        ? 'Required (Min. $minLength characters)'
+                        : 'Min. $minLength characters ($len/$minLength)';
                 hintColor = Colors.red;
               } else if (maxLength != null) {
                 if (!focusNode.hasFocus) return const SizedBox.shrink();
@@ -327,7 +349,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
 
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+                child: Text(
+                  charHint,
+                  style: TextStyle(fontSize: 11, color: hintColor),
+                ),
               );
             },
           ),
@@ -353,56 +378,82 @@ class _CapaFormPageState extends State<CapaFormPage> {
           ),
           _isLoadingData
               ? const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black38,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(color: Colors.black38, fontSize: 14),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 10),
-                Text('Memuat...', style: TextStyle(color: Colors.black38, fontSize: 14)),
-              ],
-            ),
-          )
+              )
               : _findings.isEmpty
               ? Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
-                const SizedBox(width: 8),
-                const Text('Tidak ada finding tersedia', style: TextStyle(color: Colors.black45, fontSize: 14)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _loadData,
-                  child: const Text('Refresh', style: TextStyle(color: Colors.blue, fontSize: 13)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'No findings available.',
+                      style: TextStyle(color: Colors.black45, fontSize: 14),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _loadData,
+                      child: const Text(
+                        'Refresh',
+                        style: TextStyle(color: Colors.blue, fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
+              )
               : DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedFindingId,
-              isExpanded: true,
-              hint: const Text('Select Finding', style: TextStyle(color: Colors.black26, fontSize: 14)),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _findings.map((finding) {
-                return DropdownMenuItem(
-                  value: finding['id'],
-                  child: Text(
-                    finding['title']!,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                child: DropdownButton<String>(
+                  value: _selectedFindingId,
+                  isExpanded: true,
+                  hint: const Text(
+                    'Select Finding',
+                    style: TextStyle(color: Colors.black26, fontSize: 14),
                   ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedFindingId = value);
-              },
-            ),
-          ),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.black54,
+                  ),
+                  items:
+                      _findings.map((finding) {
+                        return DropdownMenuItem(
+                          value: finding['id'],
+                          child: Text(
+                            finding['title']!,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedFindingId = value);
+                  },
+                ),
+              ),
         ],
       ),
     );
@@ -425,56 +476,82 @@ class _CapaFormPageState extends State<CapaFormPage> {
           ),
           _isLoadingData
               ? const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black38),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black38,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(color: Colors.black38, fontSize: 14),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 10),
-                Text('Memuat...', style: TextStyle(color: Colors.black38, fontSize: 14)),
-              ],
-            ),
-          )
+              )
               : _users.isEmpty
               ? Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 16),
-                const SizedBox(width: 8),
-                const Text('Tidak ada user tersedia', style: TextStyle(color: Colors.black45, fontSize: 14)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _loadData,
-                  child: const Text('Refresh', style: TextStyle(color: Colors.blue, fontSize: 13)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'No users available.',
+                      style: TextStyle(color: Colors.black45, fontSize: 14),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _loadData,
+                      child: const Text(
+                        'Refresh',
+                        style: TextStyle(color: Colors.blue, fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
+              )
               : DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedPicId,
-              isExpanded: true,
-              hint: const Text('Select Person In Charge', style: TextStyle(color: Colors.black26, fontSize: 14)),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _users.map((user) {
-                return DropdownMenuItem(
-                  value: user['id'],
-                  child: Text(
-                    user['name']!,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                child: DropdownButton<String>(
+                  value: _selectedPicId,
+                  isExpanded: true,
+                  hint: const Text(
+                    'Select Person In Charge',
+                    style: TextStyle(color: Colors.black26, fontSize: 14),
                   ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedPicId = value);
-              },
-            ),
-          ),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.black54,
+                  ),
+                  items:
+                      _users.map((user) {
+                        return DropdownMenuItem(
+                          value: user['id'],
+                          child: Text(
+                            user['name']!,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedPicId = value);
+                  },
+                ),
+              ),
         ],
       ),
     );
@@ -516,13 +593,20 @@ class _CapaFormPageState extends State<CapaFormPage> {
                 Text(
                   _selectedDeadline != null
                       ? '${_selectedDeadline!.day} ${_getMonth(_selectedDeadline!.month)} ${_selectedDeadline!.year}'
-                      : 'Pilih tanggal deadline...',
+                      : 'Select a deadline date...',
                   style: TextStyle(
                     fontSize: 15,
-                    color: _selectedDeadline != null ? Colors.black87 : Colors.black26,
+                    color:
+                        _selectedDeadline != null
+                            ? Colors.black87
+                            : Colors.black26,
                   ),
                 ),
-                const Icon(Icons.calendar_today_outlined, color: Colors.black54, size: 20),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  color: Colors.black54,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -536,28 +620,42 @@ class _CapaFormPageState extends State<CapaFormPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is CapaLoading || !_isFormValid)
-            ? null
-            : () => _onSubmit(context),
+        onPressed:
+            (state is CapaLoading || !_isFormValid)
+                ? null
+                : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
           disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        child: state is CapaLoading
-            ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-        )
-            : const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Submit CAPA', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            SizedBox(width: 8),
-            Icon(Icons.send, color: Colors.white),
-          ],
-        ),
+        child:
+            state is CapaLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Submit CAPA',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.send, color: Colors.white),
+                  ],
+                ),
       ),
     );
   }
@@ -566,31 +664,46 @@ class _CapaFormPageState extends State<CapaFormPage> {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title minimum 5 characters!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Title minimum 5 characters!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
     if (_selectedFindingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Findings must be selected!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Findings must be selected!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
     if (_actionController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Action minimum 5 characters!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Action minimum 5 characters!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
     if (_selectedPicId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Person In Charge must be selected!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Person In Charge must be selected!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
     if (_selectedDeadline == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deadline cannot be empty!'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Deadline cannot be empty!'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -608,7 +721,20 @@ class _CapaFormPageState extends State<CapaFormPage> {
   }
 
   String _getMonth(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[month - 1];
   }
 }

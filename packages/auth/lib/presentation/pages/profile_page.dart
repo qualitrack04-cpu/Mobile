@@ -457,13 +457,14 @@ class _ProfilePageState extends State<ProfilePage>
             ),
             const SizedBox(height: 20),
             Center(
-                child: _qualityScoreLoading
-                    ? const SizedBox(
+              child:
+                  _qualityScoreLoading
+                      ? const SizedBox(
                         width: 160,
                         height: 160,
                         child: Center(child: CircularProgressIndicator()),
                       )
-                    : AnimatedBuilder(
+                      : AnimatedBuilder(
                         animation: _scoreAnim,
                         builder: (context, _) {
                           final animValue = _scoreAnim.value;
@@ -587,7 +588,7 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     )
                     : Text(
-                        percentText,
+                      percentText,
                       style: GoogleFonts.inter(
                         color: AppColors.surface,
                         fontSize: 40,
@@ -749,7 +750,7 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Belum ada aktivitas',
+                        'No recent activity yet.',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AppColors.textDisabled,

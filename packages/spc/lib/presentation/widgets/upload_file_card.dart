@@ -76,10 +76,7 @@ class UploadFileCard extends StatelessWidget {
           ),
           child: Text(
             'Choose File',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 10),
@@ -87,10 +84,7 @@ class UploadFileCard extends StatelessWidget {
         // di SpcController.Analyze). CSV sengaja tidak disebut.
         Text(
           'Supported formats: .xlsx, .xls',
-          style: GoogleFonts.inter(
-            fontSize: 10,
-            color: AppColors.textDisabled,
-          ),
+          style: GoogleFonts.inter(fontSize: 10, color: AppColors.textDisabled),
         ),
       ],
     );
@@ -142,7 +136,7 @@ class UploadFileCard extends StatelessWidget {
           onPressed: enabled ? onClearFile : null,
           icon: const Icon(Icons.close, size: 18),
           color: AppColors.textMuted,
-          tooltip: 'Hapus file',
+          tooltip: 'Remove file',
         ),
       ],
     );

@@ -59,12 +59,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     super.initState();
     context.read<AuditBloc>().add(
       LoadChecklist(
-        isoTemplate: widget.audit.isoTemplates.isNotEmpty
-            ? widget.audit.isoTemplates.first
-            : '',
-        department: widget.audit.department == 'Produksi'
-            ? 'Production'
-            : widget.audit.department,
+        isoTemplate:
+            widget.audit.isoTemplates.isNotEmpty
+                ? widget.audit.isoTemplates.first
+                : '',
+        department:
+            widget.audit.department == 'Produksi'
+                ? 'Production'
+                : widget.audit.department,
       ),
     );
     _createSession();
@@ -84,7 +86,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         final state = prefs.getString('${_sessionKey}_state');
         if (state == 'PREVIEW') {
           // Cek apakah user sengaja kembali dari preview (skip redirect)
-          final skipRedirect = prefs.getBool('${_sessionKey}_skip_redirect') ?? false;
+          final skipRedirect =
+              prefs.getBool('${_sessionKey}_skip_redirect') ?? false;
           if (skipRedirect) {
             // Hapus flag skip, tapi TETAP simpan PREVIEW state
             // agar jika user keluar dan buka lagi dari audit list → masuk ke preview
@@ -97,13 +100,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: GetIt.instance<AuditBloc>(),
-                    child: AuditReportPreviewPage(
-                      audit: widget.audit,
-                      sessionId: savedSessionId,
-                    ),
-                  ),
+                  builder:
+                      (_) => BlocProvider.value(
+                        value: GetIt.instance<AuditBloc>(),
+                        child: AuditReportPreviewPage(
+                          audit: widget.audit,
+                          sessionId: savedSessionId,
+                        ),
+                      ),
                 ),
               );
             }
@@ -121,12 +125,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       final listResponse = await GetIt.instance<ApiService>().client.get(
         '/api/Checklist',
         queryParameters: {
-          'standard': widget.audit.isoTemplates.isNotEmpty
-              ? widget.audit.isoTemplates.first
-              : '',
-          'department': widget.audit.department == 'Produksi'
-              ? 'Production'
-              : widget.audit.department,
+          'standard':
+              widget.audit.isoTemplates.isNotEmpty
+                  ? widget.audit.isoTemplates.first
+                  : '',
+          'department':
+              widget.audit.department == 'Produksi'
+                  ? 'Production'
+                  : widget.audit.department,
         },
       );
       final checklists = listResponse.data as List<dynamic>;
@@ -188,7 +194,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         for (final checklist in _checklists) {
           if (responses.containsKey(checklist.id)) {
             checklist.isPassed = responses[checklist.id]!['isPassed'] as bool;
-            checklist.responseId = responses[checklist.id]!['responseId'] as String?;
+            checklist.responseId =
+                responses[checklist.id]!['responseId'] as String?;
 
             if (checklist.responseId != null) {
               datasource.getAuditEvidence(checklist.responseId!).then((url) {
@@ -234,7 +241,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
   Future<void> _autoSave(ChecklistEntity checklist) async {
     if (_sessionId == null || checklist.isPassed == null) return;
     final datasource = GetIt.instance<ChecklistRemoteDatasource>();
-    
+
     // 1. Save progress ke server
     await datasource.saveProgress(
       sessionId: _sessionId!,
@@ -246,7 +253,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     final responses = await datasource.getExistingResponses(_sessionId!);
     if (responses.containsKey(checklist.id) && mounted) {
       setState(() {
-        checklist.responseId = responses[checklist.id]!['responseId'] as String?;
+        checklist.responseId =
+            responses[checklist.id]!['responseId'] as String?;
       });
     }
   }
@@ -280,16 +288,17 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     final result = await Navigator.push<Finding>(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: GetIt.instance<FindingBloc>(),
-          child: FindingFormPage(
-            initialDepartment: widget.audit.department,
-            auditorName: widget.audit.auditorName,
-            clauseRef: checklist.description,
-            sessionId: _sessionId,
-            checklistItemId: checklist.id,
-          ),
-        ),
+        builder:
+            (_) => BlocProvider.value(
+              value: GetIt.instance<FindingBloc>(),
+              child: FindingFormPage(
+                initialDepartment: widget.audit.department,
+                auditorName: widget.audit.auditorName,
+                clauseRef: checklist.description,
+                sessionId: _sessionId,
+                checklistItemId: checklist.id,
+              ),
+            ),
       ),
     );
 
@@ -311,13 +320,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     final result = await Navigator.push<Finding>(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: GetIt.instance<FindingBloc>(),
-          child: FindingEditPage(
-            finding: checklist.finding!,
-            lockFields: true,
-          ),
-        ),
+        builder:
+            (_) => BlocProvider.value(
+              value: GetIt.instance<FindingBloc>(),
+              child: FindingEditPage(
+                finding: checklist.finding!,
+                lockFields: true,
+              ),
+            ),
       ),
     );
 
@@ -342,7 +352,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil gambar: $e'),
+            content: Text('Failed to select an image: $e'),
             backgroundColor: AppColors.danger,
             behavior: SnackBarBehavior.floating,
           ),
@@ -351,7 +361,10 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     }
   }
 
-  Future<void> _showImagePreviewDialog(ChecklistEntity checklist, String imagePath) async {
+  Future<void> _showImagePreviewDialog(
+    ChecklistEntity checklist,
+    String imagePath,
+  ) async {
     return showDialog(
       context: context,
       barrierColor: Colors.black12,
@@ -360,153 +373,174 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
           child: Dialog(
             backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Drag Handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Title
-                Text(
-                  'Upload Evidence',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Image Preview with Trash Icon
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(imagePath),
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context); // Tutup preview jika mau hapus
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFEAEA), // Merah muda
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Icon(
-                            Icons.delete_outline,
-                            color: Color(0xFFD32F2F), // Merah tua
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Upload Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      if (checklist.responseId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Menunggu respon server, coba tekan upload sekali lagi.'),
-                          ),
-                        );
-                        return;
-                      }
-
-                      // Tutup preview & Tampilkan Loading
-                      Navigator.pop(dialogContext); 
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (loadingCtx) => const Center(child: CircularProgressIndicator()),
-                      );
-
-                      // Proses Upload API
-                      final datasource = GetIt.instance<ChecklistRemoteDatasource>();
-                      final uploadedUrl = await datasource.uploadAuditEvidence(checklist.responseId!, imagePath);
-
-                      // Tutup Loading
-                      if (mounted) Navigator.pop(context);
-
-                      if (uploadedUrl != null) {
-                        setState(() {
-                          checklist.evidencePath = uploadedUrl; // Simpan URL server, bukan lokal
-                          checklist.hasEvidence = true;
-                        });
-                        _showSuccessPopup();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Gagal upload. Pastikan format foto didukung.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
-                    label: Text(
-                      'Upload',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004481), // Warna biru tua seperti di gambar
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag Handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderLight,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // Cancel Button
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel',
+                  // Title
+                  Text(
+                    'Upload Evidence',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textDisabled,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+
+                  // Image Preview with Trash Icon
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(imagePath),
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pop(
+                              context,
+                            ); // Tutup preview jika mau hapus
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFEAEA), // Merah muda
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Icon(
+                              Icons.delete_outline,
+                              color: Color(0xFFD32F2F), // Merah tua
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Upload Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        if (checklist.responseId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Waiting for the server response. Please try uploading again.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Tutup preview & Tampilkan Loading
+                        Navigator.pop(dialogContext);
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder:
+                              (loadingCtx) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                        );
+
+                        // Proses Upload API
+                        final datasource =
+                            GetIt.instance<ChecklistRemoteDatasource>();
+                        final uploadedUrl = await datasource
+                            .uploadAuditEvidence(
+                              checklist.responseId!,
+                              imagePath,
+                            );
+
+                        // Tutup Loading
+                        if (mounted) Navigator.pop(context);
+
+                        if (uploadedUrl != null) {
+                          setState(() {
+                            checklist.evidencePath =
+                                uploadedUrl; // Simpan URL server, bukan lokal
+                            checklist.hasEvidence = true;
+                          });
+                          _showSuccessPopup();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Upload failed. Make sure the image format is supported.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        'Upload',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                          0xFF004481,
+                        ), // Warna biru tua seperti di gambar
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Cancel Button
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ));
+        );
       },
     );
   }
@@ -537,7 +571,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 24),
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF2E7D32),
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     'Evidence Uploaded',
@@ -587,10 +625,12 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     );
   }
 
-    Future<void> _onSubmitChecklist() async {
+  Future<void> _onSubmitChecklist() async {
     if (_sessionId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Audit session not ready. Please try again.')),
+        const SnackBar(
+          content: Text('Audit session not ready. Please try again.'),
+        ),
       );
       return;
     }
@@ -599,22 +639,27 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     // Munculkan Bottom Sheet Audit Summary
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // PENTING: Agar pop-up bisa terdorong naik saat keyboard HP muncul
-      backgroundColor: Colors.transparent, // Transparan agar sudut melengkung pop-up terlihat
+      isScrollControlled:
+          true, // PENTING: Agar pop-up bisa terdorong naik saat keyboard HP muncul
+      backgroundColor:
+          Colors
+              .transparent, // Transparan agar sudut melengkung pop-up terlihat
       builder: (ctx) {
         return AuditSummaryDialog(
           initialSummary: _existingSummary,
           onSave: (summaryText) async {
             // Tampilkan loading sebentar (opsional tapi disarankan)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Menyimpan hasil audit...')),
+              const SnackBar(content: Text('Saving audit results...')),
             );
 
             try {
               // 1. Simpan Audit Summary ke Backend
               _existingSummary = summaryText; // Simpan secara lokal
               final apiService = GetIt.instance<ApiService>();
-              final dataSource = ChecklistRemoteDatasource(apiService: apiService);
+              final dataSource = ChecklistRemoteDatasource(
+                apiService: apiService,
+              );
               await dataSource.submitAuditSummary(
                 sessionId: _sessionId!,
                 content: summaryText,
@@ -622,7 +667,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
 
               // 2. Lanjutkan proses submit checklist seperti biasa
               final prefs = await SharedPreferences.getInstance();
-              
+
               // JANGAN hapus session key di sini, karena belum digenerate PDF-nya
               // await prefs.remove(_sessionKey);
 
@@ -633,10 +678,10 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                 // Submit hasil jawaban ke backend tanpa mengubah status audit menjadi finish
                 final datasource = GetIt.instance<ChecklistRemoteDatasource>();
                 await datasource.submitChecklistResponses(
-                  sessionId: _sessionId!, 
+                  sessionId: _sessionId!,
                   checklists: _checklists,
                 );
-                
+
                 // Menutup pop-up (dialog) terlebih dahulu
                 Navigator.pop(context);
 
@@ -646,13 +691,14 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: GetIt.instance<AuditBloc>(),
-                          child: AuditReportPreviewPage(
-                            audit: widget.audit,
-                            sessionId: _sessionId!,
-                          ),
-                        ),
+                        builder:
+                            (_) => BlocProvider.value(
+                              value: GetIt.instance<AuditBloc>(),
+                              child: AuditReportPreviewPage(
+                                audit: widget.audit,
+                                sessionId: _sessionId!,
+                              ),
+                            ),
                       ),
                     );
                   }
@@ -662,7 +708,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Gagal menyimpan: $e'),
+                    content: Text('Failed to save: $e'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -703,7 +749,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                       size: 18,
                     ),
                     SizedBox(width: 10),
-                    Text('Checklist berhasil disubmit!'),
+                    Text('Checklist submitted successfully!'),
                   ],
                 ),
                 backgroundColor: AppColors.success,
@@ -799,7 +845,9 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.audit.department == 'Produksi' ? 'Production' : widget.audit.department,
+            widget.audit.department == 'Produksi'
+                ? 'Production'
+                : widget.audit.department,
             style: GoogleFonts.inter(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -813,26 +861,27 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             children: [
               Wrap(
                 spacing: 6,
-                children: widget.audit.isoTemplates.map((iso) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE7F0FA),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Text(
-                      iso,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryLight,
-                      ),
-                    ),
-                  );
-                }).toList(),
+                children:
+                    widget.audit.isoTemplates.map((iso) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE7F0FA),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text(
+                          iso,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                      );
+                    }).toList(),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -912,8 +961,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                 checklist: ChecklistEntity(
                   id: 'skeleton-$index',
                   title: 'Loading title checklist item',
-                  description:
-                      'Loading checklist description, please wait.',
+                  description: 'Loading checklist description, please wait.',
                   category: 'Loading',
                   isPassed:
                       null, // null = belum dijawab, tombol PASS/FAIL tampil normal
@@ -955,7 +1003,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             },
             onAddFinding: () => _openAddFindingForm(checklist),
             onEditFinding: () => _openEditFindingForm(checklist),
-            onUploadEvidence: (fromCamera) => _pickEvidence(checklist, fromCamera),
+            onUploadEvidence:
+                (fromCamera) => _pickEvidence(checklist, fromCamera),
             onEditEvidence: () => _showEditEvidenceDialog(checklist),
           );
         },
@@ -985,49 +1034,51 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
           if (canSubmit) {
             _onSubmitChecklist();
           } else {
-            final message = failWithoutFinding
-                ? 'Checklist that FAIL must have a finding.\nAdd finding first.'
-                : 'All checklists must be answered first.\n$_completedCount of ${_checklists.length} completed.';
+            final message =
+                failWithoutFinding
+                    ? 'Checklist that FAIL must have a finding.\nAdd finding first.'
+                    : 'All checklists must be answered first.\n$_completedCount of ${_checklists.length} completed.';
             showDialog<void>(
               context: context,
-              builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                title: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: AppColors.primaryLight,
+              builder:
+                  (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Cannot Submit Yet',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                    title: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: AppColors.primaryLight,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Cannot Submit Yet',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                content: Text(
-                  message,
-                  style: GoogleFonts.inter(fontSize: 14, height: 1.6),
-                ),
-                actions: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryLight,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    content: Text(
+                      message,
+                      style: GoogleFonts.inter(fontSize: 14, height: 1.6),
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryLight,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(
+                          'Understand',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        ),
                       ),
-                    ),
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text(
-                      'Understand',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                    ),
+                    ],
                   ),
-                ],
-              ),
             );
           }
         }
@@ -1038,13 +1089,11 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: (isLoading || _isInitializing)
-                  ? null
-                  : handleSubmitPress,
+              onPressed:
+                  (isLoading || _isInitializing) ? null : handleSubmitPress,
               style: ElevatedButton.styleFrom(
-                backgroundColor: canSubmit
-                    ? AppColors.primaryLight
-                    : AppColors.primaryMuted,
+                backgroundColor:
+                    canSubmit ? AppColors.primaryLight : AppColors.primaryMuted,
                 disabledBackgroundColor: AppColors.primaryMuted,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1127,21 +1176,36 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                   ),
                 ),
                 Text(
-                  'Pilih Sumber Gambar',
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+                  'Choose an image source',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-                  title: Text('Kamera', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  leading: const Icon(
+                    Icons.camera_alt,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    'Kamera',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  ),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickNewImage(ImageSource.camera);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library, color: AppColors.primary),
-                  title: Text('Galeri', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  leading: const Icon(
+                    Icons.photo_library,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    'Galeri',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  ),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickNewImage(ImageSource.gallery);
@@ -1164,10 +1228,15 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
           filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
           child: AlertDialog(
             backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(
               'Remove Evidence?',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16),
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
             content: Text(
               'Are you sure you want to permanently remove this evidence?',
@@ -1176,12 +1245,20 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textDisabled, fontWeight: FontWeight.w500)),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textDisabled,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.danger,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: () {
                   Navigator.pop(ctx); // Tutup dialog konfirmasi
@@ -1191,7 +1268,13 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                     isNewImage = false;
                   });
                 },
-                child: Text('Remove', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                child: Text(
+                  'Remove',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1235,52 +1318,66 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
               const SizedBox(height: 24),
 
               // UI State 1: Existing Evidence
-                            // UI State 1: Existing Evidence
+              // UI State 1: Existing Evidence
               if (localImagePath != null && !isNewImage) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: localImagePath!.startsWith('http')
-                      ? Image.network(
-                          ApiService.fixImageUrl(localImagePath!),
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: double.infinity,
-                              height: 180,
-                              color: Colors.grey[100],
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Container(
+                  child:
+                      localImagePath!.startsWith('http')
+                          ? Image.network(
+                            ApiService.fixImageUrl(localImagePath!),
                             width: double.infinity,
                             height: 180,
-                            color: Colors.grey[200],
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.broken_image, color: Colors.grey, size: 40),
-                                const SizedBox(height: 8),
-                                const Text('Gagal memuat gambar', style: TextStyle(color: Colors.grey)),
-                              ],
-                            ),
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value:
+                                        loadingProgress.expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder:
+                                (context, error, stackTrace) => Container(
+                                  width: double.infinity,
+                                  height: 180,
+                                  color: Colors.grey[200],
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.grey,
+                                        size: 40,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Failed to load image',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                          )
+                          : Image.file(
+                            File(localImagePath!),
+                            width: double.infinity,
+                            height: 180,
+                            fit: BoxFit.cover,
                           ),
-                        )
-                      : Image.file(
-                          File(localImagePath!),
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                        ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -1288,7 +1385,10 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                   height: 48,
                   child: OutlinedButton.icon(
                     onPressed: _confirmRemove,
-                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.danger,
+                    ),
                     label: Text(
                       'Remove Evidence',
                       style: GoogleFonts.inter(
@@ -1299,11 +1399,13 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.danger),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
-              ] 
+              ]
               // UI State 2: Select New Image (Empty)
               else if (localImagePath == null) ...[
                 GestureDetector(
@@ -1320,7 +1422,9 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                       width: double.infinity,
                       height: 140,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF4F7F9), // Warna latar biru sangat muda
+                        color: const Color(
+                          0xFFF4F7F9,
+                        ), // Warna latar biru sangat muda
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
@@ -1329,7 +1433,9 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE2EAF1), // Biru pudar untuk icon box
+                              color: const Color(
+                                0xFFE2EAF1,
+                              ), // Biru pudar untuk icon box
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -1382,7 +1488,11 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                             color: const Color(0xFFFFEAEA),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Icon(Icons.delete_outline, color: Color(0xFFD32F2F), size: 18),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Color(0xFFD32F2F),
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
@@ -1394,17 +1504,30 @@ class _EditEvidenceDialogState extends State<_EditEvidenceDialog> {
                   height: 48,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pop(context); // Tutup dialog edit terlebih dahulu
-                      widget.onUpload(localImagePath!); // Baru panggil aksi upload di parent
+                      Navigator.pop(
+                        context,
+                      ); // Tutup dialog edit terlebih dahulu
+                      widget.onUpload(
+                        localImagePath!,
+                      ); // Baru panggil aksi upload di parent
                     },
-                    icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
+                    icon: const Icon(
+                      Icons.cloud_upload_outlined,
+                      color: Colors.white,
+                    ),
                     label: Text(
                       'Upload',
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF004481),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),

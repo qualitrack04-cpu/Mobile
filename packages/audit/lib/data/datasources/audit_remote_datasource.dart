@@ -9,15 +9,17 @@ String _parseError(Object e, String fallback) {
     final data = e.response?.data;
     if (data is Map) {
       final msg = data['message'] as String?;
-      if (msg != null && msg.isNotEmpty) return msg;
+      if (msg != null && msg.isNotEmpty) {
+        return ApiService.englishErrorMessage(msg, fallback: fallback);
+      }
     }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout) {
-      return 'Koneksi timeout. Pastikan internet aktif dan coba lagi.';
+      return 'The request timed out. Check your internet connection and try again.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
+      return 'Could not connect to the server. Check your internet connection.';
     }
   }
   return fallback;
@@ -37,7 +39,9 @@ class AuditRemoteDatasource {
           .map((json) => AuditModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengambil data audit. Coba lagi.'));
+      throw Exception(
+        _parseError(e, 'Failed to load audits. Please try again.'),
+      );
     }
   }
 
@@ -67,7 +71,9 @@ class AuditRemoteDatasource {
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal membuat audit. Coba lagi.'));
+      throw Exception(
+        _parseError(e, 'Failed to create the audit. Please try again.'),
+      );
     }
   }
 
@@ -97,7 +103,9 @@ class AuditRemoteDatasource {
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengupdate audit. Coba lagi.'));
+      throw Exception(
+        _parseError(e, 'Failed to update the audit. Please try again.'),
+      );
     }
   }
 
@@ -106,7 +114,9 @@ class AuditRemoteDatasource {
     try {
       await apiService.client.delete('/api/AuditPlan/$id');
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal menghapus audit. Coba lagi.'));
+      throw Exception(
+        _parseError(e, 'Failed to delete the audit. Please try again.'),
+      );
     }
   }
 }

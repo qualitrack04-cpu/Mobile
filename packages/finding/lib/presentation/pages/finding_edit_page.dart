@@ -50,7 +50,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
     'Quality Control': 'QC',
-    'Packaging': 'Packaging'
+    'Packaging': 'Packaging',
   };
 
   late final FocusNode _titleFocus;
@@ -63,24 +63,23 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _titleFocus = FocusNode();
     _descriptionFocus = FocusNode();
     _reporterFocus = FocusNode();
-    
-    _titleController =
-        TextEditingController(text: widget.finding.clauseRef)
-          ..addListener(() => setState(() {}));
-    _descriptionController =
-        TextEditingController(text: widget.finding.description)
-          ..addListener(() => setState(() {}));
-    _reporterController =
-        TextEditingController(text: widget.finding.reporter)
-          ..addListener(() => setState(() {}));
+
+    _titleController = TextEditingController(text: widget.finding.clauseRef)
+      ..addListener(() => setState(() {}));
+    _descriptionController = TextEditingController(
+      text: widget.finding.description,
+    )..addListener(() => setState(() {}));
+    _reporterController = TextEditingController(text: widget.finding.reporter)
+      ..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
 
     String deptValue = widget.finding.department;
-    String? matchedKey = _departmentMap.entries
-        .where((e) => e.value == deptValue)
-        .map((e) => e.key)
-        .firstOrNull;
-    
+    String? matchedKey =
+        _departmentMap.entries
+            .where((e) => e.value == deptValue)
+            .map((e) => e.key)
+            .firstOrNull;
+
     if (matchedKey != null) {
       _selectedDepartment = matchedKey;
     } else {
@@ -149,56 +148,60 @@ class _FindingEditPageState extends State<FindingEditPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      builder:
+          (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Tambah Evidence',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D2B55),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFEEF2F7),
+                      child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
+                    ),
+                    title: const Text('Take a Photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.camera);
+                    },
+                  ),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFEEF2F7),
+                      child: Icon(
+                        Icons.photo_library,
+                        color: Color(0xFF0D2B55),
+                      ),
+                    ),
+                    title: const Text('Choose from Gallery'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickMultipleImages();
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Tambah Evidence',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0D2B55),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF2F7),
-                  child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
-                ),
-                title: const Text('Take a Photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF2F7),
-                  child: Icon(Icons.photo_library, color: Color(0xFF0D2B55)),
-                ),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickMultipleImages();
-                },
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -311,7 +314,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                         label: 'TITLE',
                         controller: _titleController,
                         focusNode: _titleFocus,
-                        hint: 'Masukkan judul finding...',
+                        hint: 'Enter a finding title...',
                         minLength: 5,
                         maxLength: 100,
                       ),
@@ -386,12 +389,17 @@ class _FindingEditPageState extends State<FindingEditPage> {
   /// Department — read-only jika lockFields=true (dari audit checklist)
   Widget _buildDepartmentField() {
     if (widget.lockFields) {
-      final displayDept = _departmentMap.entries
-          .firstWhere(
-            (e) => e.key == _selectedDepartment,
-            orElse: () => MapEntry(_selectedDepartment ?? '', _selectedDepartment ?? ''),
-          )
-          .key;
+      final displayDept =
+          _departmentMap.entries
+              .firstWhere(
+                (e) => e.key == _selectedDepartment,
+                orElse:
+                    () => MapEntry(
+                      _selectedDepartment ?? '',
+                      _selectedDepartment ?? '',
+                    ),
+              )
+              .key;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
@@ -454,7 +462,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
             focusNode: focusNode,
             maxLines: maxLines,
             maxLength: maxLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -468,14 +478,15 @@ class _FindingEditPageState extends State<FindingEditPage> {
             builder: (context, _) {
               final int len = controller.text.length;
               final bool belowMin = minLength != null && len < minLength;
-              
+
               String charHint = '';
               Color hintColor = Colors.transparent;
 
               if (belowMin) {
-                charHint = len == 0 
-                  ? 'Required (Min. $minLength characters)'
-                  : 'Min. $minLength characters ($len/$minLength)';
+                charHint =
+                    len == 0
+                        ? 'Required (Min. $minLength characters)'
+                        : 'Min. $minLength characters ($len/$minLength)';
                 hintColor = Colors.red;
               } else if (maxLength != null) {
                 if (!focusNode.hasFocus) return const SizedBox.shrink();
@@ -487,7 +498,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+                child: Text(
+                  charHint,
+                  style: TextStyle(fontSize: 11, color: hintColor),
+                ),
               );
             },
           ),
@@ -520,16 +534,23 @@ class _FindingEditPageState extends State<FindingEditPage> {
             child: DropdownButton<FindingCategory>(
               value: _selectedCategory,
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: categories.entries.map((e) {
-                return DropdownMenuItem(
-                  value: e.key,
-                  child: Text(
-                    e.value,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
-                );
-              }).toList(),
+              icon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.black54,
+              ),
+              items:
+                  categories.entries.map((e) {
+                    return DropdownMenuItem(
+                      value: e.key,
+                      child: Text(
+                        e.value,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) {
                 if (value != null) setState(() => _selectedCategory = value);
               },
@@ -563,16 +584,23 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 'Select Department',
                 style: TextStyle(color: Colors.black26, fontSize: 14),
               ),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _departmentMap.keys.map((deptKey) {
-                return DropdownMenuItem(
-                  value: deptKey,
-                  child: Text(
-                    deptKey,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
-                );
-              }).toList(),
+              icon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.black54,
+              ),
+              items:
+                  _departmentMap.keys.map((deptKey) {
+                    return DropdownMenuItem(
+                      value: deptKey,
+                      child: Text(
+                        deptKey,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) => setState(() => _selectedDepartment = value),
             ),
           ),
@@ -584,61 +612,76 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void _showNetworkImageDialog(BuildContext context, String url) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            InteractiveViewer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  ApiService.fixImageUrl(url), 
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                            : null,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image, color: Colors.white54, size: 50),
-                        SizedBox(height: 10),
-                        Text('Gagal memuat gambar', style: TextStyle(color: Colors.white54)),
-                      ],
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InteractiveViewer(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      ApiService.fixImageUrl(url),
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                      errorBuilder:
+                          (context, error, stackTrace) => const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white54,
+                                  size: 50,
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  'Failed to load image',
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+                              ],
+                            ),
+                          ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -675,9 +718,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
           if (_evidencesLoading)
             const Padding(
               padding: EdgeInsets.only(bottom: 12),
-              child: Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             )
           else if (_existingEvidences.isNotEmpty)
             Padding(
@@ -685,83 +726,95 @@ class _FindingEditPageState extends State<FindingEditPage> {
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
-                children: _existingEvidences.map((evidence) {
-                  final fileId = evidence['id']!;
-                  final url = evidence['url']!;
-                  final isDeleting = _deletingIds.contains(fileId);
+                children:
+                    _existingEvidences.map((evidence) {
+                      final fileId = evidence['id']!;
+                      final url = evidence['url']!;
+                      final isDeleting = _deletingIds.contains(fileId);
 
-                  return Stack(
-                    children: [
-                      // Thumbnail
-                      GestureDetector(
-                        onTap: isDeleting
-                            ? null
-                            : () => _showNetworkImageDialog(context, url),
-                        child: Container(
-                          width: itemSize,
-                          height: itemSize,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.grey[200],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: isDeleting
-                                // ← Tampilkan loading saat sedang dihapus
-                                ? const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.red,
-                                    ),
-                                  )
-                                : Image.network(
-                                    ApiService.fixImageUrl(url),
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      );
-                                    },
-                                    errorBuilder: (_, __, ___) => Icon(
-                                      Icons.broken_image_outlined,
-                                      color: Colors.grey[400],
-                                      size: 28,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-
-                      // ✅ Tombol hapus (X merah) — hanya tampil kalau tidak sedang dihapus
-                      if (!isDeleting)
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: GestureDetector(
-                            onTap: () => _confirmDeleteEvidence(fileId),
+                      return Stack(
+                        children: [
+                          // Thumbnail
+                          GestureDetector(
+                            onTap:
+                                isDeleting
+                                    ? null
+                                    : () =>
+                                        _showNetworkImageDialog(context, url),
                             child: Container(
-                              width: 22,
-                              height: 22,
+                              width: itemSize,
+                              height: itemSize,
                               decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
-                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey[200],
                               ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 12,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child:
+                                    isDeleting
+                                        // ← Tampilkan loading saat sedang dihapus
+                                        ? const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.red,
+                                          ),
+                                        )
+                                        : Image.network(
+                                          ApiService.fixImageUrl(url),
+                                          fit: BoxFit.cover,
+                                          loadingBuilder: (
+                                            context,
+                                            child,
+                                            loadingProgress,
+                                          ) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return const Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder:
+                                              (_, __, ___) => Icon(
+                                                Icons.broken_image_outlined,
+                                                color: Colors.grey[400],
+                                                size: 28,
+                                              ),
+                                        ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  );
-                }).toList(),
+
+                          // ✅ Tombol hapus (X merah) — hanya tampil kalau tidak sedang dihapus
+                          if (!isDeleting)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () => _confirmDeleteEvidence(fileId),
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
 
@@ -771,7 +824,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
             runSpacing: 10,
             children: [
               ..._evidenceImages.asMap().entries.map((entry) {
-                return _buildNewImageThumbnail(entry.value, entry.key, itemSize);
+                return _buildNewImageThumbnail(
+                  entry.value,
+                  entry.key,
+                  itemSize,
+                );
               }),
               _buildAddImageButton(itemSize),
             ],
@@ -785,67 +842,75 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void _confirmDeleteEvidence(String fileId) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Hapus Evidence?',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text('Evidence ini akan dihapus permanen.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deleteExistingEvidence(fileId);
-            },
-            child: const Text(
-              'Hapus',
-              style: TextStyle(color: Colors.white),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
+            title: const Text(
+              'Delete evidence?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: const Text('This evidence will be permanently deleted.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _deleteExistingEvidence(fileId);
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showImageDialog(BuildContext context, String imagePath) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            InteractiveViewer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(File(imagePath), fit: BoxFit.contain),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InteractiveViewer(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(File(imagePath), fit: BoxFit.contain),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
-              ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -901,8 +966,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_photo_alternate_outlined,
-                color: Colors.grey[600], size: 28),
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: Colors.grey[600],
+              size: 28,
+            ),
             const SizedBox(height: 4),
             Text(
               'Add Image',
@@ -919,7 +987,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
         _descriptionController.text != widget.finding.description ||
         _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
-        _selectedDepartment != widget.finding.department && _departmentMap[_selectedDepartment] != widget.finding.department ||
+        _selectedDepartment != widget.finding.department &&
+            _departmentMap[_selectedDepartment] != widget.finding.department ||
         _existingEvidences.length != _originalEvidenceCount ||
         _evidenceImages.isNotEmpty;
   }
@@ -935,9 +1004,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is FindingLoading || !_isDirty || !_isFormValid)
-            ? null
-            : () => _onSubmit(context),
+        onPressed:
+            (state is FindingLoading || !_isDirty || !_isFormValid)
+                ? null
+                : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
           disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
@@ -945,30 +1015,31 @@ class _FindingEditPageState extends State<FindingEditPage> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: state is FindingLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Edit Findings',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+        child:
+            state is FindingLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
                   ),
-                  SizedBox(width: 8),
-                  Icon(Icons.edit, color: Colors.white, size: 18),
-                ],
-              ),
+                )
+                : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Edit Findings',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.edit, color: Colors.white, size: 18),
+                  ],
+                ),
       ),
     );
   }
@@ -976,31 +1047,35 @@ class _FindingEditPageState extends State<FindingEditPage> {
   void _onSubmit(BuildContext context) {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.trim().length < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Title min 5 characters!'),
-        backgroundColor: Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Title min 5 characters!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
     if (_descriptionController.text.trim().length < 10) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Description min 10 characters!'),
-        backgroundColor: Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Description min 10 characters!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
     context.read<FindingBloc>().add(
-          UpdateFindingEvent(
-            id: widget.finding.id,
-            category: _selectedCategory,
-            description: _descriptionController.text,
-            clauseRef: _titleController.text,
-            department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
-            reporter: _reporterController.text,
-            reporterId: widget.finding.reporterId,
-            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
-          ),
-        );
+      UpdateFindingEvent(
+        id: widget.finding.id,
+        category: _selectedCategory,
+        description: _descriptionController.text,
+        clauseRef: _titleController.text,
+        department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
+        reporter: _reporterController.text,
+        reporterId: widget.finding.reporterId,
+        evidencePaths: _evidenceImages.map((e) => e.path).toList(),
+      ),
+    );
   }
 }
