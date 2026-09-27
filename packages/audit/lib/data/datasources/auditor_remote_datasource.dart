@@ -3,21 +3,24 @@ import 'package:audit/domain/entities/auditor_entity.dart';
 import 'package:dio/dio.dart';
 
 String _parseAuditorError(Object e) {
+  const fallback = 'Failed to load auditors. Please try again.';
   if (e is DioException) {
     final data = e.response?.data;
     if (data is Map) {
       final msg = data['message'] as String?;
-      if (msg != null && msg.isNotEmpty) return msg;
+      if (msg != null && msg.isNotEmpty) {
+        return ApiService.englishErrorMessage(msg, fallback: fallback);
+      }
     }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return 'Koneksi timeout. Coba lagi.';
+      return 'The request timed out. Please try again.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak dapat terhubung ke server.';
+      return 'Could not connect to the server.';
     }
   }
-  return 'Gagal mengambil daftar auditor. Coba lagi.';
+  return fallback;
 }
 
 class AuditorRemoteDatasource {

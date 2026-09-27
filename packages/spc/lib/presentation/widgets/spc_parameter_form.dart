@@ -48,7 +48,7 @@ class SpcParameterForm extends StatelessWidget {
               decoration: _inputDecoration('e.g. Outer Diameter'),
               style: _inputStyle,
               validator: (value) => (value == null || value.trim().isEmpty)
-                  ? 'Parameter name wajib diisi'
+                  ? 'Parameter name is required.'
                   : null,
             ),
           ),
@@ -71,10 +71,10 @@ class SpcParameterForm extends StatelessWidget {
                       style: _inputStyle,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Target wajib diisi';
+                          return 'Target is required.';
                         }
                         return double.tryParse(value.trim()) == null
-                            ? 'Angka tidak valid'
+                            ? 'Enter a valid number.'
                             : null;
                       },
                     ),
@@ -160,8 +160,10 @@ class SpcParameterForm extends StatelessWidget {
   }
 
   static String? _requiredNumber(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Wajib diisi';
-    return double.tryParse(value.trim()) == null ? 'Angka tidak valid' : null;
+    if (value == null || value.trim().isEmpty) return 'This field is required.';
+    return double.tryParse(value.trim()) == null
+        ? 'Enter a valid number.'
+        : null;
   }
 
   static final _numberFormatter = FilteringTextInputFormatter.allow(

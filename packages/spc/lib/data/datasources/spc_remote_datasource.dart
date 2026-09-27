@@ -10,18 +10,23 @@ String _parseError(Object e, String fallback) {
     if (data is Map) {
       if (data.containsKey('errors')) {
         final errors = data['errors'] as Map<String, dynamic>;
-        return errors.values.map((e) => e.toString()).join('\n');
+        return ApiService.englishErrorMessage(
+          errors.values.map((e) => e.toString()).join('\n'),
+          fallback: fallback,
+        );
       }
       final msg = data['message'] as String?;
-      if (msg != null && msg.isNotEmpty) return msg;
+      if (msg != null && msg.isNotEmpty) {
+        return ApiService.englishErrorMessage(msg, fallback: fallback);
+      }
     }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout) {
-      return 'Koneksi timeout. Pastikan internet aktif.';
+      return 'The request timed out. Check your internet connection.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak dapat terhubung ke server.';
+      return 'Could not connect to the server.';
     }
   }
   return fallback;
@@ -59,10 +64,11 @@ class SpcRemoteDatasource {
           .map((json) => SpcHistoryModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengambil riwayat analisis SPC.'));
+      throw Exception(_parseError(e, 'Failed to load SPC analysis history.'));
     }
   }
-    /// POST /api/Spc/analyze
+
+  /// POST /api/Spc/analyze
   ///
   /// Dikirim sebagai multipart/form-data, bukan JSON, karena ada file Excel.
   Future<SpcResultModel> analyze({
@@ -96,16 +102,17 @@ class SpcRemoteDatasource {
 
       return SpcResultModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal menganalisis data SPC.'));
+      throw Exception(_parseError(e, 'Failed to analyze SPC data.'));
     }
   }
-    /// GET /api/Spc/{id}
+
+  /// GET /api/Spc/{id}
   Future<SpcResultModel> getById(String id) async {
     try {
       final response = await apiService.client.get('/api/Spc/$id');
       return SpcResultModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengambil detail analisis.'));
+      throw Exception(_parseError(e, 'Failed to load analysis details.'));
     }
   }
 }

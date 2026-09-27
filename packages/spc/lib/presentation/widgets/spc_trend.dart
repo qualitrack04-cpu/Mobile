@@ -120,7 +120,7 @@ class SpcTrendCard extends StatelessWidget {
                 TextButton(
                   onPressed: onRetry,
                   child: Text(
-                    'Coba lagi',
+                    'Try again',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -241,10 +241,8 @@ class _TrendChart extends StatelessWidget {
 
   double get _maxY => _interval * _intervalCount;
 
-  List<int> get _axisTicks => List.generate(
-        _intervalCount + 1,
-        (i) => (_maxY - i * _interval).round(),
-      );
+  List<int> get _axisTicks =>
+      List.generate(_intervalCount + 1, (i) => (_maxY - i * _interval).round());
 
   @override
   Widget build(BuildContext context) {
@@ -262,8 +260,9 @@ class _TrendChart extends StatelessWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final int slotCount =
-                    data.length < _visibleBars ? data.length : _visibleBars;
+                final int slotCount = data.length < _visibleBars
+                    ? data.length
+                    : _visibleBars;
                 final double slotWidth = slotCount == 0
                     ? constraints.maxWidth
                     : constraints.maxWidth / slotCount;

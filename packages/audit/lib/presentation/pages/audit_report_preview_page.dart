@@ -35,11 +35,12 @@ class AuditReportPreviewPage extends StatefulWidget {
 class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   bool _isLoading = true;
   String _errorMessage = '';
-  
+
   String _summary = '';
   List<Map<String, dynamic>> _responses = [];
   List<Map<String, dynamic>> _findings = [];
-  Map<String, List<String>> _evidencesMap = {}; // mapping responseId -> list of image URLs
+  Map<String, List<String>> _evidencesMap =
+      {}; // mapping responseId -> list of image URLs
 
   @override
   void initState() {
@@ -49,8 +50,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
 
   Future<void> _fetchData() async {
     try {
-      final dataSource = ChecklistRemoteDatasource(apiService: GetIt.I<ApiService>());
-      
+      final dataSource = ChecklistRemoteDatasource(
+        apiService: GetIt.I<ApiService>(),
+      );
+
       // Fetch concurrently
       final results = await Future.wait([
         dataSource.getAuditSummary(widget.sessionId),
@@ -66,14 +69,17 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       for (var response in _responses) {
         final respId = response['id'].toString();
         final bool isPassed = response['isPassed'] == true;
-        final String checklistItemId = response['checklistItemId']?.toString() ?? '';
+        final String checklistItemId =
+            response['checklistItemId']?.toString() ?? '';
 
         if (isPassed) {
           final urls = await dataSource.getEvidencesForResponse(respId);
           _evidencesMap[respId] = urls;
         } else {
           try {
-            final finding = _findings.firstWhere((f) => f['checklistItemId'].toString() == checklistItemId);
+            final finding = _findings.firstWhere(
+              (f) => f['checklistItemId'].toString() == checklistItemId,
+            );
             final findingId = finding['id'].toString();
             final urls = await dataSource.getEvidencesForFinding(findingId);
             _evidencesMap[respId] = urls;
@@ -95,7 +101,9 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F5F8), // Warna background abu-abu terang sesuai desain
+      backgroundColor: const Color(
+        0xFFF2F5F8,
+      ), // Warna background abu-abu terang sesuai desain
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -117,25 +125,35 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _errorMessage.isNotEmpty
-                  ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))
-                  : ListView(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100), // Bottom padding for sticky button
-                      children: [
-                        _buildSectionTitle('Audit Detail'),
-                        _buildAuditDetailCard(),
-                        const SizedBox(height: 24),
-                        
-                        _buildSectionTitle('Audit Summary'),
-                        _buildSummaryCard(),
-                        const SizedBox(height: 24),
-                        
-                        _buildSectionTitle('Checklist Result'),
-                        ..._responses.map((resp) => _buildChecklistResultCard(resp)),
-                        
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-          
+              ? Center(
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+              : ListView(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: 100,
+                ), // Bottom padding for sticky button
+                children: [
+                  _buildSectionTitle('Audit Detail'),
+                  _buildAuditDetailCard(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('Audit Summary'),
+                  _buildSummaryCard(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('Checklist Result'),
+                  ..._responses.map((resp) => _buildChecklistResultCard(resp)),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
+
           // Sticky Button
           if (!_isLoading && _errorMessage.isEmpty)
             Positioned(
@@ -164,9 +182,23 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   }
 
   Widget _buildAuditDetailCard() {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final date = widget.audit.date;
-    final dateStr = '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
+    final dateStr =
+        '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
 
     return Container(
       decoration: BoxDecoration(
@@ -175,7 +207,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       ),
       child: Column(
         children: [
-          _buildDetailRow('AUDIT ID', widget.audit.id.substring(0, 8).toUpperCase()),
+          _buildDetailRow(
+            'AUDIT ID',
+            widget.audit.id.substring(0, 8).toUpperCase(),
+          ),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
           _buildDetailRow('DEPARTMENT', widget.audit.department),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
@@ -184,7 +219,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
           _buildDetailRow('AUDIT DATE', dateStr),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
           _buildDetailRowWithWidget(
-            'STANDARD', 
+            'STANDARD',
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -192,31 +227,40 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                widget.audit.isoTemplates.isNotEmpty ? widget.audit.isoTemplates.first : '-',
+                widget.audit.isoTemplates.isNotEmpty
+                    ? widget.audit.isoTemplates.first
+                    : '-',
                 style: GoogleFonts.spaceMono(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF0F3659),
                 ),
               ),
-            )
+            ),
           ),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
           _buildDetailRowWithWidget(
-            'AUDIT STATUS', 
+            'AUDIT STATUS',
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 8, height: 8,
-                  decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Completed',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.green[700]),
-                )
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green[700],
+                  ),
+                ),
               ],
-            )
+            ),
           ),
         ],
       ),
@@ -229,8 +273,22 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.spaceMono(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.bold)),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0F3659))),
+          Text(
+            label,
+            style: GoogleFonts.spaceMono(
+              fontSize: 12,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F3659),
+            ),
+          ),
         ],
       ),
     );
@@ -242,7 +300,14 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.spaceMono(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: GoogleFonts.spaceMono(
+              fontSize: 12,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           child,
         ],
       ),
@@ -259,7 +324,11 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       ),
       child: Text(
         _summary,
-        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0F3659), height: 1.5),
+        style: GoogleFonts.inter(
+          fontSize: 14,
+          color: const Color(0xFF0F3659),
+          height: 1.5,
+        ),
       ),
     );
   }
@@ -268,15 +337,18 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     final bool isPassed = response['isPassed'] == true;
     final String respId = response['id'].toString();
     final String question = response['question'] ?? 'No Question';
-    final String checklistItemId = response['checklistItemId']?.toString() ?? '';
-    
+    final String checklistItemId =
+        response['checklistItemId']?.toString() ?? '';
+
     final evidences = _evidencesMap[respId] ?? [];
 
     // Cari finding yang sesuai dengan checklistItemId jika Fail
     String? auditorNote;
     if (!isPassed) {
       try {
-        final finding = _findings.firstWhere((f) => f['checklistItemId'].toString() == checklistItemId);
+        final finding = _findings.firstWhere(
+          (f) => f['checklistItemId'].toString() == checklistItemId,
+        );
         auditorNote = finding['description']?.toString();
       } catch (e) {
         // No matching finding found
@@ -301,12 +373,19 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
               Expanded(
                 child: Text(
                   question,
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0F3659)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F3659),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isPassed ? Colors.green[100] : Colors.red[100],
                   borderRadius: BorderRadius.circular(6),
@@ -348,42 +427,65 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                           color: Colors.grey[100],
                           child: Center(
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                  : null,
+                              value:
+                                  loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
                               color: AppColors.primary,
                             ),
                           ),
                         );
                       },
-                      errorBuilder: (_,__,___) => Container(
-                        width: 240, height: 160, color: Colors.grey[200],
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.broken_image, color: Colors.grey, size: 32),
-                            const SizedBox(height: 8),
-                            Text('Gagal memuat', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                          ],
-                        ),
-                      ),
+                      errorBuilder:
+                          (_, __, ___) => Container(
+                            width: 240,
+                            height: 160,
+                            color: Colors.grey[200],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                  size: 32,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Failed to load',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                     ),
                   );
                 },
               ),
             ),
-          
+
           if (evidences.isNotEmpty) const SizedBox(height: 16),
 
           // Auditor Note (Only if Fail)
           if (!isPassed) ...[
             Row(
               children: [
-                const Icon(Icons.description_outlined, size: 16, color: Colors.grey),
+                const Icon(
+                  Icons.description_outlined,
+                  size: 16,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'AUDITOR NOTE',
-                  style: GoogleFonts.spaceMono(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
@@ -394,11 +496,17 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF5F8FF),
                 borderRadius: BorderRadius.circular(8),
-                border: Border(left: BorderSide(color: const Color(0xFF0F3659), width: 4)),
+                border: Border(
+                  left: BorderSide(color: const Color(0xFF0F3659), width: 4),
+                ),
               ),
               child: Text(
                 auditorNote ?? '',
-                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0F3659), height: 1.5),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF0F3659),
+                  height: 1.5,
+                ),
               ),
             ),
           ],
@@ -407,85 +515,104 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     );
   }
 
-
   /// View: unduh ke temp dir lalu langsung buka di PDF reader HP
   /// Tidak menandai audit sebagai selesai — hanya untuk melihat isi PDF
   /// Tampilkan dialog konfirmasi sebelum keluar dari halaman preview
   void _showExitConfirmation() {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Leave Audit Report Preview?',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0F3659),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'You have not generated the PDF yet. Go to Dashboard or stay on this page to create your PDF report.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-                      '/dashboard',
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003B5C),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      builder:
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Leave Audit Report Preview?',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F3659),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Text('Go to Dashboard',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF003B5C)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'You have not generated the PDF yet. Go to Dashboard or stay on this page to create your PDF report.',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Text('Stay Here',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF003B5C))),
-                ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamedAndRemoveUntil(
+                          '/dashboard',
+                          (route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003B5C),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Go to Dashboard',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF003B5C)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Stay Here',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF003B5C),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   void _goToDashboard() {
-    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
-      '/dashboard',
-      (route) => false,
-    );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
   }
 
   Future<void> _viewPdf() async {
@@ -493,7 +620,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       final apiService = GetIt.I<ApiService>();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Opening PDF...'), duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Opening PDF...'),
+          duration: Duration(seconds: 2),
+        ),
       );
 
       final response = await apiService.client.get(
@@ -503,7 +633,9 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
 
       final bytes = response.data;
       final tempDir = await getTemporaryDirectory();
-      final safeTitle = widget.audit.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final safeTitle = widget.audit.title
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(' ', '_');
       final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
       await file.writeAsBytes(bytes);
 
@@ -515,7 +647,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open PDF: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to open PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -527,7 +662,10 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       final apiService = GetIt.I<ApiService>();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Downloading PDF...'), duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Downloading PDF...'),
+          duration: Duration(seconds: 2),
+        ),
       );
 
       final response = await apiService.client.get(
@@ -547,7 +685,9 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      final safeTitle = widget.audit.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_').replaceAll(' ', '_');
+      final safeTitle = widget.audit.title
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(' ', '_');
       final baseFileName = 'AuditReport_$safeTitle';
 
       File file = File('${dir!.path}/$baseFileName.pdf');
@@ -612,12 +752,14 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to download PDF: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to download PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
-
 
   Widget _buildStickyButton() {
     return Container(
@@ -627,7 +769,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
             color: Colors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          )
+          ),
         ],
       ),
       child: ElevatedButton.icon(
@@ -636,22 +778,27 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (_) => PdfSuccessDialog(
-              sessionId: widget.sessionId,
-              onView: () {
-                _viewPdf();
-              },
-              onDownload: () {
-                _downloadAndSavePdf();
-              },
-              onGoToDashboard: _goToDashboard,
-            ),
+            builder:
+                (_) => PdfSuccessDialog(
+                  sessionId: widget.sessionId,
+                  onView: () {
+                    _viewPdf();
+                  },
+                  onDownload: () {
+                    _downloadAndSavePdf();
+                  },
+                  onGoToDashboard: _goToDashboard,
+                ),
           );
         },
         icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
         label: Text(
           'Create PDF',
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF003B5C), // Navy blue

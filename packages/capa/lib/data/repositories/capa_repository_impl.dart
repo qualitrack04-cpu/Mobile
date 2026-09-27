@@ -14,7 +14,7 @@ class CapaRepositoryImpl implements CapaRepository {
     try {
       return await datasource.getCapas();
     } catch (e) {
-      throw Exception('Gagal mengambil data CAPA: $e');
+      throw Exception('Failed to load CAPA items: $e');
     }
   }
 
@@ -23,7 +23,7 @@ class CapaRepositoryImpl implements CapaRepository {
     try {
       return await datasource.getCapaDetail(id);
     } catch (e) {
-      throw Exception('Gagal mengambil detail CAPA: $e');
+      throw Exception('Failed to load CAPA details: $e');
     }
   }
 
@@ -48,7 +48,7 @@ class CapaRepositoryImpl implements CapaRepository {
         status: status,
       );
     } catch (e) {
-      throw Exception('Gagal membuat CAPA: $e');
+      throw Exception('Failed to create the CAPA: $e');
     }
   }
 
@@ -73,7 +73,7 @@ class CapaRepositoryImpl implements CapaRepository {
         status: status,
       );
     } catch (e) {
-      throw Exception('Gagal update CAPA: $e');
+      throw Exception('Failed to update the CAPA: $e');
     }
   }
 
@@ -86,7 +86,7 @@ class CapaRepositoryImpl implements CapaRepository {
     try {
       await datasource.updateCapaStatus(id: id, status: status);
     } catch (e) {
-      throw Exception('Gagal update status CAPA: $e');
+      throw Exception('Failed to update the CAPA status: $e');
     }
   }
 
@@ -105,7 +105,7 @@ class CapaRepositoryImpl implements CapaRepository {
         verifiedById: verifiedById,
       );
     } catch (e) {
-      throw Exception('Gagal closeout CAPA: $e');
+      throw Exception('Failed to close out the CAPA: $e');
     }
   }
 }

@@ -83,7 +83,9 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('File tidak bisa dibaca. Coba salin dulu ke ponsel.'),
+          content: Text(
+            'This file cannot be read. Try copying it to your phone first.',
+          ),
         ),
       );
       return;
@@ -146,7 +148,8 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
     );
 
     final mean = data.reduce((a, b) => a + b) / data.length;
-    final variance = data
+    final variance =
+        data
             .map((x) => math.pow(x - mean, 2).toDouble())
             .reduce((a, b) => a + b) /
         (data.length - 1);
@@ -155,16 +158,19 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
     final ucl = mean + 3 * stdDev;
     final lcl = mean - 3 * stdDev;
     final cp = (usl - lsl) / (6 * stdDev);
-    final cpk = math.min((usl - mean) / (3 * stdDev), (mean - lsl) / (3 * stdDev));
+    final cpk = math.min(
+      (usl - mean) / (3 * stdDev),
+      (mean - lsl) / (3 * stdDev),
+    );
 
     final isUnstable = data.any((x) => x > ucl || x < lcl);
     final status = isUnstable
         ? SpcStatus.unstable
         : cpk < 1.00
-            ? SpcStatus.notCapable
-            : cpk < 1.33
-                ? SpcStatus.marginal
-                : SpcStatus.capable;
+        ? SpcStatus.notCapable
+        : cpk < 1.33
+        ? SpcStatus.marginal
+        : SpcStatus.capable;
 
     final result = SpcAnalysisResult(
       id: 'mock',
@@ -316,7 +322,8 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
       ),
     );
   }
-    /// Toleransi spesifikasi: USL = target + 0.5, LSL = target - 0.5.
+
+  /// Toleransi spesifikasi: USL = target + 0.5, LSL = target - 0.5.
   static const double _tolerance = 0.5;
 
   void _syncSpecLimits() {

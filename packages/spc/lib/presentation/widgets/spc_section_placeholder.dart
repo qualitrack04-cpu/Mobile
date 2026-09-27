@@ -10,10 +10,10 @@ import 'spc_card.dart';
 /// supaya ketiga kondisi itu tampil seragam.
 class SpcSectionPlaceholder extends StatelessWidget {
   const SpcSectionPlaceholder.loading({super.key})
-      : isLoading = true,
-        message = null,
-        icon = null,
-        onRetry = null;
+    : isLoading = true,
+      message = null,
+      icon = null,
+      onRetry = null;
 
   const SpcSectionPlaceholder.message({
     super.key,
@@ -57,7 +57,7 @@ class SpcSectionPlaceholder extends StatelessWidget {
                     TextButton(
                       onPressed: onRetry,
                       child: Text(
-                        'Coba lagi',
+                        'Try again',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

@@ -7,7 +7,7 @@ class NewAnalysisBloc extends Bloc<NewAnalysisEvent, NewAnalysisState> {
   final AnalyzeSpc analyzeSpc;
 
   NewAnalysisBloc({required this.analyzeSpc})
-      : super(const NewAnalysisState()) {
+    : super(const NewAnalysisState()) {
     on<FileSelected>(_onFileSelected);
     on<FileCleared>(_onFileCleared);
     on<SubmitAnalysis>(_onSubmit);
@@ -42,7 +42,7 @@ class NewAnalysisBloc extends Bloc<NewAnalysisEvent, NewAnalysisState> {
       emit(
         state.copyWith(
           status: SubmitStatus.failure,
-          errorMessage: 'Pilih file Excel terlebih dahulu.',
+          errorMessage: 'Please select an Excel file first.',
         ),
       );
       return;

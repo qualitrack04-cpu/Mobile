@@ -203,8 +203,8 @@ class AnalysisResultPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Data pengukuran tidak tersimpan di server, '
-              'jadi control chart hanya tersedia tepat setelah analisis dibuat.',
+              'Measurement data was not saved to the server, so the control chart '
+              'is only available immediately after the analysis is created.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 12,

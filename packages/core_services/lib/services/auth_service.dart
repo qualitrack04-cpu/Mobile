@@ -26,11 +26,12 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       final token = data['token'] as String;
       final responseUserId = data['userId']?.toString();
-      final userId = responseUserId != null &&
-              responseUserId.isNotEmpty &&
-              responseUserId != 'null'
-          ? responseUserId
-          : _userIdFromToken(token);
+      final userId =
+          responseUserId != null &&
+                  responseUserId.isNotEmpty &&
+                  responseUserId != 'null'
+              ? responseUserId
+              : _userIdFromToken(token);
 
       await prefs.setString('auth_token', token);
       await prefs.setString('user_role', data['role'] as String);
@@ -54,9 +55,11 @@ class AuthService {
       final parts = token.split('.');
       if (parts.length != 3) return null;
 
-      final payload = jsonDecode(
-        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-      ) as Map<String, dynamic>;
+      final payload =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map<String, dynamic>;
 
       for (final entry in payload.entries) {
         final key = entry.key.toLowerCase();
@@ -94,20 +97,36 @@ class AuthService {
       if (e.response?.data != null) {
         final data = e.response!.data;
         if (data is Map && data['message'] != null) {
-          throw Exception(data['message']);
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data['message'],
+              fallback:
+                  'Registration failed. Check your information or contact an administrator.',
+            ),
+          );
         }
         if (data is Map && data['title'] != null) {
-          throw Exception(data['title']); // Untuk format ASP.NET Core
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data['title'],
+              fallback: 'Registration failed. Please check your information.',
+            ),
+          ); // ASP.NET Core error format
         }
         if (data is String) {
-          throw Exception(data);
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data,
+              fallback: 'Registration failed. Please try again.',
+            ),
+          );
         }
       }
       throw Exception(
-        'Registrasi gagal. Cek kembali data Anda atau hubungi admin.',
+        'Registration failed. Check your information or contact an administrator.',
       );
     } catch (e) {
-      throw Exception('Terjadi kesalahan saat registrasi.');
+      throw Exception('An error occurred during registration.');
     }
   }
 
@@ -119,7 +138,7 @@ class AuthService {
         data: {'email': email, 'otp': otp},
       );
     } catch (e) {
-      throw Exception('OTP salah atau sudah kadaluarsa');
+      throw Exception('The OTP is incorrect or has expired.');
     }
   }
 
@@ -131,7 +150,7 @@ class AuthService {
         data: {'email': email},
       );
     } catch (e) {
-      throw Exception('Gagal kirim ulang OTP');
+      throw Exception('Failed to resend the OTP.');
     }
   }
 
@@ -143,7 +162,7 @@ class AuthService {
         data: {'email': email},
       );
     } catch (e) {
-      throw Exception('Email tidak ditemukan');
+      throw Exception('Email address not found.');
     }
   }
 
@@ -161,7 +180,7 @@ class AuthService {
       final data = response.data as Map<String, dynamic>;
       return data['resetToken'] as String;
     } catch (e) {
-      throw Exception('OTP salah atau sudah kadaluarsa');
+      throw Exception('The OTP is incorrect or has expired.');
     }
   }
 
@@ -183,7 +202,7 @@ class AuthService {
         },
       );
     } catch (e) {
-      throw Exception('Gagal reset password');
+      throw Exception('Failed to reset the password.');
     }
   }
   // // POST /api/Auth/forgot-password (alur tanpa OTP - dinonaktifkan)
@@ -243,7 +262,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
     } catch (e) {
-      throw Exception('Gagal menyimpan profil ke server');
+      throw Exception('Failed to save your profile to the server.');
     }
   }
 
@@ -257,10 +276,13 @@ class AuthService {
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
         throw Exception(
-          data is Map ? data['message'] : 'Gagal mengirim OTP ke email baru',
+          ApiService.englishErrorMessage(
+            data is Map ? data['message'] : data,
+            fallback: 'Failed to send an OTP to the new email address.',
+          ),
         );
       }
-      throw Exception('Gagal mengirim OTP ke email baru');
+      throw Exception('Failed to send an OTP to the new email address.');
     }
   }
 
@@ -278,9 +300,14 @@ class AuthService {
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
-        throw Exception(data is Map ? data['message'] : 'Kode OTP tidak valid');
+        throw Exception(
+          ApiService.englishErrorMessage(
+            data is Map ? data['message'] : data,
+            fallback: 'The OTP is invalid.',
+          ),
+        );
       }
-      throw Exception('Kode OTP tidak valid');
+      throw Exception('The OTP is invalid.');
     }
   }
 
@@ -291,7 +318,7 @@ class AuthService {
         data: {'newPassword': newPassword},
       );
     } catch (e) {
-      throw Exception('Gagal mengganti password di server');
+      throw Exception('Failed to change the password on the server.');
     }
   }
 
@@ -330,7 +357,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_photo', url);
     } catch (e) {
-      throw Exception('Gagal mengupload foto profil');
+      throw Exception('Failed to upload the profile photo.');
     }
   }
 }

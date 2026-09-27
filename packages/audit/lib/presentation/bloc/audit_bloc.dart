@@ -16,7 +16,7 @@ String _extractMessage(Object e) {
   while (msg.startsWith('Exception: ')) {
     msg = msg.substring('Exception: '.length);
   }
-  return msg.isNotEmpty ? msg : 'Terjadi kesalahan. Coba lagi.';
+  return msg.isNotEmpty ? msg : 'Something went wrong. Please try again.';
 }
 
 class AuditBloc extends Bloc<AuditEvent, AuditState> {
@@ -49,10 +49,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     on<SubmitChecklistEvent>(_onSubmitChecklist);
   }
 
-  Future<void> _onLoadAudits(
-    LoadAudits event,
-    Emitter<AuditState> emit,
-  ) async {
+  Future<void> _onLoadAudits(LoadAudits event, Emitter<AuditState> emit) async {
     emit(AuditLoading());
     try {
       final audits = await getAudits();
@@ -200,4 +197,4 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       emit(AuditError(message: _extractMessage(e)));
     }
   }
-}
+}

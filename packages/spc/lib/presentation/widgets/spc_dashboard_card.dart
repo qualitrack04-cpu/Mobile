@@ -111,10 +111,7 @@ class _SpcDashboardCardState extends State<SpcDashboardCard> {
           padding: const EdgeInsets.only(top: 6),
           child: Text(
             'Last ${widget.days} days',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppColors.textMuted,
-            ),
+            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
           ),
         ),
       ],
@@ -173,7 +170,7 @@ class _SpcDashboardCardState extends State<SpcDashboardCard> {
             TextButton(
               onPressed: () => setState(_load),
               child: Text(
-                'Coba lagi',
+                'Try again',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
