@@ -15,6 +15,7 @@ class UserKpi {
   final double? onTimeRate;
   final double? complianceScore;
   final double? qualityScore;
+  final double? successRate;
 
   UserKpi({
     required this.totalCapaAssigned,
@@ -31,25 +32,27 @@ class UserKpi {
     this.onTimeRate,
     this.complianceScore,
     this.qualityScore,
+    this.successRate,
   });
 
   factory UserKpi.fromJson(Map<String, dynamic> json) {
     return UserKpi(
       totalCapaAssigned:
-        (json['totalCapaAssigned'] ?? json['totalAssigned']) as int? ?? 0,
+          (json['totalCapaAssigned'] ?? json['totalAssigned']) as int? ?? 0,
       totalCapaClosed:
-        (json['totalCapaClosed'] ?? json['totalCompleted']) as int? ?? 0,
+          (json['totalCapaClosed'] ?? json['totalCompleted']) as int? ?? 0,
       totalCapaOpenInProgress:
-        (json['totalCapaOpenInProgress'] ?? json['totalStalled']) as int? ?? 0,
+          (json['totalCapaOpenInProgress'] ?? json['totalStalled']) as int? ??
+          0,
       totalCapaClosedOnTime:
-        (json['totalCapaClosedOnTime'] ?? json['totalCompletedOnTime'])
-          as int? ??
-        0,
+          (json['totalCapaClosedOnTime'] ?? json['totalCompletedOnTime'])
+              as int? ??
+          0,
       totalFindingsReported: json['totalFindingsReported'] as int? ?? 0,
       onTimeCompletionRate:
-        ((json['onTimeCompletionRate'] ?? json['onTimeRate']) as num?)
-          ?.toDouble() ??
-        0.0,
+          ((json['onTimeCompletionRate'] ?? json['onTimeRate']) as num?)
+              ?.toDouble() ??
+          0.0,
       totalAssigned: json['totalAssigned'] as int?,
       totalCompleted: json['totalCompleted'] as int?,
       totalCompletedOnTime: json['totalCompletedOnTime'] as int?,
@@ -58,6 +61,7 @@ class UserKpi {
       onTimeRate: (json['onTimeRate'] as num?)?.toDouble(),
       complianceScore: (json['complianceScore'] as num?)?.toDouble(),
       qualityScore: (json['qualityScore'] as num?)?.toDouble(),
+      successRate: (json['successRate'] as num?)?.toDouble(),
     );
   }
 
@@ -74,7 +78,8 @@ class UserKpi {
 }
 
 class UserRecentActivity {
-  final String activityType; // "CapaAction" | "CapaVerified" | "FindingReported"
+  final String
+  activityType; // "CapaAction" | "CapaVerified" | "FindingReported"
   final String description;
   final DateTime? timestamp;
   final String relatedId;

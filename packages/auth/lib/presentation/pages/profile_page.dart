@@ -549,12 +549,13 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildSuccessRate() {
-    final rate = _kpi?.onTimeRate ?? _kpi?.onTimeCompletionRate ?? 0.0;
+    final completed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
+    final totalAssigned = _kpi?.totalAssigned ?? _kpi?.totalCapaAssigned ?? 0;
+    final rate =
+        _kpi?.successRate ??
+        (totalAssigned == 0 ? 0.0 : completed / totalAssigned);
     final percentText = '${(rate * 100).toStringAsFixed(1)}%';
-    final onTime =
-        _kpi?.totalCompletedOnTime ?? _kpi?.totalCapaClosedOnTime ?? 0;
-    final totalClosed = _kpi?.totalCompleted ?? _kpi?.totalCapaClosed ?? 0;
-    final ratioText = '$onTime/$totalClosed';
+    final ratioText = '$completed/$totalAssigned';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),

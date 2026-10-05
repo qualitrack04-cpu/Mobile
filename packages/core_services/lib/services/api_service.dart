@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://173.249.63.40:5144'; 
-  // Untuk server dika :'http://173.249.63.40:5144'
+  static const String baseUrl = 'https://api.qualitrack.my.id'; 
+  // Untuk server dika :'https://api.qualitrack.my.id'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
   
   static final RegExp _indonesianErrorTerms = RegExp(
