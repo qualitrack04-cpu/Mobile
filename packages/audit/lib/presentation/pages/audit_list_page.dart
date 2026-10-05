@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:core_services/core_services.dart';
 
 import '../../domain/entities/audit_entity.dart';
 import '../bloc/audit_bloc.dart';
@@ -45,14 +46,14 @@ class _AuditListViewState extends State<_AuditListView> {
     _loadUserRole();
   }
 
-  String _userRole = '';
+  UserRole _role = UserRole.unknown;
   String _userName = '';
 
   Future<void> _loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _userRole = prefs.getString('user_role') ?? '';
+        _role = UserRole.fromApi(prefs.getString('user_role'));
         _userName = prefs.getString('user_name') ?? '';
       });
     }
@@ -144,7 +145,7 @@ class _AuditListViewState extends State<_AuditListView> {
         ],
       ),
 
-      floatingActionButton: _userRole.startsWith('Auditor')
+      floatingActionButton: !_role.canCreateAudit
           ? null
           : SizedBox(
               width: fabSize,
@@ -332,7 +333,7 @@ class _AuditListViewState extends State<_AuditListView> {
                 return AuditCard(
                   audit: audit,
 
-                  onEdit: _userRole.startsWith('Auditor') ? null : () async {
+                  onEdit: !_role.canCreateAudit ? null : () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -346,8 +347,11 @@ class _AuditListViewState extends State<_AuditListView> {
 
                   onChecklist: audit.isFinished
                       ? null
-                      // Auditor hanya bisa akses checklist audit yang dia jadi PIC-nya
-                      : (_userRole.startsWith('Auditor') && audit.auditorName != _userName)
+                      // Auditee tidak mengerjakan checklist sama sekali;
+                      // Auditor hanya untuk audit yang dia jadi PIC-nya.
+                      : !_role.canRunChecklist ||
+                              (_role == UserRole.auditorInternal &&
+                                  audit.auditorName != _userName)
                           ? null
                           : () async {
                               await Navigator.push<bool>(
@@ -361,7 +365,7 @@ class _AuditListViewState extends State<_AuditListView> {
                               );
                             },
 
-                  onDelete: _userRole.startsWith('Auditor') ? null : () async {
+                  onDelete: !_role.canCreateAudit ? null : () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(

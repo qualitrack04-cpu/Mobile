@@ -31,4 +31,15 @@ class AppColors {
   // Filter
   static const Color filterActive = Color(0xFF6E97CC);
   static const Color filterBackground = Color(0xFFE9EDF2);
+
+  // Action
+  // Biru tombol/aksi. Nilai yang sama sudah dipakai sebagai hardcode di
+  // dashboard_page.dart (summary card) — ganti ke token ini saat merapikan.
+  static const Color action = Color(0xFF1D52D8);
+
+  // SPC status
+  static const Color spcCapable = Color(0xFF22C55E);
+  static const Color spcMarginal = Color(0xFFF5B841);
+  static const Color spcNotCapable = Color(0xFFE02B20);
+  static const Color spcUnstable = Color(0xFF8B5E3C);
 }

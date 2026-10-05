@@ -33,10 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-      r'^[\w\.-]+@gmail\.com$',
-      caseSensitive: false,
-    );
+    final emailRegex = RegExp(r'^[\w\.-]+@gmail\.com$', caseSensitive: false);
     return emailRegex.hasMatch(email.trim());
   }
 
@@ -83,11 +80,11 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       String msg = e.toString();
       if (msg.contains('Role yang dipilih tidak sesuai')) {
-        msg = 'Role yang dipilih tidak sesuai dengan akun ini';
+        msg = 'The selected role does not match this account.';
       } else if (msg.contains('Email atau password')) {
-        msg = 'Email atau password salah';
+        msg = 'The email or password is incorrect.';
       } else {
-        msg = 'Login gagal, coba lagi';
+        msg = 'Login failed. Please try again.';
       }
       setState(() => _generalError = msg);
     } finally {
@@ -181,9 +178,10 @@ class _LoginPageState extends State<LoginPage> {
                         autofillHints: const [AutofillHints.email],
                         onChanged: (val) {
                           setState(() {
-                            _emailError = val.trim().isEmpty
-                                ? 'Email is required'
-                                : !_isValidEmail(val.trim())
+                            _emailError =
+                                val.trim().isEmpty
+                                    ? 'Email is required'
+                                    : !_isValidEmail(val.trim())
                                     ? 'Email must use @gmail.com'
                                     : null;
                           });
@@ -209,14 +207,16 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ForgotPasswordPage(
-                                    initialEmail: _emailController.text,
+                              onPressed:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => ForgotPasswordPage(
+                                            initialEmail: _emailController.text,
+                                          ),
+                                    ),
                                   ),
-                                ),
-                              ),
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,
                                 minimumSize: Size.zero,
@@ -240,9 +240,8 @@ class _LoginPageState extends State<LoginPage> {
                         obscureText: _isObscured,
                         onChanged: (val) {
                           setState(() {
-                            _passwordError = val.isEmpty
-                                ? 'Password is required'
-                                : null;
+                            _passwordError =
+                                val.isEmpty ? 'Password is required' : null;
                           });
                         },
                         decoration: customInputDecoration(
@@ -255,8 +254,9 @@ class _LoginPageState extends State<LoginPage> {
                                   : Icons.visibility_off_outlined,
                               size: 20,
                             ),
-                            onPressed: () =>
-                                setState(() => _isObscured = !_isObscured),
+                            onPressed:
+                                () =>
+                                    setState(() => _isObscured = !_isObscured),
                           ),
                         ),
                       ),
@@ -277,10 +277,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
-                          : ActionButton(
-                              label: 'SIGN IN',
-                              onPressed: _onLogin,
-                            ),
+                          : ActionButton(label: 'SIGN IN', onPressed: _onLogin),
 
                       const SizedBox(height: 16),
                       Center(
@@ -291,12 +288,13 @@ class _LoginPageState extends State<LoginPage> {
                               style: TextStyle(color: Colors.grey),
                             ),
                             TextButton(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterPage(),
-                                ),
-                              ),
+                              onPressed:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterPage(),
+                                    ),
+                                  ),
                               child: const Text(
                                 'SIGN UP',
                                 style: TextStyle(

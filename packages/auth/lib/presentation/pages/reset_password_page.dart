@@ -45,18 +45,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     bool hasError = false;
 
     if (_passwordController.text.isEmpty) {
-      setState(() => _passwordError = 'Password wajib diisi');
+      setState(() => _passwordError = 'Password is required.');
       hasError = true;
     } else if (_passwordController.text.length < 8) {
-      setState(() => _passwordError = 'Password minimal 8 karakter');
+      setState(
+        () => _passwordError = 'Password must be at least 8 characters long.',
+      );
       hasError = true;
     }
 
     if (_confirmPasswordController.text.isEmpty) {
-      setState(() => _confirmPasswordError = 'Silakan konfirmasi password');
+      setState(() => _confirmPasswordError = 'Please confirm your password.');
       hasError = true;
     } else if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _confirmPasswordError = 'Password tidak sama');
+      setState(() => _confirmPasswordError = 'Passwords do not match.');
       hasError = true;
     }
 
@@ -79,7 +81,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password berhasil direset!'),
+          content: Text('Password reset successfully!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -89,7 +91,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         (route) => false,
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Gagal reset password, coba lagi');
+      setState(
+        () => _errorMessage = 'Failed to reset the password. Please try again.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -123,11 +127,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.shield,
-                  size: 28,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.shield, size: 28, color: Colors.white),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -186,10 +186,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       obscureText: _isObscured,
                       onChanged: (val) {
                         setState(() {
-                          _passwordError = val.isEmpty
-                              ? 'Password wajib diisi'
-                              : val.length < 8
-                                  ? 'Password minimal 8 karakter'
+                          _passwordError =
+                              val.isEmpty
+                                  ? 'Password is required.'
+                                  : val.length < 8
+                                  ? 'Password must be at least 8 characters long.'
                                   : null;
                         });
                       },
@@ -207,8 +208,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             size: 20,
                             color: Colors.grey,
                           ),
-                          onPressed: () =>
-                              setState(() => _isObscured = !_isObscured),
+                          onPressed:
+                              () => setState(() => _isObscured = !_isObscured),
                         ),
                         filled: true,
                         fillColor: Colors.grey[100],
@@ -247,10 +248,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       obscureText: _isObscuredConfirm,
                       onChanged: (val) {
                         setState(() {
-                          _confirmPasswordError = val.isEmpty
-                              ? 'Silakan konfirmasi password'
-                              : val != _passwordController.text
-                                  ? 'Password tidak sama'
+                          _confirmPasswordError =
+                              val.isEmpty
+                                  ? 'Please confirm your password.'
+                                  : val != _passwordController.text
+                                  ? 'Passwords do not match.'
                                   : null;
                         });
                       },
@@ -268,8 +270,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             size: 20,
                             color: Colors.grey,
                           ),
-                          onPressed: () => setState(
-                              () => _isObscuredConfirm = !_isObscuredConfirm),
+                          onPressed:
+                              () => setState(
+                                () => _isObscuredConfirm = !_isObscuredConfirm,
+                              ),
                         ),
                         filled: true,
                         fillColor: Colors.grey[100],
@@ -296,10 +300,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       const SizedBox(height: 8),
                       Text(
                         _errorMessage!,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 13,
-                        ),
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
                       ),
                     ],
 
@@ -308,9 +309,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : ActionButton(
-                            label: 'RESET',
-                            onPressed: _onResetPassword,
-                          ),
+                          label: 'RESET',
+                          onPressed: _onResetPassword,
+                        ),
                   ],
                 ),
               ),

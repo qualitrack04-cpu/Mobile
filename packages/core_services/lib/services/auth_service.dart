@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:core_services/services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:core_services/user_role.dart';
 
 class AuthService {
   final ApiService apiService;
@@ -21,12 +24,23 @@ class AuthService {
       );
       final data = response.data as Map<String, dynamic>;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', data['token'] as String);
+      final token = data['token'] as String;
+      final responseUserId = data['userId']?.toString();
+      final userId =
+          responseUserId != null &&
+                  responseUserId.isNotEmpty &&
+                  responseUserId != 'null'
+              ? responseUserId
+              : _userIdFromToken(token);
+
+      await prefs.setString('auth_token', token);
       await prefs.setString('user_role', data['role'] as String);
       await prefs.setString('user_name', data['fullName'] as String);
-      await prefs.setString('user_id', data['userId'].toString());
+      if (userId != null) {
+        await prefs.setString('user_id', userId);
+      }
       await prefs.setString('user_email', email);
-      
+
       // Ambil data profil (termasuk URL foto)
       try {
         await fetchProfile();
@@ -34,6 +48,32 @@ class AuthService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  String? _userIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map<String, dynamic>;
+
+      for (final entry in payload.entries) {
+        final key = entry.key.toLowerCase();
+        if (key == 'sub' ||
+            key == 'nameid' ||
+            key.endsWith('/nameidentifier')) {
+          final value = entry.value?.toString();
+          if (value != null && value.isNotEmpty) return value;
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   // POST /api/Auth/register
@@ -57,18 +97,36 @@ class AuthService {
       if (e.response?.data != null) {
         final data = e.response!.data;
         if (data is Map && data['message'] != null) {
-          throw Exception(data['message']);
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data['message'],
+              fallback:
+                  'Registration failed. Check your information or contact an administrator.',
+            ),
+          );
         }
         if (data is Map && data['title'] != null) {
-          throw Exception(data['title']); // Untuk format ASP.NET Core
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data['title'],
+              fallback: 'Registration failed. Please check your information.',
+            ),
+          ); // ASP.NET Core error format
         }
         if (data is String) {
-          throw Exception(data);
+          throw Exception(
+            ApiService.englishErrorMessage(
+              data,
+              fallback: 'Registration failed. Please try again.',
+            ),
+          );
         }
       }
-      throw Exception('Registrasi gagal. Cek kembali data Anda atau hubungi admin.');
+      throw Exception(
+        'Registration failed. Check your information or contact an administrator.',
+      );
     } catch (e) {
-      throw Exception('Terjadi kesalahan saat registrasi.');
+      throw Exception('An error occurred during registration.');
     }
   }
 
@@ -80,7 +138,7 @@ class AuthService {
         data: {'email': email, 'otp': otp},
       );
     } catch (e) {
-      throw Exception('OTP salah atau sudah kadaluarsa');
+      throw Exception('The OTP is incorrect or has expired.');
     }
   }
 
@@ -92,7 +150,7 @@ class AuthService {
         data: {'email': email},
       );
     } catch (e) {
-      throw Exception('Gagal kirim ulang OTP');
+      throw Exception('Failed to resend the OTP.');
     }
   }
 
@@ -104,12 +162,12 @@ class AuthService {
         data: {'email': email},
       );
     } catch (e) {
-      throw Exception('Email tidak ditemukan');
+      throw Exception('Email address not found.');
     }
   }
 
   // POST /api/Auth/forgot-password/verify-otp
-// POST /api/Auth/forgot-password/verify-otp
+  // POST /api/Auth/forgot-password/verify-otp
   Future<String> verifyForgotPasswordOtp({
     required String email,
     required String otp,
@@ -122,7 +180,7 @@ class AuthService {
       final data = response.data as Map<String, dynamic>;
       return data['resetToken'] as String;
     } catch (e) {
-      throw Exception('OTP salah atau sudah kadaluarsa');
+      throw Exception('The OTP is incorrect or has expired.');
     }
   }
 
@@ -144,7 +202,7 @@ class AuthService {
         },
       );
     } catch (e) {
-      throw Exception('Gagal reset password');
+      throw Exception('Failed to reset the password.');
     }
   }
   // // POST /api/Auth/forgot-password (alur tanpa OTP - dinonaktifkan)
@@ -190,20 +248,21 @@ class AuthService {
     };
   }
 
-  Future<void> updateProfile({
-    required String name,
-  }) async {
+  Future<UserRole> getCurrentRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return UserRole.fromApi(prefs.getString('user_role'));
+  }
+
+  Future<void> updateProfile({required String name}) async {
     try {
       await apiService.client.put(
         '/api/Auth/update-profile',
-        data: {
-          'fullName': name,
-        },
+        data: {'fullName': name},
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
     } catch (e) {
-      throw Exception('Gagal menyimpan profil ke server');
+      throw Exception('Failed to save your profile to the server.');
     }
   }
 
@@ -216,9 +275,14 @@ class AuthService {
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
-        throw Exception(data is Map ? data['message'] : 'Gagal mengirim OTP ke email baru');
+        throw Exception(
+          ApiService.englishErrorMessage(
+            data is Map ? data['message'] : data,
+            fallback: 'Failed to send an OTP to the new email address.',
+          ),
+        );
       }
-      throw Exception('Gagal mengirim OTP ke email baru');
+      throw Exception('Failed to send an OTP to the new email address.');
     }
   }
 
@@ -230,15 +294,20 @@ class AuthService {
       );
       final data = response.data as Map<String, dynamic>;
       final newEmail = data['newEmail'] as String;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', newEmail);
     } catch (e) {
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
-        throw Exception(data is Map ? data['message'] : 'Kode OTP tidak valid');
+        throw Exception(
+          ApiService.englishErrorMessage(
+            data is Map ? data['message'] : data,
+            fallback: 'The OTP is invalid.',
+          ),
+        );
       }
-      throw Exception('Kode OTP tidak valid');
+      throw Exception('The OTP is invalid.');
     }
   }
 
@@ -246,12 +315,10 @@ class AuthService {
     try {
       await apiService.client.post(
         '/api/Auth/change-password',
-        data: {
-          'newPassword': newPassword,
-        },
+        data: {'newPassword': newPassword},
       );
     } catch (e) {
-      throw Exception('Gagal mengganti password di server');
+      throw Exception('Failed to change the password on the server.');
     }
   }
 
@@ -264,7 +331,7 @@ class AuthService {
       await prefs.setString('user_name', data['fullName'] ?? '');
       await prefs.setString('user_email', data['email'] ?? '');
       await prefs.setString('user_role', data['role'] ?? '');
-      
+
       final photoUrl = data['profilePhotoUrl'] as String? ?? '';
       debugPrint('[fetchProfile] profilePhotoUrl = $photoUrl');
       await prefs.setString('user_photo', photoUrl);
@@ -283,14 +350,14 @@ class AuthService {
         '/api/Auth/upload-profile-photo',
         data: formData,
       );
-      
+
       final data = response.data as Map<String, dynamic>;
       final url = data['url'] as String;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_photo', url);
     } catch (e) {
-      throw Exception('Gagal mengupload foto profil');
+      throw Exception('Failed to upload the profile photo.');
     }
   }
 }

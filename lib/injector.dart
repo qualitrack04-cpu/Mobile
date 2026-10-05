@@ -2,6 +2,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:core_services/services/auth_service.dart';
+import 'package:core_services/services/quality_score_service.dart';
+import 'package:core_services/services/profile_service.dart';
 
 // Finding
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
@@ -37,6 +39,20 @@ import 'package:audit/domain/usecases/get_checklist.dart';
 import 'package:audit/domain/usecases/get_auditors.dart';
 import 'package:audit/domain/usecases/submit_checklist.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
+
+//SPC
+import 'package:spc/data/datasources/spc_remote_datasource.dart';
+import 'package:spc/data/repositories/spc_repository_impl.dart';
+import 'package:spc/domain/repositories/spc_repository.dart';
+import 'package:spc/domain/usecases/analyze_spc.dart';
+import 'package:spc/domain/usecases/get_analyses_history.dart';
+import 'package:spc/domain/usecases/get_recent_analyses.dart';
+import 'package:spc/domain/usecases/get_spc_trends.dart';
+import 'package:spc/presentation/bloc/new_analysis_bloc.dart';
+import 'package:spc/presentation/bloc/spc_bloc.dart';
+import 'package:spc/presentation/bloc/spc_history_bloc.dart';
+import 'package:spc/domain/usecases/get_analysis_detail.dart';
+import 'package:spc/domain/usecases/get_spc_status_summary.dart';
 
 final sl = GetIt.instance;
 
@@ -84,6 +100,8 @@ Future<void> init() async {
   // ===== AUDIT =====
   sl.registerLazySingleton(() => ApiService());
   sl.registerLazySingleton(() => AuthService(apiService: sl()));
+  sl.registerLazySingleton(() => QualityScoreService(apiService: sl()));
+  sl.registerLazySingleton(() => ProfileService(apiService: sl()));
   sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => AuditorRemoteDatasource(apiService: sl()));
@@ -117,4 +135,38 @@ Future<void> init() async {
       submitChecklist: sl(),
     ),
   );
+
+  //SPC
+    // ===== SPC =====
+  sl.registerLazySingleton(
+    () => SpcRemoteDatasource(apiService: sl()),
+  );
+ 
+  sl.registerLazySingleton<SpcRepository>(
+    () => SpcRepositoryImpl(datasource: sl()),
+  );
+ 
+  sl.registerLazySingleton(() => GetSpcTrends(repository: sl()));
+  sl.registerLazySingleton(() => GetRecentAnalyses(repository: sl()));
+  sl.registerLazySingleton(() => GetAnalysesHistory(repository: sl()));
+  sl.registerLazySingleton(() => AnalyzeSpc(repository: sl()));
+ 
+  // Factory, bukan singleton: tiap halaman menutup bloc-nya saat dispose,
+  // jadi setiap kali dibuka harus dapat instance baru.
+  sl.registerFactory(
+    () => SpcBloc(
+      getSpcTrends: sl(),
+      getRecentAnalyses: sl(),
+    ),
+  );
+ 
+  sl.registerFactory(
+    () => SpcHistoryBloc(getAnalysesHistory: sl()),
+  );
+ 
+  sl.registerFactory(
+    () => NewAnalysisBloc(analyzeSpc: sl()),
+  );
+    sl.registerLazySingleton(() => GetAnalysisDetail(repository: sl()));
+    sl.registerLazySingleton(() => GetSpcStatusSummary(repository: sl()));
 }

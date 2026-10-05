@@ -21,6 +21,8 @@ dependencies:
     path: ../capa
   auth:
     path: ../auth
+  spc: 
+    path: ../spc
   google_fonts: ^8.1.0
   core_services:
     path: ../core_services
@@ -29,6 +31,7 @@ dependencies:
   path_provider: ^2.1.5
   open_filex: ^4.7.0
   pdfx: ^2.9.2
+  fl_chart: ^1.1.1
 
 dev_dependencies:
   flutter_test:

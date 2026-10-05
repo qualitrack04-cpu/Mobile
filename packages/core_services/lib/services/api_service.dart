@@ -2,7 +2,43 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://173.249.63.40:5144'; 
+  static const String baseUrl = 'https://api.qualitrack.my.id'; 
+  // Untuk server dika :'https://api.qualitrack.my.id'
+  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
+  
+  static final RegExp _indonesianErrorTerms = RegExp(
+    r'\b(gagal|tidak|belum|sudah|silakan|mohon|pastikan|ditemukan|terdaftar|tersedia|wajib|harus|salah|kadaluarsa|kedaluwarsa|berhasil|terjadi|dapat|mengirim|mengambil|menyimpan|mengunggah|mengupload|masukkan|periksa|coba lagi|ditolak|dibatalkan|dihapus|digunakan)\b',
+    caseSensitive: false,
+  );
+
+  static String englishErrorMessage(
+    Object? message, {
+    required String fallback,
+  }) {
+    if (message is DioException) {
+      if (message.type == DioExceptionType.connectionTimeout ||
+          message.type == DioExceptionType.receiveTimeout ||
+          message.type == DioExceptionType.sendTimeout) {
+        return 'The request timed out. Check your internet connection and try again.';
+      }
+      if (message.type == DioExceptionType.connectionError) {
+        return 'Could not connect to the server. Check your internet connection.';
+      }
+      return fallback;
+    }
+
+    var text = message?.toString().trim() ?? '';
+    while (text.startsWith('Exception:')) {
+      text = text.substring('Exception:'.length).trim();
+    }
+    if (text.isEmpty ||
+        text.contains('DioException') ||
+        _indonesianErrorTerms.hasMatch(text)) {
+      return fallback;
+    }
+    return text;
+  }
+
   // Untuk server dika :'http://173.249.63.40:5144'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
 

@@ -2,7 +2,7 @@ name: mobile
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.0.0+9
+version: 3.1.0+11
 
 environment:
   sdk: ^3.7.2
@@ -25,8 +25,11 @@ dependencies:
     path: packages/capa
   core_services:
     path: packages/core_services
+  spc:
+    path: packages/spc
   open_filex: ^4.3.2
   image_picker: ^1.0.7
+  file_picker: ^8.1.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

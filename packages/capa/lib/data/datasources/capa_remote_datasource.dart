@@ -9,18 +9,23 @@ String _parseError(Object e, String fallback) {
       if (data.containsKey('errors')) {
         // ASP.NET validation errors
         final errors = data['errors'] as Map<String, dynamic>;
-        return errors.values.map((e) => e.toString()).join('\n');
+        return ApiService.englishErrorMessage(
+          errors.values.map((e) => e.toString()).join('\n'),
+          fallback: fallback,
+        );
       }
       final msg = data['message'] as String?;
-      if (msg != null && msg.isNotEmpty) return msg;
+      if (msg != null && msg.isNotEmpty) {
+        return ApiService.englishErrorMessage(msg, fallback: fallback);
+      }
     }
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout) {
-      return 'Koneksi timeout. Pastikan internet aktif.';
+      return 'The request timed out. Check your internet connection.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak dapat terhubung ke server.';
+      return 'Could not connect to the server.';
     }
   }
   return fallback;
@@ -40,7 +45,7 @@ class CapaRemoteDatasource {
           .map((json) => CapaModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengambil data CAPA.'));
+      throw Exception(_parseError(e, 'Failed to load CAPA items.'));
     }
   }
 
@@ -50,7 +55,7 @@ class CapaRemoteDatasource {
       final response = await apiService.client.get('/api/Capa/$id');
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal mengambil detail CAPA.'));
+      throw Exception(_parseError(e, 'Failed to load CAPA details.'));
     }
   }
 
@@ -69,8 +74,9 @@ class CapaRemoteDatasource {
         'rootCause': rootCause,
         'correctiveAction': correctiveAction,
         'preventiveAction': preventiveAction,
-        'picId': picId,  // ✅ picId di Flutter isinya nama, kirim ke picName
-        'deadline': '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
+        'picId': picId, // ✅ picId di Flutter isinya nama, kirim ke picName
+        'deadline':
+            '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
       final response = await apiService.client.post(
         '/api/Capa/finding/$findingId',
@@ -78,7 +84,7 @@ class CapaRemoteDatasource {
       );
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal membuat CAPA.'));
+      throw Exception(_parseError(e, 'Failed to create the CAPA.'));
     }
   }
 
@@ -98,12 +104,13 @@ class CapaRemoteDatasource {
         'correctiveAction': correctiveAction,
         'preventiveAction': preventiveAction,
         'picId': picId,
-        'deadline': '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
+        'deadline':
+            '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
       final response = await apiService.client.put('/api/Capa/$id', data: body);
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal update CAPA.'));
+      throw Exception(_parseError(e, 'Failed to update the CAPA.'));
     }
   }
 
@@ -126,7 +133,7 @@ class CapaRemoteDatasource {
       final statusInt = statusMap[status] ?? 0;
       await apiService.client.patch('/api/Capa/$id/status', data: statusInt);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal update status CAPA.'));
+      throw Exception(_parseError(e, 'Failed to update the CAPA status.'));
     }
   }
 
@@ -141,11 +148,12 @@ class CapaRemoteDatasource {
       final body = {
         'isEffective': isEffective,
         'verificationNotes': verificationNotes,
-        'verifiedById': verifiedById,
+        if (verifiedById.isNotEmpty && verifiedById.toLowerCase() != 'null')
+          'verifiedById': verifiedById,
       };
       await apiService.client.post('/api/Capa/$id/closeout', data: body);
     } catch (e) {
-      throw Exception(_parseError(e, 'Gagal closeout CAPA.'));
+      throw Exception(_parseError(e, 'Failed to close out the CAPA.'));
     }
   }
 }
