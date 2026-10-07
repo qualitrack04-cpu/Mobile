@@ -290,7 +290,7 @@ class _CapaCardState extends State<_CapaCard> {
         widget.userId.isNotEmpty &&
         widget.userId.toLowerCase() != 'null' &&
         picId.toLowerCase() == widget.userId.toLowerCase();
-    final normalizeName = (String value) =>
+    String normalizeName(String value) =>
         value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
     final sameName = widget.capa.picName.isNotEmpty &&
         widget.userName.isNotEmpty &&
@@ -533,7 +533,7 @@ class _CapaCardState extends State<_CapaCard> {
 
             setState(() => _currentStatus = newStatus);
 
-            // ✅ kirim event ke bloc
+            if (!context.mounted) return;
             context.read<CapaBloc>().add(
               UpdateCapaStatusEvent(id: widget.capa.id, status: newStatus),
             );

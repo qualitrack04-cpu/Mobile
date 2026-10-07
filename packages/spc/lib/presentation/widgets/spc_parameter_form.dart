@@ -159,13 +159,6 @@ class SpcParameterForm extends StatelessWidget {
     );
   }
 
-  static String? _requiredNumber(String? value) {
-    if (value == null || value.trim().isEmpty) return 'This field is required.';
-    return double.tryParse(value.trim()) == null
-        ? 'Enter a valid number.'
-        : null;
-  }
-
   static final _numberFormatter = FilteringTextInputFormatter.allow(
     RegExp(r'^-?\d*\.?\d*'),
   );

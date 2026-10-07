@@ -1,12 +1,13 @@
 import 'package:core_services/core_services.dart';
+import 'package:flutter/foundation.dart';
 
 /// Model untuk satu data trend quality score per bulan
 class QualityTrend {
-  final int period;           // nomor bulan (1–12)
-  final String periodLabel;   // misal: "Jan 2026"
+  final int period; // nomor bulan (1–12)
+  final String periodLabel; // misal: "Jan 2026"
   final int totalSessions;
   final double complianceScore;
-  final double qualityScore;  // nilai yang kita tampilkan di profil (0–100)
+  final double qualityScore; // nilai yang kita tampilkan di profil (0–100)
 
   QualityTrend({
     required this.period,
@@ -46,7 +47,9 @@ class QualityScoreService {
           .map((e) => QualityTrend.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error getTrends: $e');
+      if (kDebugMode) {
+        debugPrint('Error getTrends: $e');
+      }
       return [];
     }
   }

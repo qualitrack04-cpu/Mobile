@@ -33,6 +33,9 @@ dependencies:
   pdfx: ^2.9.2
   fl_chart: ^1.1.1
 
+  get_it: any
+  skeletonizer: any
+  flutter_bloc: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

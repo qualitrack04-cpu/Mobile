@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:dio/dio.dart';
 
-import 'package:core_services/services/api_service.dart';
 import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,7 +38,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   String _summary = '';
   List<Map<String, dynamic>> _responses = [];
   List<Map<String, dynamic>> _findings = [];
-  Map<String, List<String>> _evidencesMap =
+  final Map<String, List<String>> _evidencesMap =
       {}; // mapping responseId -> list of image URLs
 
   @override
@@ -438,7 +437,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
                         );
                       },
                       errorBuilder:
-                          (_, __, ___) => Container(
+                          (_, _, _) => Container(
                             width: 240,
                             height: 160,
                             color: Colors.grey[200],
@@ -722,6 +721,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
           filePath: file.path,
         );
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -766,7 +766,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

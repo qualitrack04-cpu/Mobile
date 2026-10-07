@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
-import 'package:core_services/services/api_service.dart';
-import 'package:core_services/services/quality_score_service.dart';
-import 'package:core_services/services/profile_service.dart';
 import 'package:get_it/get_it.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
@@ -129,15 +126,6 @@ class _ProfilePageState extends State<ProfilePage>
         _isLoading = false;
       });
     }
-  }
-
-  String _formatRole(String role) {
-    if (role == 'Auditor' || role == 'AuditorInternal')
-      return 'Auditor Internal';
-    if (role.isEmpty) return '-';
-    return role
-        .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
-        .trim();
   }
 
   @override
@@ -766,7 +754,7 @@ class _ProfilePageState extends State<ProfilePage>
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _activities.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   return _buildActivityItem(_activities[index]);
                 },

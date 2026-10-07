@@ -89,7 +89,7 @@ class SpcRemoteDatasource {
         // Nama field mengikuti signature backend, yang masih memakai
         // `productName` meski di database tersimpan sebagai ParameterName.
         'productName': parameterName,
-        if (target != null) 'target': target,
+        'target': ?target,
         if (unit != null && unit.isNotEmpty) 'unit': unit,
         if (description != null && description.isNotEmpty)
           'description': description,
