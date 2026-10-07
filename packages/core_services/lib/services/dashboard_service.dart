@@ -1,5 +1,6 @@
 import 'package:core_services/core_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class AuditSummary {
   final int activeAudit;
@@ -193,8 +194,7 @@ class QualityTrendPoint {
     return QualityTrendPoint(
       month: json['month'] ?? 0,
       year: json['year'] ?? 0,
-      monthName:
-          json['monthName'] as String? ?? periodLabel.split(' ').first,
+      monthName: json['monthName'] as String? ?? periodLabel.split(' ').first,
       score:
           (json['overallScore'] as num?)?.toDouble() ??
           (json['score'] as num?)?.toDouble() ??
@@ -271,7 +271,9 @@ class DashboardService {
 
       return QualityTrendResponse.fromJson(res.data);
     } catch (e) {
-      print('Error getQualityTrend: $e');
+      if (kDebugMode) {
+        debugPrint('Error getQualityTrend: $e');
+      }
 
       return QualityTrendResponse(
         currentScore: 0,
@@ -291,7 +293,9 @@ class DashboardService {
           .map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error getCompletedReports: $e');
+      if (kDebugMode) {
+        debugPrint('Error getCompletedReports: $e');
+      }
       return [];
     }
   }
@@ -302,7 +306,9 @@ class DashboardService {
       final res = await apiService.client.get('/api/Dashboard/summary');
       return AuditSummary.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
-      print('Error getAuditSummary: $e');
+      if (kDebugMode) {
+        debugPrint('Error getAuditSummary: $e');
+      }
       return AuditSummary(
         activeAudit: 0,
         totalCapa: 0,
@@ -320,7 +326,9 @@ class DashboardService {
       );
       return ComplianceScoreResponse.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
-      print('Error getComplianceScores: $e');
+      if (kDebugMode) {
+        debugPrint('Error getComplianceScores: $e');
+      }
       return ComplianceScoreResponse(overallScore: 0, data: []);
     }
   }
@@ -359,9 +367,9 @@ class DashboardService {
                   as String? ??
               '';
 
-            if (scheduleId != null && scheduleId.isNotEmpty) {
+          if (scheduleId != null && scheduleId.isNotEmpty) {
             existingScheduleIds.add(scheduleId);
-            }
+          }
 
           if (scheduleId != null &&
               scheduleId.isNotEmpty &&
@@ -417,7 +425,9 @@ class DashboardService {
         data: filteredDays,
       );
     } catch (e) {
-      print('Error getAuditSchedule: $e');
+      if (kDebugMode) {
+        debugPrint('Error getAuditSchedule: $e');
+      }
       return AuditScheduleResponse(month: month, year: year, data: []);
     }
   }
@@ -540,7 +550,9 @@ class DashboardService {
         }
       }
     } catch (e) {
-      print('Error calculating dashboard findings: $e');
+      if (kDebugMode) {
+        debugPrint('Error calculating dashboard findings: $e');
+      }
       activeFindingsCount = findingList.length;
     }
 

@@ -490,6 +490,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                           });
                           _showSuccessPopup();
                         } else {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -682,7 +683,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
                   checklists: _checklists,
                 );
 
-                // Menutup pop-up (dialog) terlebih dahulu
+                if (!mounted) return;
                 Navigator.pop(context);
 
                 // Tunggu satu frame agar pop selesai sebelum push
@@ -1121,11 +1122,10 @@ class _EditEvidenceDialog extends StatefulWidget {
   final VoidCallback onRemove;
 
   const _EditEvidenceDialog({
-    Key? key,
     required this.checklist,
     required this.onUpload,
     required this.onRemove,
-  }) : super(key: key);
+  });
 
   @override
   State<_EditEvidenceDialog> createState() => _EditEvidenceDialogState();

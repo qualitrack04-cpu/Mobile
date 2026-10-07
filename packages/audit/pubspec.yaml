@@ -27,6 +27,9 @@ dependencies:
   open_filex: ^4.4.0
   pdfx: ^2.9.2
 
+  flutter_bloc: any
+  equatable: any
+  get_it: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

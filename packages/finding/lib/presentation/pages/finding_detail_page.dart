@@ -375,7 +375,7 @@ class _EvidenceThumbnail extends StatelessWidget {
                     ),
                   );
                 },
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: Colors.grey[200],
                   child: Icon(Icons.broken_image_outlined,
                       color: Colors.grey[400], size: 28),
@@ -483,7 +483,7 @@ class _EvidenceGalleryPageState extends State<_EvidenceGalleryPage> {
                     child: CircularProgressIndicator(color: Colors.white),
                   );
                 },
-                errorBuilder: (_, __, ___) => const Center(
+                errorBuilder: (_, _, _) => const Center(
                   child: Icon(Icons.broken_image_outlined,
                       color: Colors.white54, size: 64),
                 ),

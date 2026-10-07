@@ -1,4 +1,5 @@
 import 'package:core_services/services/api_service.dart';
+import 'package:flutter/foundation.dart';
 
 class UserKpi {
   final int totalCapaAssigned;
@@ -118,7 +119,9 @@ class ProfileService {
       }
       return null;
     } catch (e) {
-      print('Error getKpi: $e');
+      if (kDebugMode) {
+        debugPrint('Error getKpi: $e');
+      }
       return null;
     }
   }
@@ -135,7 +138,9 @@ class ProfileService {
           .map((e) => UserRecentActivity.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error getRecentActivity: $e');
+      if (kDebugMode) {
+        debugPrint('Error getRecentActivity: $e');
+      }
       return [];
     }
   }

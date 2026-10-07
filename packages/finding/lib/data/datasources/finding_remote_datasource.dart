@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class FindingRemoteDatasource {
   final ApiService apiService;
@@ -13,21 +13,21 @@ class FindingRemoteDatasource {
   /// GET /api/Upload/finding/{findingId}
   Future<List<Map<String, String>>> getEvidences(String findingId) async {
     try {
-      final response =
-          await apiService.client.get('/api/Upload/finding/$findingId');
+      final response = await apiService.client.get(
+        '/api/Upload/finding/$findingId',
+      );
       final List<dynamic> data = response.data as List<dynamic>;
       return data.map((e) {
         final urlStr = e['url'] as String;
         // Ambil id evidence — sesuaikan key-nya jika berbeda dari backend
         final id = e['id'] as String? ?? e['fileId'] as String? ?? '';
-        var fullUrl = urlStr.startsWith('http')
-            ? urlStr
-            : '${ApiService.baseUrl}$urlStr';
-        
+        var fullUrl =
+            urlStr.startsWith('http') ? urlStr : '${ApiService.baseUrl}$urlStr';
+
         if (fullUrl.startsWith('http://backendqualitrack')) {
           fullUrl = fullUrl.replaceFirst('http://', 'https://');
         }
-        
+
         return {'id': id, 'url': fullUrl};
       }).toList();
     } catch (_) {
@@ -66,14 +66,14 @@ class FindingRemoteDatasource {
     );
 
     final List<dynamic> data = response.data as List<dynamic>;
-    final findings = data
-        .map((json) => FindingModel.fromJson(json as Map<String, dynamic>))
-        .toList();
+    final findings =
+        data
+            .map((json) => FindingModel.fromJson(json as Map<String, dynamic>))
+            .toList();
 
     try {
       final capaResponse = await apiService.client.get('/api/Capa');
       final capaData = capaResponse.data as List<dynamic>;
-      final now = DateTime.now();
 
       // Map findingId -> Capa
       final capaMap = <String, Map<String, dynamic>>{};
@@ -92,23 +92,29 @@ class FindingRemoteDatasource {
         final capa = capaMap[finding.id];
         if (capa != null) {
           final statusRaw = capa['status'];
-          const statusIntMap = {0: 'Open', 1: 'In Progress', 2: 'Pending Verification', 3: 'Closed'};
+          const statusIntMap = {
+            0: 'Open',
+            1: 'In Progress',
+            2: 'Pending Verification',
+            3: 'Closed',
+          };
           const statusStrMap = {
             'Open': 'Open',
             'InProgress': 'In Progress',
             'PendingVerification': 'Pending Verification',
             'Closed': 'Closed',
           };
-          final statusStr = statusRaw is int
-              ? (statusIntMap[statusRaw] ?? 'Open')
-              : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
+          final statusStr =
+              statusRaw is int
+                  ? (statusIntMap[statusRaw] ?? 'Open')
+                  : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
 
           isCapaClosed = (statusStr == 'Closed');
 
           if (isCapaClosed) {
             final verifiedAtStr = capa['closeOut']?['verifiedAt'] as String?;
             final closedAtStr = capa['closedAt'] as String?;
-            
+
             if (closedAtStr != null && closedAtStr.isNotEmpty) {
               var dateStr = closedAtStr;
               if (!dateStr.endsWith('Z')) dateStr += 'Z';
@@ -138,7 +144,9 @@ class FindingRemoteDatasource {
         );
       }
     } catch (e) {
-      print('Error merging CAPA data into findings: $e');
+      if (kDebugMode) {
+        debugPrint('Error merging CAPA data into findings: $e');
+      }
     }
 
     return findings;
@@ -170,7 +178,8 @@ class FindingRemoteDatasource {
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,
-        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null')
+          'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);
@@ -194,7 +203,8 @@ class FindingRemoteDatasource {
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,
-        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null') 'reporterId': reporterId,
+        if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null')
+          'reporterId': reporterId,
       },
     );
     return FindingModel.fromJson(response.data as Map<String, dynamic>);

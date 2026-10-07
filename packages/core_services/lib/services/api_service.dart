@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://api.qualitrack.my.id'; 
+  static const String baseUrl = 'https://api.qualitrack.my.id';
   // Untuk server dika :'https://api.qualitrack.my.id'
   // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
-  
+
   static final RegExp _indonesianErrorTerms = RegExp(
     r'\b(gagal|tidak|belum|sudah|silakan|mohon|pastikan|ditemukan|terdaftar|tersedia|wajib|harus|salah|kadaluarsa|kedaluwarsa|berhasil|terjadi|dapat|mengirim|mengambil|menyimpan|mengunggah|mengupload|masukkan|periksa|coba lagi|ditolak|dibatalkan|dihapus|digunakan)\b',
     caseSensitive: false,
@@ -39,9 +40,6 @@ class ApiService {
     return text;
   }
 
-  // Untuk server dika :'http://173.249.63.40:5144'
-  // Untuk server pens : 'https://be.qualitrack.labs.it.pens.ac.id'
-
   static String fixImageUrl(String url) {
     if (url.startsWith('http://localhost:5144')) {
       return url.replaceFirst('http://localhost:5144', baseUrl);
@@ -57,12 +55,14 @@ class ApiService {
   void Function()? onUnauthorized;
 
   ApiService() {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
     // Interceptor: otomatis sisipkan JWT token di setiap request
     _dio.interceptors.add(
@@ -70,30 +70,44 @@ class ApiService {
         onRequest: (options, handler) async {
           final prefs = await SharedPreferences.getInstance();
           final token = prefs.getString('auth_token');
+
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          print('REQUEST: ${options.method} ${options.baseUrl}${options.path}');
-          print('BODY: ${options.data}');
-          return handler.next(options);
+
+          if (kDebugMode) {
+            debugPrint('REQUEST: ${options.method} ${options.uri.path}');
+          }
+
+          handler.next(options);
         },
         onResponse: (response, handler) {
-          print('RESPONSE ${response.statusCode}: ${response.data}');
-          return handler.next(response);
+          if (kDebugMode) {
+            debugPrint(
+              'RESPONSE ${response.statusCode}: '
+              '${response.requestOptions.method} '
+              '${response.requestOptions.uri.path}',
+            );
+          }
+
+          handler.next(response);
         },
         onError: (DioException error, handler) {
-          print('ERROR: ${error.type}');
-          print('ERROR MESSAGE: ${error.message}');
-          print('ERROR RESPONSE: ${error.response?.data}');
-          print('STATUS CODE: ${error.response?.statusCode}');
+          if (kDebugMode) {
+            debugPrint(
+              'REQUEST ERROR: ${error.type} '
+              '${error.requestOptions.method} '
+              '${error.requestOptions.uri.path}',
+            );
+          }
+
           if (error.response?.statusCode == 401) {
-            // Jangan trigger auto-logout jika 401 berasal dari percobaan login
             if (!error.requestOptions.path.contains('/api/Auth/login')) {
-              // Server sudah nyala, trigger auto-logout
               onUnauthorized?.call();
             }
           }
-          return handler.next(error);
+
+          handler.next(error);
         },
       ),
     );

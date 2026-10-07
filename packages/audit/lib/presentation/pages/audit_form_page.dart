@@ -32,8 +32,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
   final Map<String, String> _departments = {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
-    'Quality Control' : 'QC',
-    'Packaging' : 'Packaging'
+    'Quality Control': 'QC',
+    'Packaging': 'Packaging',
   };
 
   static const String _iso9001 = 'ISO9001';
@@ -97,10 +97,13 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _titleController.text = audit.title;
       _descriptionController.text = audit.description;
       _selectedAuditorName = audit.auditorName;
-      _selectedDepartment = _departments.entries
-          .where((e) => e.value == audit.department || e.key == audit.department)
-          .map((e) => e.key)
-          .firstOrNull;
+      _selectedDepartment =
+          _departments.entries
+              .where(
+                (e) => e.value == audit.department || e.key == audit.department,
+              )
+              .map((e) => e.key)
+              .firstOrNull;
 
       // Fallback: Jika tidak cocok dengan map, tambahkan ke map agar dropdown tidak null
       if (_selectedDepartment == null && audit.department.isNotEmpty) {
@@ -148,26 +151,30 @@ class _AuditFormPageState extends State<AuditFormPage> {
     final bloc = context.read<AuditBloc>();
 
     if (_isEdit) {
-      bloc.add(UpdateAuditEvent(
-        audit: widget.audit!,
-        title: _titleController.text.trim(),
-        auditorName: _selectedAuditorName ?? '',
-        isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _departmentValue,
-        date: _selectedDate!,
-        description: _descriptionController.text.trim(),
-        isPriority: _isPriority,
-      ));
+      bloc.add(
+        UpdateAuditEvent(
+          audit: widget.audit!,
+          title: _titleController.text.trim(),
+          auditorName: _selectedAuditorName ?? '',
+          isoTemplates: [_selectedIso].whereType<String>().toList(),
+          department: _departmentValue,
+          date: _selectedDate!,
+          description: _descriptionController.text.trim(),
+          isPriority: _isPriority,
+        ),
+      );
     } else {
-      bloc.add(CreateAuditEvent(
-        title: _titleController.text.trim(),
-        auditorName: _selectedAuditorName ?? '',
-        isoTemplates: [_selectedIso].whereType<String>().toList(),
-        department: _departmentValue,
-        date: _selectedDate!,
-        description: _descriptionController.text.trim(),
-        isPriority: _isPriority,
-      ));
+      bloc.add(
+        CreateAuditEvent(
+          title: _titleController.text.trim(),
+          auditorName: _selectedAuditorName ?? '',
+          isoTemplates: [_selectedIso].whereType<String>().toList(),
+          department: _departmentValue,
+          date: _selectedDate!,
+          description: _descriptionController.text.trim(),
+          isPriority: _isPriority,
+        ),
+      );
     }
   }
 
@@ -191,9 +198,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
             _auditors = state.auditors;
 
             if (_isEdit && _selectedAuditorId == null) {
-              final match = _auditors
-                  .where((a) => a.fullName == _selectedAuditorName)
-                  .firstOrNull;
+              final match =
+                  _auditors
+                      .where((a) => a.fullName == _selectedAuditorName)
+                      .firstOrNull;
               if (match != null) {
                 _selectedAuditorId = match.id;
                 // Simpan juga ke snapshot awal supaya perbandingan akurat
@@ -212,7 +220,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
               SnackBar(
                 content: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(child: Text(state.message)),
                   ],
@@ -248,7 +260,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: ListenableBuilder(
-          listenable: Listenable.merge([_titleController, _descriptionController, _formNotifier]),
+          listenable: Listenable.merge([
+            _titleController,
+            _descriptionController,
+            _formNotifier,
+          ]),
           builder: (context, _) {
             return BlocBuilder<AuditBloc, AuditState>(
               builder: (context, state) {
@@ -281,16 +297,20 @@ class _AuditFormPageState extends State<AuditFormPage> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      icon: isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
+                      icon:
+                          isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(
+                                Icons.add_task_rounded,
                                 color: Colors.white,
-                                strokeWidth: 2,
                               ),
-                            )
-                          : const Icon(Icons.add_task_rounded, color: Colors.white),
                       label: Text(
                         _isEdit ? 'Edit Plan' : 'Create Plan',
                         style: GoogleFonts.inter(
@@ -390,7 +410,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 18, color: AppColors.primaryLight),
+                  const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.primaryLight,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -409,7 +433,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     },
                     borderRadius: BorderRadius.circular(6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(6),
@@ -434,27 +461,42 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 isExpanded: true,
                 hint: Text(
                   'choose an auditor',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textDisabled,
+                  ),
                 ),
-                items: _auditors.where((a) => a.role.startsWith('Auditor')).map((auditor) {
-                  return DropdownMenuItem<String>(
-                    value: auditor.id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          auditor.fullName,
-                          style: GoogleFonts.inter(fontSize: 13, color: Colors.black87),
+                items:
+                    _auditors.where((a) => a.role.startsWith('Auditor')).map((
+                      auditor,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: auditor.id,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              auditor.fullName,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              auditor.role == 'Auditor' ||
+                                      auditor.role == 'AuditorInternal'
+                                  ? 'Auditor Internal'
+                                  : auditor.role,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          auditor.role == 'Auditor' || auditor.role == 'AuditorInternal' ? 'Auditor Internal' : auditor.role,
-                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
                 onChanged: (id) {
                   if (id == null) return;
                   final selected = _auditors.firstWhere((a) => a.id == id);
@@ -505,7 +547,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
             textInputAction: TextInputAction.next,
             scrollPadding: const EdgeInsets.only(bottom: 120),
             maxLength: maxLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(color: AppColors.textDisabled),
@@ -518,14 +562,15 @@ class _AuditFormPageState extends State<AuditFormPage> {
             builder: (context, _) {
               final int len = controller.text.length;
               final bool belowMin = len < minLength;
-              
+
               String charHint = '';
               Color hintColor = Colors.transparent;
 
               if (belowMin) {
-                charHint = len == 0 
-                  ? 'Required (Min. $minLength characters)'
-                  : 'Min. $minLength characters ($len/$minLength)';
+                charHint =
+                    len == 0
+                        ? 'Required (Min. $minLength characters)'
+                        : 'Min. $minLength characters ($len/$minLength)';
                 hintColor = Colors.red;
               } else {
                 if (!focusNode.hasFocus) return const SizedBox.shrink();
@@ -535,7 +580,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+                child: Text(
+                  charHint,
+                  style: GoogleFonts.inter(fontSize: 11, color: hintColor),
+                ),
               );
             },
           ),
@@ -550,55 +598,48 @@ class _AuditFormPageState extends State<AuditFormPage> {
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'ISO TEMPLATE',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-              color: AppColors.textSecondary,
+      child: RadioGroup<String>(
+        groupValue: _selectedIso,
+        onChanged:
+            (value) => setState(() {
+              _selectedIso = value;
+              _formNotifier.value++;
+            }),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ISO TEMPLATE',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-          RadioListTile<String>(
-            value: _iso9001,
-            groupValue: _selectedIso,
-            onChanged: (value) => setState(() {
-              _selectedIso = value;
-              _formNotifier.value++;
-            }),
-            title: Text('ISO 9001', style: GoogleFonts.inter(fontSize: 12)),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-            activeColor: AppColors.primaryLight,
-          ),
-          RadioListTile<String>(
-            value: _iso14001,
-            groupValue: _selectedIso,
-            onChanged: (value) => setState(() {
-              _selectedIso = value;
-              _formNotifier.value++;
-            }),
-            title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-            activeColor: AppColors.primaryLight,
-          ),
-          RadioListTile<String>(
-            value: _gmp,
-            groupValue: _selectedIso,
-            onChanged: (value) => setState(() {
-              _selectedIso = value;
-              _formNotifier.value++;
-            }),
-            title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-            activeColor: AppColors.primaryLight,
-          ),
-        ],
+            RadioListTile<String>(
+              value: _iso9001,
+              title: Text('ISO 9001', style: GoogleFonts.inter(fontSize: 12)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              activeColor: AppColors.primaryLight,
+            ),
+            RadioListTile<String>(
+              value: _iso14001,
+              title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              activeColor: AppColors.primaryLight,
+            ),
+            RadioListTile<String>(
+              value: _gmp,
+              title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              activeColor: AppColors.primaryLight,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -627,21 +668,29 @@ class _AuditFormPageState extends State<AuditFormPage> {
               isExpanded: true,
               hint: Text(
                 'Select department',
-                style: GoogleFonts.inter(fontSize: 15, color: AppColors.textDisabled),
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: AppColors.textDisabled,
+                ),
               ),
-              items: _departments.keys.map((label) {
-                return DropdownMenuItem<String>(
-                  value: label,
-                  child: Text(
-                    label,
-                    style: GoogleFonts.inter(fontSize: 15, color: Colors.black87),
-                  ),
-                );
-              }).toList(),
-              onChanged: (label) => setState(() {
-                _selectedDepartment = label;
-                _formNotifier.value++;
-              }),
+              items:
+                  _departments.keys.map((label) {
+                    return DropdownMenuItem<String>(
+                      value: label,
+                      child: Text(
+                        label,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+              onChanged:
+                  (label) => setState(() {
+                    _selectedDepartment = label;
+                    _formNotifier.value++;
+                  }),
             ),
           ),
         ],
@@ -652,9 +701,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
   Widget _buildDatePicker() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final firstDate = (_selectedDate != null && _selectedDate!.isBefore(today))
-        ? _selectedDate!
-        : today;
+    final firstDate =
+        (_selectedDate != null && _selectedDate!.isBefore(today))
+            ? _selectedDate!
+            : today;
     return InkWell(
       onTap: () async {
         final picked = await showDatePicker(
@@ -665,7 +715,9 @@ class _AuditFormPageState extends State<AuditFormPage> {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(primary: AppColors.primaryLight),
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.primaryLight,
+                ),
               ),
               child: child!,
             );
@@ -705,9 +757,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
                       : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: _selectedDate == null
-                        ? AppColors.textDisabled
-                        : AppColors.textSecondary,
+                    color:
+                        _selectedDate == null
+                            ? AppColors.textDisabled
+                            : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -746,18 +799,27 @@ class _AuditFormPageState extends State<AuditFormPage> {
             focusNode: _descriptionFocus,
             maxLines: 2,
             maxLength: maxLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             style: GoogleFonts.inter(fontSize: 12),
             textInputAction: TextInputAction.done,
             scrollPadding: const EdgeInsets.only(bottom: 120),
             decoration: InputDecoration(
-              hintText: 'Detail the non-conformance observed during the audit...',
-              hintStyle: GoogleFonts.inter(fontSize: 12, color: AppColors.textDisabled),
+              hintText:
+                  'Detail the non-conformance observed during the audit...',
+              hintStyle: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textDisabled,
+              ),
               border: InputBorder.none,
             ),
           ),
           AnimatedBuilder(
-            animation: Listenable.merge([_descriptionController, _descriptionFocus]),
+            animation: Listenable.merge([
+              _descriptionController,
+              _descriptionFocus,
+            ]),
             builder: (context, _) {
               if (!_descriptionFocus.hasFocus) return const SizedBox.shrink();
               final int len = _descriptionController.text.length;
@@ -773,7 +835,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(charHint, style: GoogleFonts.inter(fontSize: 11, color: hintColor)),
+                child: Text(
+                  charHint,
+                  style: GoogleFonts.inter(fontSize: 11, color: hintColor),
+                ),
               );
             },
           ),
@@ -800,10 +865,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
           Switch(
             value: _isPriority,
             activeThumbColor: AppColors.primary,
-            onChanged: (value) => setState(() {
-              _isPriority = value;
-              _formNotifier.value++; // trigger rebuild FAB
-            }),
+            onChanged:
+                (value) => setState(() {
+                  _isPriority = value;
+                  _formNotifier.value++; // trigger rebuild FAB
+                }),
           ),
         ],
       ),

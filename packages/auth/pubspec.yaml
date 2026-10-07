@@ -21,6 +21,8 @@ dependencies:
   core_services:
     path: ../core_services
 
+  get_it: any
+  image_picker: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

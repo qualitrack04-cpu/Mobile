@@ -626,7 +626,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
                 : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.4),
+          disabledBackgroundColor: const Color(0xFF0D2B55).withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

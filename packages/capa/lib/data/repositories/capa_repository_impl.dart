@@ -1,6 +1,4 @@
-import 'package:core_services/services/api_service.dart';
-import 'package:capa/data/datasources/capa_remote_datasource.dart'; // ← ganti ini
-import 'package:capa/data/models/capa_model.dart';
+import 'package:capa/data/datasources/capa_remote_datasource.dart';
 import 'package:capa/domain/entities/capa.dart';
 import 'package:capa/domain/repositories/capa_repository.dart';
 

@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
-import 'package:core_services/services/dashboard_service.dart';
-import 'package:core_services/services/api_service.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
@@ -52,7 +50,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // Untuk navigasi bulan di kalender
   DateTime _calendarMonth = DateTime.now();
-  DateTime _selectedDate = DateTime.now();
 
   // Dinaikkan setiap refresh supaya kartu SPC ikut memuat ulang datanya.
   int _spcRefreshToken = 0;
@@ -105,7 +102,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     setState(() {
       _calendarMonth = DateTime.now();
-      _selectedDate = DateTime.now();
       _spcRefreshToken++;
 
       // =============================
@@ -373,7 +369,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: reports.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        separatorBuilder: (_, _) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           final report = reports[index];
           return _buildReportCard(report, screenWidth);
@@ -390,7 +386,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -488,7 +484,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ), // Biar ada border putih
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -617,6 +613,7 @@ class _DashboardPageState extends State<DashboardPage> {
           filePath: file.path,
         );
 
+        if(!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -706,7 +703,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -982,9 +979,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  lineColor.withOpacity(0.25),
-                  lineColor.withOpacity(0.10),
-                  lineColor.withOpacity(0.00),
+                  lineColor.withValues(alpha: 0.25),
+                  lineColor.withValues(alpha: 0.10),
+                  lineColor.withValues(alpha: 0.00),
                 ],
                 stops: const [0.0, 0.45, 1.0],
               ),
@@ -1381,7 +1378,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1496,7 +1493,7 @@ class _DashboardPageState extends State<DashboardPage> {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.10),
+            color: color.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -1729,7 +1726,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   width: 38,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.10),
+                    color: color.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Column(
@@ -1917,338 +1914,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
     );
-  }
-
-  Widget _buildCalendar(AuditScheduleResponse schedule, double screenWidth) {
-    // 1. Nama hari (Senin - Minggu)
-    final List<String> weekdays = [
-      'MON',
-      'TUE',
-      'WED',
-      'THU',
-      'FRI',
-      'SAT',
-      'SUN',
-    ];
-
-    // 2. Hitung jumlah hari dalam bulan dan hari pertama (Senin=1)
-    final int daysInMonth = DateUtils.getDaysInMonth(
-      _calendarMonth.year,
-      _calendarMonth.month,
-    );
-    final DateTime firstDayOfMonth = DateTime(
-      _calendarMonth.year,
-      _calendarMonth.month,
-      1,
-    );
-    final int firstWeekday = firstDayOfMonth.weekday;
-
-    // 3. Warna titik per departemen (harus sama dengan Compliance Score)
-    final Map<String, Color> deptColors = {
-      'Production': const Color(0xFFE75480),
-      'Packaging': const Color(0xFF9570E1),
-      'Warehouse': const Color(0xFF1DD8B6),
-      'Quality Control': const Color(0xFF4AB4FF),
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- HEADER BULAN & NAVIGASI ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    _monthName(_calendarMonth.month),
-                    style: GoogleFonts.inter(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _calendarMonth.year.toString(),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.chevron_left,
-                      color: AppColors.primary,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _calendarMonth = DateTime(
-                          _calendarMonth.year,
-                          _calendarMonth.month - 1,
-                        );
-                        _scheduleFuture = _dashboardService
-                            .getAuditSchedule(
-                              month: _calendarMonth.month,
-                              year: _calendarMonth.year,
-                            )
-                            .then((data) {
-                              _lastSchedule = data;
-                              return data;
-                            });
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.chevron_right,
-                      color: AppColors.primary,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _calendarMonth = DateTime(
-                          _calendarMonth.year,
-                          _calendarMonth.month + 1,
-                        );
-                        _scheduleFuture = _dashboardService
-                            .getAuditSchedule(
-                              month: _calendarMonth.month,
-                              year: _calendarMonth.year,
-                            )
-                            .then((data) {
-                              _lastSchedule = data;
-                              return data;
-                            });
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // --- NAMA HARI (MON, TUE, dll) ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children:
-                weekdays.map((day) {
-                  return Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textDisabled,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-          ),
-          const SizedBox(height: 12),
-
-          // --- GRID TANGGAL ---
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: daysInMonth + firstWeekday - 1,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: screenWidth > 600 ? 1.5 : 1.1,
-            ),
-            itemBuilder: (context, index) {
-              if (index < firstWeekday - 1) {
-                return const SizedBox();
-              }
-
-              final int day = index - firstWeekday + 2;
-
-              // Apakah tanggal ini adalah hari ini
-              final today = DateTime.now();
-              final bool isToday =
-                  today.year == _calendarMonth.year &&
-                  today.month == _calendarMonth.month &&
-                  today.day == day;
-
-              // Apakah tanggal ini yang sedang dipilih
-              final bool isSelected =
-                  _selectedDate.year == _calendarMonth.year &&
-                  _selectedDate.month == _calendarMonth.month &&
-                  _selectedDate.day == day;
-
-              // Cari apakah ada jadwal di tanggal ini
-              final scheduleDayList =
-                  schedule.data.where((s) => s.day == day).toList();
-              final scheduleDay =
-                  scheduleDayList.isNotEmpty ? scheduleDayList.first : null;
-              final hasSchedule =
-                  scheduleDay != null && scheduleDay.departments.isNotEmpty;
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedDate = DateTime(
-                      _calendarMonth.year,
-                      _calendarMonth.month,
-                      day,
-                    );
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border:
-                        isToday && !isSelected
-                            ? Border.all(color: AppColors.primary, width: 1.5)
-                            : Border.all(color: Colors.transparent),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        day.toString(),
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight:
-                              isSelected || isToday
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                          color:
-                              isSelected
-                                  ? Colors.white
-                                  : isToday
-                                  ? AppColors.primary
-                                  : AppColors.textPrimary,
-                        ),
-                      ),
-                      if (hasSchedule) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children:
-                              scheduleDay.departments.take(3).map((dept) {
-                                String normalizedDept = dept.department;
-                                if (dept.department.toLowerCase() ==
-                                        'produksi' ||
-                                    dept.department.toLowerCase() ==
-                                        'production') {
-                                  normalizedDept = 'Production';
-                                } else if (dept.department == 'QC' ||
-                                    dept.department.toLowerCase() ==
-                                        'quality control' ||
-                                    dept.department.toLowerCase() ==
-                                        'quality manager') {
-                                  normalizedDept = 'Quality Control';
-                                }
-                                final color =
-                                    deptColors[normalizedDept] ??
-                                    AppColors.primaryLight;
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 1.5,
-                                  ),
-                                  width: 4,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                );
-                              }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 12),
-
-          // --- LEGEND ---
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              children:
-                  deptColors.entries.map((entry) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: entry.value,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            entry.key.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textMuted,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _monthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[month - 1];
   }
 }
 

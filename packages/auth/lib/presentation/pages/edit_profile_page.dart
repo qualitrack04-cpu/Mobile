@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
@@ -32,7 +31,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _passwordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _isObscured = true;
   bool _isObscuredNew = true;
   bool _isObscuredConfirm = true;
   bool _isLoading = false;
@@ -75,15 +73,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  String _formatRole(String role) {
-    if (role == 'Auditor' || role == 'AuditorInternal')
-      return 'Auditor Internal';
-    if (role.isEmpty) return '-';
-    return role
-        .replaceAllMapped(RegExp(r'(?<=[a-z])([A-Z])'), (Match m) => ' ${m[1]}')
-        .trim();
   }
 
   Future<void> _pickImage() async {
@@ -438,11 +427,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                         otp: otpCode,
                                       );
 
-                                      if (!this.mounted) return;
+                                      if (!mounted) return;
                                       setState(() {
                                         _isEmailVerified = true;
                                         _errorMessage = null;
                                       });
+                                      if (!context.mounted) return;
                                       Navigator.pop(ctx); // Tutup dialog OTP
 
                                       // Langsung otomatis jalankan Save Changes untuk semuanya (nama, foto)
@@ -455,10 +445,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                                 'The OTP is incorrect or has expired.',
                                       );
                                     } finally {
-                                      if (this.mounted)
+                                      if (mounted) {
                                         setModalState(
                                           () => isVerifying = false,
                                         );
+                                      }
                                     }
                                   },
                           style: ElevatedButton.styleFrom(
@@ -609,7 +600,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.deepPurple.withOpacity(0.1),
+                          color: Colors.deepPurple.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -684,6 +675,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (emailChanged && !_isEmailVerified) {
         if (mounted) setState(() => _isLoading = false);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(

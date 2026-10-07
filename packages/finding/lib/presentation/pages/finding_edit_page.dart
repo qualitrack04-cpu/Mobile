@@ -767,8 +767,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
                                             child,
                                             loadingProgress,
                                           ) {
-                                            if (loadingProgress == null)
+                                            if (loadingProgress == null) {
                                               return child;
+                                            }
                                             return const Center(
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
@@ -776,7 +777,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                                             );
                                           },
                                           errorBuilder:
-                                              (_, __, ___) => Icon(
+                                              (_, _, _) => Icon(
                                                 Icons.broken_image_outlined,
                                                 color: Colors.grey[400],
                                                 size: 28,
@@ -1010,7 +1011,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withOpacity(0.6),
+          disabledBackgroundColor: const Color(0xFF0D2B55).withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
