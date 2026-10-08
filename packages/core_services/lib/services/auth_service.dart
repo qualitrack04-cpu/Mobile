@@ -6,6 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:core_services/user_role.dart';
 
+class AdminMobileLoginException implements Exception {
+  const AdminMobileLoginException();
+
+  @override
+  String toString() => 'The email or password is incorrect.';
+}
+
 class AuthService {
   final ApiService apiService;
 
@@ -23,6 +30,10 @@ class AuthService {
         data: {'email': email, 'password': password, 'role': role},
       );
       final data = response.data as Map<String, dynamic>;
+      final serverRole = UserRole.fromApi(data['role'] as String?);
+      if (!serverRole.canLoginOnMobile) {
+        throw const AdminMobileLoginException();
+      }
       final prefs = await SharedPreferences.getInstance();
       final token = data['token'] as String;
       final responseUserId = data['userId']?.toString();
