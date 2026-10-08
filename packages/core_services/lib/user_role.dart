@@ -9,9 +9,7 @@ enum UserRole {
   qualityManager,
   auditorInternal,
   auditee,
-
-  /// Role tidak dikenal, misalnya karena backend menambah role baru yang
-  /// belum ditangani mobile. Sengaja tanpa hak akses apa pun.
+  admin,
   unknown;
 
   /// Terjemahan dari nilai yang dikirim backend (field `role`).
@@ -26,6 +24,8 @@ enum UserRole {
         return UserRole.auditorInternal;
       case 'Auditee':
         return UserRole.auditee;
+      case 'Admin':
+        return UserRole.admin;
       default:
         return UserRole.unknown;
     }
@@ -40,37 +40,25 @@ enum UserRole {
         return 'Auditor Internal';
       case UserRole.auditee:
         return 'Auditee';
+      case UserRole.admin:
+        return 'Admin';
       case UserRole.unknown:
         return '-';
     }
   }
 
   // ------------------------------------------------------------------ audit
-
-  /// Membuat, mengubah, dan menghapus audit plan.
   bool get canCreateAudit => this == UserRole.qualityManager;
-
-  /// Membuka dan mengisi checklist audit.
   bool get canRunChecklist =>
       this == UserRole.qualityManager || this == UserRole.auditorInternal;
 
   // ---------------------------------------------------------------- finding
-
-  /// Membuat finding baru.
   bool get canCreateFinding => this != UserRole.unknown;
-
-  /// Mengubah finding milik orang lain.
-  ///
-  /// Role lain tetap boleh mengubah finding yang dia laporkan sendiri;
-  /// pemeriksaan itu dilakukan di halaman dengan membandingkan pelapornya.
   bool get canEditOthersFinding => this == UserRole.qualityManager;
 
   // ------------------------------------------------------------------- capa
-
-  /// Membuat CAPA, menunjuk PIC, dan mengubah status CAPA milik siapa pun.
   bool get canManageCapa => this == UserRole.qualityManager;
-
-  /// Mengerjakan CAPA yang menjadi tugasnya sendiri.
   bool get canFillOwnCapa =>
       this == UserRole.qualityManager || this == UserRole.auditee;
+  bool get canLoginOnMobile => this != UserRole.admin;
 }

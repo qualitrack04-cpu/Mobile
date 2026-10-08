@@ -77,11 +77,13 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
         (route) => false,
       );
+    } on AdminMobileLoginException {
+      if (!mounted) return;
+      setState(() => _generalError = 'The email or password is incorrect.');
     } catch (e) {
       String msg = e.toString();
-      if (msg.contains('Role yang dipilih tidak sesuai')) {
-        msg = 'The selected role does not match this account.';
-      } else if (msg.contains('Email atau password')) {
+      if (msg.contains('The role chosen doesn\'t match') ||
+          msg.contains('Email atau password')) {
         msg = 'The email or password is incorrect.';
       } else {
         msg = 'Login failed. Please try again.';
