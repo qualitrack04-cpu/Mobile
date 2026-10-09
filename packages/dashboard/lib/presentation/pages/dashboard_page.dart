@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
@@ -9,8 +8,6 @@ import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:spc/spc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +26,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardService _dashboardService;
+  final ReportPdfService _pdfService = GetIt.I<ReportPdfService>();
 
   String _selectedTrendPeriod = '3 Month';
 
@@ -525,132 +523,78 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  /// Buka PDF langsung di reader HP (tanpa simpan ke Download)
+   /// Buka PDF di pembaca PDF perangkat (tanpa simpan ke Download).
   Future<void> _viewPdf(String sessionId, String planTitle) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
+    _showLoadingDialog();
     try {
-      final response = await _dashboardService.apiService.client.get(
-        '/api/Pdf/audit-report/$sessionId',
-        options: Options(responseType: ResponseType.bytes),
+      final file = await _pdfService.saveForViewing(
+        sessionId: sessionId,
+        title: planTitle,
       );
-
-      final bytes = response.data;
-      // Simpan ke direktori temporary (bukan Download)
-      final tempDir = await getTemporaryDirectory();
-      final safeTitle = planTitle
-          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
-          .replaceAll(' ', '_');
-      final file = File('${tempDir.path}/AuditReport_$safeTitle.pdf');
-      await file.writeAsBytes(bytes);
-
-      if (mounted) {
-        Navigator.pop(context);
-        await OpenFilex.open(file.path);
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
+      await _pdfService.open(file);
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to open PDF: $e')));
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar('Failed to open PDF', e);
     }
   }
 
-  /// Download PDF → simpan ke folder Download HP → tampil notifikasi
+  /// Unduh PDF ke folder Download, lalu tampilkan snackbar sukses.
   Future<void> _downloadAndSavePdf(String sessionId, String planTitle) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
+    _showLoadingDialog();
     try {
-      final response = await _dashboardService.apiService.client.get(
-        '/api/Pdf/audit-report/$sessionId',
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      final bytes = response.data;
-
-      Directory? dir;
-      if (Platform.isAndroid) {
-        dir = Directory('/storage/emulated/0/Download');
-        if (!await dir.exists()) {
-          dir = await getExternalStorageDirectory();
-        }
-      } else {
-        dir = await getApplicationDocumentsDirectory();
-      }
-
-      final safeTitle = planTitle
-          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
-          .replaceAll(' ', '_');
-      final baseFileName = 'AuditReport_$safeTitle';
-
-      File file = File('${dir!.path}/$baseFileName.pdf');
-      int counter = 1;
-      while (await file.exists()) {
-        file = File('${dir.path}/$baseFileName ($counter).pdf');
-        counter++;
-      }
-
-      await file.writeAsBytes(bytes);
-
-      if (mounted) {
-        Navigator.pop(context);
-
-        // Tampil notifikasi sistem Android
-        await NotificationService().showDownloadNotification(
-          id: sessionId.hashCode,
-          title: 'Download Complete',
-          body: '${file.path.split('/').last} has been downloaded',
-          filePath: file.path,
-        );
-
-        if(!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Audit report successfully saved to Downloads folder',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+      await _pdfService.download(sessionId: sessionId, title: planTitle);
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Audit report successfully saved to Downloads folder',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
+              ),
+            ],
           ),
-        );
-      }
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to download PDF: $e')));
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar('Failed to download PDF', e);
     }
   }
 
+  void _showLoadingDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  void _showErrorSnackBar(String prefix, Object error) {
+    final message = error.toString().replaceFirst('Exception: ', '');
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$prefix: $message')));
+  }
   // Helper: judul section seperti "SCHEDULE", "AUDIT SUMMARY"
   Widget _buildSectionTitle(String title) {
     return Text(

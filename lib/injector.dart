@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:core_services/services/auth_service.dart';
@@ -39,6 +38,7 @@ import 'package:audit/domain/usecases/get_checklist.dart';
 import 'package:audit/domain/usecases/get_auditors.dart';
 import 'package:audit/domain/usecases/submit_checklist.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
+import 'package:core_services/services/report_pdf_service.dart';
 
 //SPC
 import 'package:spc/data/datasources/spc_remote_datasource.dart';
@@ -102,6 +102,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AuthService(apiService: sl()));
   sl.registerLazySingleton(() => QualityScoreService(apiService: sl()));
   sl.registerLazySingleton(() => ProfileService(apiService: sl()));
+  sl.registerLazySingleton(() => ReportPdfService(apiService: sl()));
   sl.registerLazySingleton(() => AuditRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => ChecklistRemoteDatasource(apiService: sl()));
   sl.registerLazySingleton(() => AuditorRemoteDatasource(apiService: sl()));
@@ -137,36 +138,27 @@ Future<void> init() async {
   );
 
   //SPC
-    // ===== SPC =====
-  sl.registerLazySingleton(
-    () => SpcRemoteDatasource(apiService: sl()),
-  );
- 
+  // ===== SPC =====
+  sl.registerLazySingleton(() => SpcRemoteDatasource(apiService: sl()));
+
   sl.registerLazySingleton<SpcRepository>(
     () => SpcRepositoryImpl(datasource: sl()),
   );
- 
+
   sl.registerLazySingleton(() => GetSpcTrends(repository: sl()));
   sl.registerLazySingleton(() => GetRecentAnalyses(repository: sl()));
   sl.registerLazySingleton(() => GetAnalysesHistory(repository: sl()));
   sl.registerLazySingleton(() => AnalyzeSpc(repository: sl()));
- 
+
   // Factory, bukan singleton: tiap halaman menutup bloc-nya saat dispose,
   // jadi setiap kali dibuka harus dapat instance baru.
   sl.registerFactory(
-    () => SpcBloc(
-      getSpcTrends: sl(),
-      getRecentAnalyses: sl(),
-    ),
+    () => SpcBloc(getSpcTrends: sl(), getRecentAnalyses: sl()),
   );
- 
-  sl.registerFactory(
-    () => SpcHistoryBloc(getAnalysesHistory: sl()),
-  );
- 
-  sl.registerFactory(
-    () => NewAnalysisBloc(analyzeSpc: sl()),
-  );
-    sl.registerLazySingleton(() => GetAnalysisDetail(repository: sl()));
-    sl.registerLazySingleton(() => GetSpcStatusSummary(repository: sl()));
+
+  sl.registerFactory(() => SpcHistoryBloc(getAnalysesHistory: sl()));
+
+  sl.registerFactory(() => NewAnalysisBloc(analyzeSpc: sl()));
+  sl.registerLazySingleton(() => GetAnalysisDetail(repository: sl()));
+  sl.registerLazySingleton(() => GetSpcStatusSummary(repository: sl()));
 }
