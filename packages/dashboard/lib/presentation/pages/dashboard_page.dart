@@ -15,6 +15,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
 import 'package:audit/presentation/pages/audit_checklist_page.dart';
+import '../widgets/audit_summary_grid.dart';
+import '../widgets/compliance_score_list.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onOpenAuditPlan;
@@ -316,13 +318,13 @@ class _DashboardPageState extends State<DashboardPage> {
               // 4. Compliance Score
               _buildSectionTitle('COMPLIANCE SCORE'),
               const SizedBox(height: 12),
-              _buildComplianceScore(score, screenWidth),
+              ComplianceScoreList(scoreResponse: score),
               const SizedBox(height: 24),
 
               // 5. summary card
               _buildSectionTitle('SUMMARY CARD'),
               const SizedBox(height: 12),
-              _buildAuditSummary(summary, screenWidth),
+              AuditSummaryGrid(summary: summary),
               const SizedBox(height: 24),
 
               // 6. SPC
@@ -954,224 +956,6 @@ class _DashboardPageState extends State<DashboardPage> {
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildAuditSummary(AuditSummary summary, double screenWidth) {
-    final int crossAxisCount = screenWidth > 600 ? 4 : 2;
-
-    return GridView(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        mainAxisExtent:
-            85, // Tinggi FIX untuk tiap kotak agar 100% tidak terpotong
-      ),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        _summaryCard(
-          'Active Audit',
-          summary.activeAudit.toString(),
-          AppColors.action,
-        ),
-        _summaryCard(
-          'Total CAPA',
-          summary.totalCapa.toString(),
-          AppColors.action,
-        ),
-        _summaryCard(
-          'CAPA Open',
-          summary.capaOpen.toString(),
-          const Color(0xFF2E7D32),
-        ),
-        _summaryCard(
-          'CAPA Overdue',
-          summary.capaOverdue.toString(),
-          AppColors.danger,
-        ),
-      ],
-    );
-  }
-
-  Widget _summaryCard(String title, String value, Color accentColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Garis warna di kiri
-          Container(
-            width: 4,
-            decoration: BoxDecoration(
-              color: accentColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textDisabled,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: GoogleFonts.inter(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w700,
-                      color: accentColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComplianceScore(
-    ComplianceScoreResponse scoreResponse,
-    double screenWidth,
-  ) {
-    // Urutan kartu sesuai desain.
-    const displayOrder = [
-      'Packaging',
-      'Quality Control',
-      'Warehouse',
-      'Production',
-    ];
-
-    final displayScores = displayOrder.map((deptName) {
-      final matches = scoreResponse.data.where(
-        (d) => DepartmentStyle.normalize(d.department) == deptName,
-      );
-      final source = matches.isEmpty ? null : matches.first;
-
-      return ComplianceScore(
-        department: deptName,
-        score: source?.score ?? 0.0,
-        totalAudit: source?.totalAudit ?? 0,
-        totalResponses: source?.totalResponses ?? 0,
-        conformResponses: source?.conformResponses ?? 0,
-      );
-    }).toList();
-
-    final cardWidth = (screenWidth * 0.4).clamp(140.0, 200.0);
-
-    return SizedBox(
-      height: 130,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: displayScores.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final item = displayScores[index];
-          return SizedBox(
-            width: cardWidth,
-            child: _complianceCard(item, DepartmentStyle.colorOf(item.department)),
-          );
-        },
-      ),
-    );
-  }
-  
-  Widget _complianceCard(ComplianceScore item, Color color) {
-    // Tentukan apakah dia sudah diaudit (skor/total audit lebih dari 0)
-    final bool hasAudit = item.score > 0 || item.totalAudit > 0;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: color,
-          width: 1.5,
-        ), // Tambahkan border di sini
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            item.department,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-
-          if (hasAudit) ...[
-            Text(
-              '${item.score.toStringAsFixed(1)}%',
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-              ),
-            ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: item.score / 100,
-                minHeight: 4,
-                backgroundColor: color.withValues(alpha: 0.15),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            ),
-          ] else ...[
-            // TAMPILAN JIKA BELUM ADA AUDIT (SKOR = 0)
-            Expanded(
-              child: Center(
-                child: Text(
-                  'No Audit Yet',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDisabled,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
