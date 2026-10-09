@@ -3,12 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
 import 'package:core/department_style.dart';
-import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
 import 'package:spc/spc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +15,7 @@ import 'package:audit/presentation/bloc/audit_bloc.dart';
 import 'package:audit/presentation/pages/audit_checklist_page.dart';
 import '../widgets/audit_summary_grid.dart';
 import '../widgets/compliance_score_list.dart';
+import '../widgets/audit_report_list.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onOpenAuditPlan;
@@ -336,7 +335,12 @@ class _DashboardPageState extends State<DashboardPage> {
               // 7. Audit Report
               _buildSectionTitle('AUDIT REPORT'),
               const SizedBox(height: 12),
-              _buildAuditReportList(reports, screenWidth),
+              AuditReportList(
+                reports: reports,
+                onView: (r) => _viewPdf(r.sessionId, r.planTitle),
+                onDownload:
+                    (r) => _downloadAndSavePdf(r.sessionId, r.planTitle),
+              ),
               const SizedBox(height: 32),
             ],
           ),
@@ -344,189 +348,7 @@ class _DashboardPageState extends State<DashboardPage> {
       },
     );
   }
-
-  Widget _buildAuditReportList(
-    List<CompletedAuditReport> reports,
-    double screenWidth,
-  ) {
-    if (reports.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Text(
-            'No completed audit reports yet.',
-            style: GoogleFonts.inter(color: AppColors.textDisabled),
-          ),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 240,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: reports.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final report = reports[index];
-          return _buildReportCard(report, screenWidth);
-        },
-      ),
-    );
-  }
-
-  Widget _buildReportCard(CompletedAuditReport report, double screenWidth) {
-    return Container(
-      width: 180,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Bagian atas (actual pdf thumbnail)
-              Container(
-                height: 100,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: PdfThumbnailWidget(sessionId: report.sessionId),
-                ),
-              ),
-              // Bagian bawah (Text + Button)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    26,
-                    16,
-                    16,
-                  ), // top 26 agar tidak nabrak icon tengah
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        report.planTitle,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF00104A), // Navy color
-                        ),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 38,
-                        child: ElevatedButton(
-                          onPressed:
-                              () =>
-                                  _viewPdf(report.sessionId, report.planTitle),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF00104A,
-                            ), // Dark navy
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: Text(
-                            'View Report',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Ikon PDF di tengah-tengah pemisah
-          Positioned(
-            top: 80, // Setengah di atas (100-20), setengah di bawah
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F4FA), // Light blue background
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 2,
-                  ), // Biar ada border putih
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.picture_as_pdf,
-                  color: Color(0xFF00104A), // Navy color
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-          // Tombol Download di ujung kanan atas
-          Positioned(
-            top: 12,
-            right: 12,
-            child: GestureDetector(
-              onTap:
-                  () => _downloadAndSavePdf(report.sessionId, report.planTitle),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00104A),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.download,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-   /// Buka PDF di pembaca PDF perangkat (tanpa simpan ke Download).
+  /// Buka PDF di pembaca PDF perangkat (tanpa simpan ke Download).
   Future<void> _viewPdf(String sessionId, String planTitle) async {
     _showLoadingDialog();
     try {
@@ -598,6 +420,7 @@ class _DashboardPageState extends State<DashboardPage> {
       context,
     ).showSnackBar(SnackBar(content: Text('$prefix: $message')));
   }
+
   // Helper: judul section seperti "SCHEDULE", "AUDIT SUMMARY"
   Widget _buildSectionTitle(String title) {
     return Text(
@@ -1460,44 +1283,45 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-    Widget _buildAuditLegend() {
+  Widget _buildAuditLegend() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final fontSize = constraints.maxWidth < 300 ? 6.5 : 8.0;
 
         return Row(
-          children: DepartmentStyle.standard.map((name) {
-            return Expanded(
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: DepartmentStyle.colorOf(name),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        name.toUpperCase(),
-                        maxLines: 1,
-                        style: GoogleFonts.inter(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
+          children:
+              DepartmentStyle.standard.map((name) {
+                return Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: DepartmentStyle.colorOf(name),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            name.toUpperCase(),
+                            maxLines: 1,
+                            style: GoogleFonts.inter(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
         );
       },
     );
@@ -1563,98 +1387,4 @@ class _UpcomingAuditItem {
     required this.auditorName,
     required this.date,
   });
-}
-
-class PdfThumbnailWidget extends StatefulWidget {
-  final String sessionId;
-  const PdfThumbnailWidget({super.key, required this.sessionId});
-
-  @override
-  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
-}
-
-class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
-  PdfDocument? _pdfDoc;
-  PdfPageImage? _pageImage;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPdfThumbnail();
-  }
-
-  Future<void> _loadPdfThumbnail() async {
-    try {
-      final apiService = GetIt.I<ApiService>();
-      final response = await apiService.client.get(
-        '/api/Pdf/audit-report/${widget.sessionId}',
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      final document = await PdfDocument.openData(response.data);
-      final page = await document.getPage(1);
-
-      // Render page at a small thumbnail resolution to save memory
-      final pageImage = await page.render(
-        width: page.width / 3,
-        height: page.height / 3,
-        format: PdfPageImageFormat.jpeg,
-      );
-
-      if (mounted) {
-        setState(() {
-          _pdfDoc = document;
-          _pageImage = pageImage;
-          _isLoading = false;
-        });
-      }
-
-      await page.close();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _pdfDoc?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.primary,
-          ),
-        ),
-      );
-    }
-    if (_hasError || _pageImage == null) {
-      return const Center(
-        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
-      );
-    }
-    return Container(
-      color: Colors.white,
-      child: Image.memory(
-        _pageImage!.bytes,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        alignment: Alignment.topCenter,
-      ),
-    );
-  }
 }
