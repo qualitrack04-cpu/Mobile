@@ -16,6 +16,8 @@ import '../widgets/audit_summary_grid.dart';
 import '../widgets/compliance_score_list.dart';
 import '../widgets/audit_report_list.dart';
 import '../widgets/quality_trend_card.dart';
+import '../widgets/dashboard_app_bar.dart';
+import '../widgets/dashboard_header.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onOpenAuditPlan;
@@ -160,83 +162,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/icon/Q.png',
-              height: (screenWidth * 0.08).clamp(
-                32.0,
-                42.0,
-              ), // Memperbesar logo
-              fit: BoxFit.contain,
-            ),
-            // Menggeser teks: Offset(Kiri/Kanan, Atas/Bawah)
-            // - Angka pertama (kiri/kanan): minus (-) untuk geser kiri, plus (+) untuk kanan
-            // - Angka kedua (atas/bawah): minus (-) untuk geser ke atas, plus (+) untuk ke bawah
-            Transform.translate(
-              offset: const Offset(
-                -3,
-                3,
-              ), // Coba atur angka '3' ini (naik/turun) sampai pas sejajar
-              child: Text(
-                'ualiTrack',
-                style: GoogleFonts.inter(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: (screenWidth * 0.06).clamp(24.0, 30.0),
-                  height:
-                      1.0, // Dibuat 1.0 agar tidak ada padding berlebih dari font
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                );
-                _loadUserRole();
-              },
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primaryLight, width: 2.5),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: CircleAvatar(
-                    backgroundColor: AppColors.primaryLight,
-                    backgroundImage:
-                        _photoPath.isNotEmpty
-                            ? NetworkImage(ApiService.fixImageUrl(_photoPath))
-                            : null,
-                    child:
-                        _photoPath.isEmpty
-                            ? Icon(
-                              Icons.person,
-                              size: 20,
-                              color: AppColors.surface,
-                            )
-                            : null,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+      appBar: DashboardAppBar(
+        photoPath: _photoPath,
+        onProfileTap: _openProfile,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -301,7 +229,7 @@ class _DashboardPageState extends State<DashboardPage> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
               // 1. Header Greeting
-              _buildHeader(screenWidth),
+              DashboardHeader(userName: _userName),
               const SizedBox(height: 24),
 
               // 2. Quality Trend
@@ -352,6 +280,15 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       },
     );
+  }
+
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfilePage()),
+    );
+    if (!mounted) return;
+    _loadUserRole();
   }
   /// Buka PDF di pembaca PDF perangkat (tanpa simpan ke Download).
   Future<void> _viewPdf(String sessionId, String planTitle) async {
@@ -436,36 +373,6 @@ class _DashboardPageState extends State<DashboardPage> {
         color: AppColors.primary,
         letterSpacing: 1.2,
       ),
-    );
-  }
-
-  // Helper: greeting di bagian atas
-  Widget _buildHeader(double screenWidth) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Hello, ${_role.label}! 👋',
-            style: GoogleFonts.inter(
-              fontSize:
-                  32, // Ukuran maksimal 32, tapi akan mengecil otomatis jika tidak muat
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Welcome back to your dashboard',
-          style: GoogleFonts.inter(
-            fontSize: (screenWidth * 0.04).clamp(14.0, 16.0),
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
     );
   }
 
