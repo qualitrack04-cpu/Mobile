@@ -8,7 +8,6 @@ import 'package:core_services/core_services.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spc/spc.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:audit/domain/entities/audit_entity.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
@@ -16,6 +15,7 @@ import 'package:audit/presentation/pages/audit_checklist_page.dart';
 import '../widgets/audit_summary_grid.dart';
 import '../widgets/compliance_score_list.dart';
 import '../widgets/audit_report_list.dart';
+import '../widgets/quality_trend_card.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onOpenAuditPlan;
@@ -305,7 +305,12 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(height: 24),
 
               // 2. Quality Trend
-              _buildQualityTrend(screenWidth, trend),
+              QualityTrendCard(
+                trend: trend,
+                periods: _trendPeriods,
+                selectedPeriod: _selectedTrendPeriod,
+                onPeriodChanged: _onTrendPeriodChanged,
+              ),
               const SizedBox(height: 24),
 
               // 3. Audit Schedule
@@ -461,325 +466,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildQualityTrend(double screenWidth, QualityTrendResponse trend) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Quality Trend',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
-
-              Container(
-                height: 34,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: AppColors.primaryMuted),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedTrendPeriod,
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                    ),
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                    items:
-                        _trendPeriods.map((period) {
-                          return DropdownMenuItem<String>(
-                            value: period,
-                            child: Text(period),
-                          );
-                        }).toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-
-                      setState(() {
-                        // Ubah pilihan dropdown
-                        _selectedTrendPeriod = value;
-
-                        // Ambil ulang Quality Trend dari backend
-                        _trendFuture = _dashboardService
-                            .getQualityTrend(months: _getTrendMonths())
-                            .then((data) {
-                              _lastTrend = data;
-                              return data;
-                            });
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 6),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${trend.currentScore.toStringAsFixed(1)}%',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                  height: 1,
-                ),
-              ),
-
-              const SizedBox(width: 5),
-
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  '${trend.change >= 0 ? '↗' : '↘'} '
-                  '${trend.change.abs().toStringAsFixed(1)}%',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: trend.change >= 0 ? Colors.green : Colors.red,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 3),
-
-          Text(
-            'vs previous month',
-            style: GoogleFonts.inter(
-              fontSize: 8,
-              color: AppColors.textDisabled,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          SizedBox(height: 160, child: _buildQualityLineChart(trend)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQualityLineChart(QualityTrendResponse trend) {
-    final months = trend.data.map((item) => item.monthName).toList();
-
-    final spots =
-        trend.data
-            .asMap()
-            .entries
-            .map((entry) => FlSpot(entry.key.toDouble(), entry.value.score))
-            .toList();
-
-    const lineColor = Color(0xFF1689E8);
-    const gridColor = Color(0xFFE5E7EB);
-    const labelColor = Color(0xFF94A3B8);
-
-    return LineChart(
-      LineChartData(
-        minX: 0,
-        maxX: trend.data.isEmpty ? 0 : (trend.data.length - 1).toDouble(),
-        minY: 0,
-        maxY: 100,
-
-        // =========================
-        // GARIS HORIZONTAL
-        // =========================
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: 25,
-          getDrawingHorizontalLine: (value) {
-            return const FlLine(color: gridColor, strokeWidth: 1);
-          },
-        ),
-
-        // Garis bagian atas = garis 100%
-        borderData: FlBorderData(
-          show: true,
-          border: const Border(top: BorderSide(color: gridColor, width: 1)),
-        ),
-
-        // =========================
-        // LABEL AXIS
-        // =========================
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-
-          // =========================
-          // PERSENTASE KIRI
-          // =========================
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 44,
-              interval: 25,
-              getTitlesWidget: (value, meta) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    '${value.toInt()}%',
-                    textAlign: TextAlign.right,
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: labelColor,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // =========================
-          // BULAN
-          // =========================
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-
-                if (index < 0 || index >= months.length) {
-                  return const SizedBox.shrink();
-                }
-
-                Widget monthText = Padding(
-                  padding: const EdgeInsets.only(top: 9),
-                  child: Text(
-                    months[index],
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w400,
-                      color: labelColor,
-                    ),
-                  ),
-                );
-
-                // Geser bulan terakhir sedikit ke kiri
-                // supaya tulisan Aug tidak keluar dari area grafik
-                if (index == months.length - 1) {
-                  monthText = Transform.translate(
-                    offset: const Offset(-10, 0),
-                    child: monthText,
-                  );
-                }
-
-                return monthText;
-              },
-            ),
-          ),
-        ),
-
-        // =========================
-        // LINE GRAPH
-        // =========================
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-
-            isCurved: true,
-            curveSmoothness: 0.35,
-
-            color: lineColor,
-            barWidth: 1.7,
-
-            isStrokeCapRound: true,
-
-            // =========================
-            // TITIK GRAFIK
-            // =========================
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 3.5,
-                  color: const Color(0xFF087FD0),
-                  strokeWidth: 0,
-                );
-              },
-            ),
-
-            // =========================
-            // GRADIENT AREA
-            // =========================
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  lineColor.withValues(alpha: 0.25),
-                  lineColor.withValues(alpha: 0.10),
-                  lineColor.withValues(alpha: 0.00),
-                ],
-                stops: const [0.0, 0.45, 1.0],
-              ),
-            ),
-          ),
-        ],
-
-        // =========================
-        // TOOLTIP
-        // =========================
-        lineTouchData: LineTouchData(
-          enabled: true,
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipItems: (spots) {
-              return spots.map((spot) {
-                return LineTooltipItem(
-                  '${spot.y.toInt()}%',
-                  GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                );
-              }).toList();
-            },
-          ),
-        ),
-      ),
     );
   }
 
@@ -1366,6 +1052,17 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
     );
+  }
+    void _onTrendPeriodChanged(String period) {
+    setState(() {
+      _selectedTrendPeriod = period;
+      _trendFuture = _dashboardService
+          .getQualityTrend(months: _getTrendMonths())
+          .then((data) {
+            _lastTrend = data;
+            return data;
+          });
+    });
   }
 }
 
