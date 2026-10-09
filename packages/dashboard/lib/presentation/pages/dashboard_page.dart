@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/department_style.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:auth/presentation/pages/profile_page.dart';
 import 'package:core_services/core_services.dart';
@@ -974,12 +975,12 @@ class _DashboardPageState extends State<DashboardPage> {
         _summaryCard(
           'Active Audit',
           summary.activeAudit.toString(),
-          const Color(0xFF1D52D8),
+          AppColors.action,
         ),
         _summaryCard(
           'Total CAPA',
           summary.totalCapa.toString(),
-          const Color(0xFF1D52D8),
+          AppColors.action,
         ),
         _summaryCard(
           'CAPA Open',
@@ -1061,98 +1062,48 @@ class _DashboardPageState extends State<DashboardPage> {
     ComplianceScoreResponse scoreResponse,
     double screenWidth,
   ) {
-    // 1. Daftar 4 departemen wajib sesuai desain
-    final List<String> standardDepts = [
+    // Urutan kartu sesuai desain.
+    const displayOrder = [
       'Packaging',
       'Quality Control',
       'Warehouse',
       'Production',
     ];
 
-    // 2. Map warna spesifik untuk tiap departemen
-    final Map<String, Color> colors = {
-      'Production': const Color(0xFFE75480),
-      'Packaging': const Color(0xFF9570E1),
-      'Warehouse': const Color(0xFF1DD8B6),
-      'Quality Control': const Color(0xFF4AB4FF),
-    };
+    final displayScores = displayOrder.map((deptName) {
+      final matches = scoreResponse.data.where(
+        (d) => DepartmentStyle.normalize(d.department) == deptName,
+      );
+      final source = matches.isEmpty ? null : matches.first;
 
-    // 3. Gabungkan data API dengan departemen standar
-    final List<ComplianceScore> displayScores =
-        standardDepts.map((deptName) {
-          // Cari apakah ada data dari API untuk departemen ini
-          final apiDataList =
-              scoreResponse.data.where((d) {
-                // Normalisasi nama dari backend ke nama tampilan:
-                // 'Produksi' atau 'Production' → Production
-                // 'QC' atau 'Quality Control' → Quality Control
-                if (deptName == 'Production') {
-                  return d.department.toLowerCase() == 'production' ||
-                      d.department.toLowerCase() == 'produksi';
-                }
-                if (deptName == 'Quality Control') {
-                  return d.department == 'QC' ||
-                      d.department.toLowerCase() == 'quality control' ||
-                      d.department.toLowerCase() == 'quality manager';
-                }
-                return d.department.toLowerCase() == deptName.toLowerCase();
-              }).toList();
+      return ComplianceScore(
+        department: deptName,
+        score: source?.score ?? 0.0,
+        totalAudit: source?.totalAudit ?? 0,
+        totalResponses: source?.totalResponses ?? 0,
+        conformResponses: source?.conformResponses ?? 0,
+      );
+    }).toList();
 
-          return apiDataList.isNotEmpty
-              ? apiDataList.first
-              : ComplianceScore(
-                department: deptName,
-                score: 0.0,
-                totalAudit: 0,
-                totalResponses: 0,
-                conformResponses: 0,
-              );
-        }).toList();
-
-    // 4. Ubah menjadi List yang bisa di-scroll ke samping (Horizontal)
     final cardWidth = (screenWidth * 0.4).clamp(140.0, 200.0);
 
     return SizedBox(
-      height: 130, // Tinggi kotaknya, bisa kamu atur sesuka hati
+      height: 130,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: displayScores.length,
-        separatorBuilder:
-            (context, index) => const SizedBox(width: 16), // Jarak antar kotak
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           final item = displayScores[index];
-
-          // Normalisasi nama departemen dari backend ke nama tampilan
-          String displayDept = item.department;
-          if (item.department.toLowerCase() == 'produksi' ||
-              item.department.toLowerCase() == 'production') {
-            displayDept = 'Production';
-          } else if (item.department == 'QC' ||
-              item.department.toLowerCase() == 'quality control' ||
-              item.department.toLowerCase() == 'quality manager') {
-            displayDept = 'Quality Control';
-          }
-
-          final color = colors[displayDept] ?? AppColors.primaryLight;
-
           return SizedBox(
             width: cardWidth,
-            child: _complianceCard(
-              ComplianceScore(
-                department: displayDept,
-                score: item.score,
-                totalAudit: item.totalAudit,
-                totalResponses: item.totalResponses,
-                conformResponses: item.conformResponses,
-              ),
-              color,
-            ),
+            child: _complianceCard(item, DepartmentStyle.colorOf(item.department)),
           );
         },
       ),
     );
   }
-
+  
   Widget _complianceCard(ComplianceScore item, Color color) {
     // Tentukan apakah dia sudah diaudit (skor/total audit lebih dari 0)
     final bool hasAudit = item.score > 0 || item.totalAudit > 0;
@@ -1248,7 +1199,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _UpcomingAuditItem(
               scheduleId: department.scheduleId,
               title: department.planTitle,
-              department: _normalizeDepartment(department.department),
+              department: DepartmentStyle.normalize(department.department),
               rawDepartment: department.department,
               standard: department.standard,
               auditorName: department.auditorName,
@@ -1263,49 +1214,6 @@ class _DashboardPageState extends State<DashboardPage> {
     result.sort((a, b) => a.date.compareTo(b.date));
 
     return result;
-  }
-
-  String _normalizeDepartment(String department) {
-    final value = department.toLowerCase();
-
-    if (value == 'produksi' || value == 'production') {
-      return 'Production';
-    }
-
-    if (value == 'qc' ||
-        value == 'quality control' ||
-        value == 'quality manager') {
-      return 'Quality Control';
-    }
-
-    if (value == 'packaging') {
-      return 'Packaging';
-    }
-
-    if (value == 'warehouse') {
-      return 'Warehouse';
-    }
-
-    return department;
-  }
-
-  Color _departmentColor(String department) {
-    switch (department) {
-      case 'Production':
-        return const Color(0xFFE75480);
-
-      case 'Packaging':
-        return const Color(0xFF9570E1);
-
-      case 'Warehouse':
-        return const Color(0xFF1DD8B6);
-
-      case 'Quality Control':
-        return const Color(0xFF4AB4FF);
-
-      default:
-        return AppColors.primary;
-    }
   }
 
   Widget _buildUpcomingAudits(
@@ -1424,7 +1332,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildFeaturedAudit(_UpcomingAuditItem audit) {
     final daysLeft = _daysLeft(audit.date);
-    final color = _departmentColor(audit.department);
+    final color = DepartmentStyle.colorOf(audit.department);
 
     return Material(
       color: Colors.transparent,
@@ -1629,7 +1537,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildUpcomingAuditRow(_UpcomingAuditItem audit) {
-    final color = _departmentColor(audit.department);
+    final color = DepartmentStyle.colorOf(audit.department);
     final daysLeft = _daysLeft(audit.date);
 
     const months = [
@@ -1768,52 +1676,44 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildAuditLegend() {
-    final departments = {
-      'Production': const Color(0xFFE75480),
-      'Packaging': const Color(0xFF9570E1),
-      'Warehouse': const Color(0xFF1DD8B6),
-      'Quality Control': const Color(0xFF4AB4FF),
-    };
-
+    Widget _buildAuditLegend() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final fontSize = constraints.maxWidth < 300 ? 6.5 : 8.0;
 
         return Row(
-          children:
-              departments.entries.map((entry) {
-                return Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: entry.value,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            entry.key.toUpperCase(),
-                            maxLines: 1,
-                            style: GoogleFonts.inter(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+          children: DepartmentStyle.standard.map((name) {
+            return Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: DepartmentStyle.colorOf(name),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                );
-              }).toList(),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        name.toUpperCase(),
+                        maxLines: 1,
+                        style: GoogleFonts.inter(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         );
       },
     );

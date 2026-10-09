@@ -42,4 +42,10 @@ class AppColors {
   static const Color spcMarginal = Color(0xFFF5B841);
   static const Color spcNotCapable = Color(0xFFE02B20);
   static const Color spcUnstable = Color(0xFF8B5E3C);
+
+  // Department
+  static const Color deptProduction = Color(0xFFE75480);
+  static const Color deptPackaging = Color(0xFF9570E1);
+  static const Color deptWarehouse = Color(0xFF1DD8B6);
+  static const Color deptQualityControl = Color(0xFF4AB4FF);
 }
