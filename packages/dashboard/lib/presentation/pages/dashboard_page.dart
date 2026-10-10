@@ -121,6 +121,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
           AuditReportList(
             reports: _viewModel.reports,
+            loadThumbnailBytes: _pdfService.fetchBytes,
             onView: (r) => _viewPdf(r.sessionId, r.planTitle),
             onDownload: (r) => _downloadAndSavePdf(r.sessionId, r.planTitle),
           ),

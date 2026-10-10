@@ -27,7 +27,6 @@ dependencies:
   core_services:
     path: ../core_services
   shared_preferences: ^2.3.0
-  pdfx: ^2.9.2
   fl_chart: ^1.1.1
 
   get_it: any

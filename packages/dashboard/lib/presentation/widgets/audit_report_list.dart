@@ -10,11 +10,13 @@ class AuditReportList extends StatelessWidget {
   const AuditReportList({
     super.key,
     required this.reports,
+    required this.loadThumbnailBytes,
     required this.onView,
     required this.onDownload,
   });
 
   final List<CompletedAuditReport> reports;
+  final Future<List<int>> Function(String sessionId) loadThumbnailBytes;
   final ValueChanged<CompletedAuditReport> onView;
   final ValueChanged<CompletedAuditReport> onDownload;
 
@@ -46,6 +48,7 @@ class AuditReportList extends StatelessWidget {
           final report = reports[index];
           return AuditReportCard(
             report: report,
+            loadThumbnailBytes: () => loadThumbnailBytes(report.sessionId),
             onView: () => onView(report),
             onDownload: () => onDownload(report),
           );

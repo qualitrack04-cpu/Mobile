@@ -781,6 +781,8 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
             builder:
                 (_) => PdfSuccessDialog(
                   sessionId: widget.sessionId,
+                  loadThumbnailBytes: () =>
+                      GetIt.I<ReportPdfService>().fetchBytes(widget.sessionId),
                   onView: () {
                     _viewPdf();
                   },

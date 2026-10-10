@@ -1,5 +1,4 @@
-import 'package:audit/presentation/widgets/pdf_success_dialog.dart'
-    show PdfThumbnailWidget;
+import 'package:core/core.dart';
 import 'package:core_services/core_services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,11 +8,13 @@ class AuditReportCard extends StatelessWidget {
   const AuditReportCard({
     super.key,
     required this.report,
+    required this.loadThumbnailBytes,
     required this.onView,
     required this.onDownload,
   });
 
   final CompletedAuditReport report;
+  final Future<List<int>> Function() loadThumbnailBytes;
   final VoidCallback onView;
   final VoidCallback onDownload;
 
@@ -50,7 +51,7 @@ class AuditReportCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: PdfThumbnailWidget(sessionId: report.sessionId),
+                  child: PdfThumbnailWidget(loadBytes: loadThumbnailBytes),
                 ),
               ),
               Expanded(
