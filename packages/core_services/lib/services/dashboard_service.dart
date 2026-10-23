@@ -173,11 +173,17 @@ class CompletedAuditReport {
   final String sessionId;
   final String department;
   final String planTitle;
+  final int? pageCount;
+  final int? fileSizeBytes;
+  final String? fileSizeFormatted;
 
   CompletedAuditReport({
     required this.sessionId,
     required this.department,
     required this.planTitle,
+    this.pageCount,
+    this.fileSizeBytes,
+    this.fileSizeFormatted,
   });
 
   factory CompletedAuditReport.fromJson(Map<String, dynamic> json) {
@@ -185,7 +191,22 @@ class CompletedAuditReport {
       sessionId: json['sessionId'] ?? '',
       department: json['department'] ?? '',
       planTitle: json['auditPlanTitle'] ?? '',
+      pageCount: (json['pageCount'] as num?)?.toInt(),
+      fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt(),
+      fileSizeFormatted: json['fileSizeFormatted'] as String?,
     );
+  }
+
+  /// Info file untuk subtitle, contoh: "PDF · 14 pages · 2.4 MB".
+  /// Bagian yang datanya belum ada (report lama) dilewati.
+  String get fileInfoLabel {
+    final size = fileSizeFormatted;
+    final parts = <String>[
+      'PDF',
+      if (pageCount != null) '$pageCount ${pageCount == 1 ? 'page' : 'pages'}',
+      if (size != null && size.isNotEmpty) size,
+    ];
+    return parts.join(' · ');
   }
 }
 
