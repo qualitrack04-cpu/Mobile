@@ -514,6 +514,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     final categories = {
       FindingCategory.majorNC: 'Major NC',
       FindingCategory.minorNC: 'Minor NC',
+      FindingCategory.observation: 'Observation',
       FindingCategory.ofi: 'OFI',
     };
     return Padding(

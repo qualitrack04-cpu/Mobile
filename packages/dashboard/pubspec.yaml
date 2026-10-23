@@ -28,6 +28,9 @@ dependencies:
     path: ../core_services
   shared_preferences: ^2.3.0
   fl_chart: ^1.1.1
+  dio: ^5.9.2
+  path_provider: ^2.1.5
+  open_filex: ^4.7.0
 
   get_it: any
   skeletonizer: any

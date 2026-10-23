@@ -1,15 +1,17 @@
 enum FindingCategory {
   majorNC,
   minorNC,
+  observation,
   ofi;
 
-  // Konversi dari string backend (MajorNC → majorNC)
   static FindingCategory fromString(String value) {
     switch (value) {
       case 'MajorNC':
         return FindingCategory.majorNC;
       case 'MinorNC':
         return FindingCategory.minorNC;
+      case 'Observation':
+        return FindingCategory.observation;
       case 'OFI':
         return FindingCategory.ofi;
       default:
@@ -17,13 +19,14 @@ enum FindingCategory {
     }
   }
 
-  // Konversi ke string untuk kirim ke backend
   String toBackendString() {
     switch (this) {
       case FindingCategory.majorNC:
         return 'MajorNC';
       case FindingCategory.minorNC:
         return 'MinorNC';
+      case FindingCategory.observation:
+        return 'Observation';
       case FindingCategory.ofi:
         return 'OFI';
     }

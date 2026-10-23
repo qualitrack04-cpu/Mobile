@@ -15,11 +15,12 @@ import '../../domain/entities/upcoming_audit_item.dart';
 import '../viewmodels/dashboard_view_model.dart';
 import '../widgets/audit_report_list.dart';
 import '../widgets/audit_summary_grid.dart';
-import '../widgets/compliance_score_list.dart';
+import '../widgets/compliance_score_card.dart';
 import '../widgets/dashboard_app_bar.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/quality_trend_card.dart';
 import '../widgets/upcoming_audits_card.dart';
+import 'audit_report_page.dart';
 
 /// Halaman utama dashboard. Hanya merakit widget dan menangani navigasi;
 /// data dan state ada di [DashboardViewModel].
@@ -107,7 +108,7 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 24),
           _buildSectionTitle('COMPLIANCE SCORE'),
           const SizedBox(height: 12),
-          ComplianceScoreList(scoreResponse: _viewModel.score),
+          ComplianceScoreCard(scoreResponse: _viewModel.score),
           const SizedBox(height: 24),
           _buildSectionTitle('SUMMARY CARD'),
           const SizedBox(height: 12),
@@ -121,9 +122,13 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
           AuditReportList(
             reports: _viewModel.reports,
-            loadThumbnailBytes: _pdfService.fetchBytes,
             onView: (r) => _viewPdf(r.sessionId, r.planTitle),
             onDownload: (r) => _downloadAndSavePdf(r.sessionId, r.planTitle),
+            onViewAll:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AuditReportPage()),
+                ),
           ),
           const SizedBox(height: 32),
         ],
@@ -181,10 +186,11 @@ class _DashboardPageState extends State<DashboardPage> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: auditBloc,
-            child: AuditChecklistPage(audit: selectedAudit),
-          ),
+          builder:
+              (_) => BlocProvider.value(
+                value: auditBloc,
+                child: AuditChecklistPage(audit: selectedAudit),
+              ),
         ),
       );
     } catch (e) {

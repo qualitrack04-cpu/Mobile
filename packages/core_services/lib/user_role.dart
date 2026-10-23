@@ -57,8 +57,11 @@ enum UserRole {
   bool get canEditOthersFinding => this == UserRole.qualityManager;
 
   // ------------------------------------------------------------------- capa
-  bool get canManageCapa => this == UserRole.qualityManager;
+  bool get canManageCapa =>
+      this == UserRole.qualityManager || this == UserRole.auditorInternal;
   bool get canFillOwnCapa =>
-      this == UserRole.qualityManager || this == UserRole.auditee;
+      this == UserRole.qualityManager ||
+      this == UserRole.auditorInternal ||
+      this == UserRole.auditee;
   bool get canLoginOnMobile => this != UserRole.admin;
 }

@@ -269,7 +269,12 @@ class _CapaCard extends StatefulWidget {
 
 class _CapaCardState extends State<_CapaCard> {
   late String _currentStatus;
-
+  /// Auditee hanya boleh sampai Pending Verification.
+  /// Status Closed khusus Quality Manager / Auditor Internal.
+  List<String> get _availableStatuses =>
+      widget.role.canManageCapa
+          ? _statusOptions
+          : _statusOptions.where((s) => s != 'Closed').toList();
   // ✅ opsi dropdown status
   static const List<String> _statusOptions = [
     'Open',
@@ -494,7 +499,7 @@ class _CapaCardState extends State<_CapaCard> {
           dropdownColor: Colors.white,
           borderRadius: BorderRadius.circular(12),
           items:
-              _statusOptions.map((status) {
+              _availableStatuses.map((status) {
                 return DropdownMenuItem<String>(
                   value: status,
                   child: Text(
@@ -505,6 +510,9 @@ class _CapaCardState extends State<_CapaCard> {
               }).toList(),
           onChanged: widget.capa.status == 'Closed' ? null : (newStatus) async {
             if (newStatus == null) return;
+
+            // Pengaman: hanya yang berhak boleh menutup CAPA
+            if (newStatus == 'Closed' && !widget.role.canManageCapa) return;
             
             if (newStatus == 'Closed') {
               final confirm = await showDialog<bool>(
