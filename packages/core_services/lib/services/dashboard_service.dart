@@ -53,23 +53,37 @@ class ComplianceScore {
 
 class ComplianceScoreResponse {
   final double overallScore;
+  final double? previousScore;
+  final int? month;
+  final int? year;
   final List<ComplianceScore> data;
 
-  ComplianceScoreResponse({required this.overallScore, required this.data});
+  ComplianceScoreResponse({
+    required this.overallScore,
+    this.previousScore,
+    this.month,
+    this.year,
+    required this.data,
+  });
+
+  /// Selisih terhadap bulan lalu, null jika backend belum mengirim.
+  double? get change =>
+      previousScore == null ? null : overallScore - previousScore!;
 
   factory ComplianceScoreResponse.fromJson(Map<String, dynamic> json) {
     final list = json['data'] as List? ?? [];
 
     return ComplianceScoreResponse(
       overallScore: (json['overallScore'] as num?)?.toDouble() ?? 0.0,
-      data:
-          list
-              .map((e) => ComplianceScore.fromJson(e as Map<String, dynamic>))
-              .toList(),
+      previousScore: (json['previousScore'] as num?)?.toDouble(),
+      month: json['month'] as int?,
+      year: json['year'] as int?,
+      data: list
+          .map((e) => ComplianceScore.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
-
 // Level 3: detail satu departemen dalam jadwal
 class ScheduleDepartment {
   final String department;

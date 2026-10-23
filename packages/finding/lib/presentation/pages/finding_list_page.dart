@@ -63,180 +63,178 @@ class _FindingListViewState extends State<_FindingListView> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              backgroundColor: AppColors.surface,
-              elevation: 0,
-              title: Text(
-                'Findings',
-                style: GoogleFonts.inter(
-                  fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        title: Text(
+          'Findings',
+          style: GoogleFonts.inter(
+            fontSize: (screenWidth * 0.06).clamp(20.0, 24.0),
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+
+      body: BlocConsumer<FindingBloc, FindingState>(
+        listener: (context, state) {
+          if (state is FindingLoaded) {
+            _lastFindings = state.findings;
+            _isFirstLoad = false;
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is FindingLoading || state is FindingInitial;
+          final findings =
+              state is FindingLoaded ? state.findings : _lastFindings;
+
+          if (state is FindingError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
               ),
-            ),
+            );
+          }
 
-            body: BlocConsumer<FindingBloc, FindingState>(
-              listener: (context, state) {
-                if (state is FindingLoaded) {
-                  _lastFindings = state.findings;
-                  _isFirstLoad = false;
-                }
-              },
-              builder: (context, state) {
-                final isLoading = state is FindingLoading || state is FindingInitial;
-                final findings = state is FindingLoaded ? state.findings : _lastFindings;
-
-                if (state is FindingError) {
-                  return Center(
-                    child: Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
-                // Skeleton placeholder saat first load
-                // Gunakan jumlah data sebelumnya agar tidak misleading. Jika kosong & bukan first load, count = 0
-                final skeletonCount = _isFirstLoad ? 3 : _lastFindings.length;
-                final skeletonList = List.generate(
-                  skeletonCount,
-                  (_) => Finding(
-                    id: '',
-                    category: FindingCategory.ofi, // OFI untuk warna netral
-                    description: 'Loading Description Here',
-                    clauseRef: '-',
-                    foundAt: DateTime.now(),
-                    status: FindingStatus.open,
-                    department: 'Department Name',
-                    reporter: '',
-                    reporterId: '',
-                  ),
-                );
-
-                // Filter findings: hide if Closed > 24 hours ago
-                final filteredFindings = findings.where((finding) {
-                  if (finding.status == FindingStatus.closed) {
-                    if (finding.capaClosedAt != null) {
-                      final diff = DateTime.now().toUtc().difference(finding.capaClosedAt!.toUtc());
-                      return diff.inHours < 24;
-                    }
-                    return false; // sembunyikan jika tidak ada tanggal close
-                  }
-                  return true;
-                }).toList();
-
-                final displayList = isLoading ? skeletonList : filteredFindings;
-
-                // Urutkan berdasarkan kategori saja (tetap urut major, minor, ofi)
-                final sortedFindings = List.of(displayList)..sort((a, b) {
-                  return a.category.index.compareTo(b.category.index);
-                });
-
-                return Stack(
-                  children: [
-                    // Empty state centered exactly on the screen
-                    if (!isLoading && sortedFindings.isEmpty)
-                      const Center(
-                        child: Text(
-                          'No Finding is available',
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    
-                    RefreshIndicator(
-                      onRefresh: () async {
-                        context.read<FindingBloc>().add(const LoadFindings());
-                        await Future.delayed(const Duration(milliseconds: 800));
-                      },
-                      child: Skeletonizer(
-                        enabled: isLoading,
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                          children: [
-                            if (isLoading || sortedFindings.isNotEmpty)
-                              ...sortedFindings.map(
-                                (finding) => _FindingCard(
-                                  finding: finding,
-                                  role: _role,
-                                  userName: _userName,
-                                  userId: _userId,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // FAB tambah finding baru
-                      // FAB tambah finding baru
-                      if (_role.canCreateFinding)
-                        Positioned(
-                          bottom: 16,
-                          right: 16,
-                          child: Builder(
-                          builder: (context) {
-                            final screenWidth =
-                                MediaQuery.of(context).size.width;
-
-                            // ukuran FAB dinamis seperti AuditListPage
-                            final fabSize = (screenWidth * 0.18).clamp(
-                              64.0,
-                              88.0,
-                            );
-
-                            return SizedBox(
-                              width: fabSize,
-                              height: fabSize,
-                              child: FloatingActionButton(
-                                backgroundColor: AppColors.primaryLight,
-                                elevation: 4,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    fabSize * 0.25,
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final bloc = context.read<FindingBloc>();
-
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => BlocProvider.value(
-                                            value: bloc,
-                                            child: const FindingFormPage(),
-                                          ),
-                                    ),
-                                  );
-
-                                  // FindingFormPage mengembalikan Finding object saat berhasil
-                                  if (result != null && context.mounted) {
-                                    bloc.add(const LoadFindings());
-                                  }
-                                },
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: fabSize * 0.45,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-              },
+          // Skeleton placeholder saat first load
+          // Gunakan jumlah data sebelumnya agar tidak misleading. Jika kosong & bukan first load, count = 0
+          final skeletonCount = _isFirstLoad ? 3 : _lastFindings.length;
+          final skeletonList = List.generate(
+            skeletonCount,
+            (_) => Finding(
+              id: '',
+              category: FindingCategory.ofi, // OFI untuk warna netral
+              description: 'Loading Description Here',
+              clauseRef: '-',
+              foundAt: DateTime.now(),
+              status: FindingStatus.open,
+              department: 'Department Name',
+              reporter: '',
+              reporterId: '',
             ),
           );
+
+          // Filter findings: hide if Closed > 24 hours ago
+          final filteredFindings =
+              findings.where((finding) {
+                if (finding.status == FindingStatus.closed) {
+                  if (finding.capaClosedAt != null) {
+                    final diff = DateTime.now().toUtc().difference(
+                      finding.capaClosedAt!.toUtc(),
+                    );
+                    return diff.inHours < 24;
+                  }
+                  return false; // sembunyikan jika tidak ada tanggal close
+                }
+                return true;
+              }).toList();
+
+          final displayList = isLoading ? skeletonList : filteredFindings;
+
+          // Urutkan berdasarkan kategori saja (tetap urut major, minor, ofi)
+          final sortedFindings = List.of(displayList)..sort((a, b) {
+            return a.category.index.compareTo(b.category.index);
+          });
+
+          return Stack(
+            children: [
+              // Empty state centered exactly on the screen
+              if (!isLoading && sortedFindings.isEmpty)
+                const Center(
+                  child: Text(
+                    'No Finding is available',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
+              RefreshIndicator(
+                onRefresh: () async {
+                  context.read<FindingBloc>().add(const LoadFindings());
+                  await Future.delayed(const Duration(milliseconds: 800));
+                },
+                child: Skeletonizer(
+                  enabled: isLoading,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                    children: [
+                      if (isLoading || sortedFindings.isNotEmpty)
+                        ...sortedFindings.map(
+                          (finding) => _FindingCard(
+                            finding: finding,
+                            role: _role,
+                            userName: _userName,
+                            userId: _userId,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // FAB tambah finding baru
+              // FAB tambah finding baru
+              if (_role.canCreateFinding)
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: Builder(
+                    builder: (context) {
+                      final screenWidth = MediaQuery.of(context).size.width;
+
+                      // ukuran FAB dinamis seperti AuditListPage
+                      final fabSize = (screenWidth * 0.18).clamp(64.0, 88.0);
+
+                      return SizedBox(
+                        width: fabSize,
+                        height: fabSize,
+                        child: FloatingActionButton(
+                          backgroundColor: AppColors.primaryLight,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(fabSize * 0.25),
+                          ),
+                          onPressed: () async {
+                            final bloc = context.read<FindingBloc>();
+
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => BlocProvider.value(
+                                      value: bloc,
+                                      child: const FindingFormPage(),
+                                    ),
+                              ),
+                            );
+
+                            // FindingFormPage mengembalikan Finding object saat berhasil
+                            if (result != null && context.mounted) {
+                              bloc.add(const LoadFindings());
+                            }
+                          },
+                          child: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: fabSize * 0.45,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -364,7 +362,6 @@ class _FindingCard extends StatelessWidget {
                     )
                   else
                     const SizedBox.shrink(), // Kosong jika tidak boleh edit
-
                   // Tombol Details (tetap seperti semula)
                   GestureDetector(
                     onTap: () {
@@ -410,6 +407,8 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFF0F0);
       case FindingCategory.minorNC:
         return Colors.white;
+      case FindingCategory.observation:
+        return Colors.white;
       case FindingCategory.ofi:
         return Colors.white;
     }
@@ -422,6 +421,8 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
+      case FindingCategory.observation:
+        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }
@@ -435,7 +436,10 @@ class _FindingCard extends StatelessWidget {
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Text('Loading', style: TextStyle(color: Colors.transparent)),
+        child: const Text(
+          'Loading',
+          style: TextStyle(color: Colors.transparent),
+        ),
       );
     }
     return Container(
@@ -461,6 +465,8 @@ class _FindingCard extends StatelessWidget {
         return 'Major NC';
       case FindingCategory.minorNC:
         return 'Minor NC';
+      case FindingCategory.observation:
+        return 'Observation';
       case FindingCategory.ofi:
         return 'OFI';
     }
@@ -472,6 +478,8 @@ class _FindingCard extends StatelessWidget {
         return const Color(0xFFFFDDDD);
       case FindingCategory.minorNC:
         return const Color(0xFFFFEDD5);
+      case FindingCategory.observation:
+        return const Color(0xFFD5F5E3);
       case FindingCategory.ofi:
         return const Color(0xFFDDE8FF);
     }
@@ -483,6 +491,8 @@ class _FindingCard extends StatelessWidget {
         return Colors.red;
       case FindingCategory.minorNC:
         return Colors.orange;
+      case FindingCategory.observation:
+        return Colors.green;
       case FindingCategory.ofi:
         return const Color(0xFF3B6FD4);
     }

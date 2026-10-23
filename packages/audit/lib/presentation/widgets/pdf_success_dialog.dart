@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:pdfx/pdfx.dart';
-import 'package:get_it/get_it.dart';
-import 'package:core/app_colors.dart';
-import 'package:core_services/services/api_service.dart';
-import 'package:dio/dio.dart';
+import 'package:core/core.dart';
 
 class PdfSuccessDialog extends StatelessWidget {
   final VoidCallback onView;
@@ -12,6 +8,7 @@ class PdfSuccessDialog extends StatelessWidget {
   final VoidCallback onGoToDashboard;
   final String reportTitle;
   final String sessionId;
+  final Future<List<int>> Function() loadThumbnailBytes;
 
   const PdfSuccessDialog({
     super.key,
@@ -19,6 +16,7 @@ class PdfSuccessDialog extends StatelessWidget {
     required this.onDownload,
     required this.onGoToDashboard,
     required this.sessionId,
+    required this.loadThumbnailBytes,
     this.reportTitle = 'Monthly Compliance Report',
   });
 
@@ -167,7 +165,7 @@ class PdfSuccessDialog extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: PdfThumbnailWidget(sessionId: sessionId),
+                child: PdfThumbnailWidget(loadBytes: loadThumbnailBytes),
               ),
             ),
             const SizedBox(height: 24),
@@ -207,97 +205,6 @@ class PdfSuccessDialog extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class PdfThumbnailWidget extends StatefulWidget {
-  final String sessionId;
-  const PdfThumbnailWidget({super.key, required this.sessionId});
-
-  @override
-  State<PdfThumbnailWidget> createState() => _PdfThumbnailWidgetState();
-}
-
-class _PdfThumbnailWidgetState extends State<PdfThumbnailWidget> {
-  PdfDocument? _pdfDoc;
-  PdfPageImage? _pageImage;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPdfThumbnail();
-  }
-
-  Future<void> _loadPdfThumbnail() async {
-    try {
-      final apiService = GetIt.I<ApiService>();
-      final response = await apiService.client.get(
-        '/api/Pdf/audit-report/${widget.sessionId}',
-        options: Options(responseType: ResponseType.bytes),
-      );
-      
-      final document = await PdfDocument.openData(response.data);
-      final page = await document.getPage(1);
-      
-      // Render page at a small thumbnail resolution to save memory
-      final pageImage = await page.render(
-        width: page.width / 3,
-        height: page.height / 3,
-        format: PdfPageImageFormat.jpeg,
-      );
-
-      if (mounted) {
-        setState(() {
-          _pdfDoc = document;
-          _pageImage = pageImage;
-          _isLoading = false;
-        });
-      }
-
-      await page.close();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _pdfDoc?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: SizedBox(
-          width: 24, 
-          height: 24, 
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)
-        )
-      );
-    }
-    if (_hasError || _pageImage == null) {
-      return const Center(
-        child: Icon(Icons.picture_as_pdf, color: Colors.grey, size: 40),
-      );
-    }
-    return Container(
-      color: Colors.white,
-      child: Image.memory(
-        _pageImage!.bytes,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        alignment: Alignment.topCenter,
       ),
     );
   }
