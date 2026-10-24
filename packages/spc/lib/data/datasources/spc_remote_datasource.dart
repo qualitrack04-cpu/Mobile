@@ -48,7 +48,7 @@ class SpcRemoteDatasource {
   }) async {
     try {
       final response = await apiService.client.get(
-        '/api/Spc/history',
+        '/api/spc/history',
         queryParameters: {
           'period': period.apiValue,
           if (status != null) 'status': status.apiValue,
@@ -96,7 +96,7 @@ class SpcRemoteDatasource {
       });
 
       final response = await apiService.client.post(
-        '/api/Spc/analyze',
+        '/api/spc/analyze',
         data: formData,
       );
 
@@ -109,7 +109,7 @@ class SpcRemoteDatasource {
   /// GET /api/Spc/{id}
   Future<SpcResultModel> getById(String id) async {
     try {
-      final response = await apiService.client.get('/api/Spc/$id');
+      final response = await apiService.client.get('/api/spc/$id');
       return SpcResultModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to load analysis details.'));

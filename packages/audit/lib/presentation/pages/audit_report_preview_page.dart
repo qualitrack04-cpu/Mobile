@@ -626,7 +626,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       );
 
       final response = await apiService.client.get(
-        '/api/Pdf/audit-report/${widget.sessionId}',
+        '/api/pdf/audit-report/${widget.sessionId}',
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -668,7 +668,7 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
       );
 
       final response = await apiService.client.get(
-        '/api/Pdf/audit-report/${widget.sessionId}',
+        '/api/pdf/audit-report/${widget.sessionId}',
         options: Options(responseType: ResponseType.bytes),
       );
 

@@ -30,10 +30,10 @@ class AuditRemoteDatasource {
 
   AuditRemoteDatasource({required this.apiService});
 
-  // GET /api/AuditPlan
+  // GET /api/audit-plans
   Future<List<AuditEntity>> getAudits() async {
     try {
-      final response = await apiService.client.get('/api/AuditPlan');
+      final response = await apiService.client.get('/api/audit-plans');
       final data = response.data['data'] as List<dynamic>;
       return data
           .map((json) => AuditModel.fromJson(json as Map<String, dynamic>))
@@ -45,7 +45,7 @@ class AuditRemoteDatasource {
     }
   }
 
-  // POST /api/AuditPlan
+  // POST /api/audit-plans
   Future<AuditEntity> createAudit({
     required String title,
     required List<String> isoTemplates,
@@ -66,7 +66,7 @@ class AuditRemoteDatasource {
       };
 
       final response = await apiService.client.post(
-        '/api/AuditPlan',
+        '/api/audit-plans',
         data: body,
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
@@ -77,7 +77,7 @@ class AuditRemoteDatasource {
     }
   }
 
-  // PUT /api/AuditPlan/{id}
+  // PUT /api/audit-plans/{id}
   Future<AuditEntity> updateAudit({
     required String id,
     required String title,
@@ -98,7 +98,7 @@ class AuditRemoteDatasource {
       };
 
       final response = await apiService.client.put(
-        '/api/AuditPlan/$id',
+        '/api/audit-plans/$id',
         data: body,
       );
       return AuditModel.fromJson(response.data['data'] as Map<String, dynamic>);
@@ -109,10 +109,10 @@ class AuditRemoteDatasource {
     }
   }
 
-  // DELETE /api/AuditPlan/{id}
+  // DELETE /api/audit-plans/{id}
   Future<void> deleteAudit(String id) async {
     try {
-      await apiService.client.delete('/api/AuditPlan/$id');
+      await apiService.client.delete('/api/audit-plans/$id');
     } catch (e) {
       throw Exception(
         _parseError(e, 'Failed to delete the audit. Please try again.'),

@@ -28,10 +28,10 @@ class AuditorRemoteDatasource {
 
   AuditorRemoteDatasource({required this.apiService});
 
-  // GET /api/Auth/auditors
+  // GET /api/auth/auditors
   Future<List<AuditorEntity>> getAuditors() async {
     try {
-      final response = await apiService.client.get('/api/Auth/auditors');
+      final response = await apiService.client.get('/api/users/auditors');
       final data = response.data['data'] as List<dynamic>;
       return data.map((json) {
         final map = json as Map<String, dynamic>;

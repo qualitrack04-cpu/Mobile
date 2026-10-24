@@ -36,10 +36,10 @@ class CapaRemoteDatasource {
 
   CapaRemoteDatasource({required this.apiService});
 
-  // GET /api/Capa
+  // GET /api/capas
   Future<List<CapaModel>> getCapas() async {
     try {
-      final response = await apiService.client.get('/api/Capa');
+      final response = await apiService.client.get('/api/capas');
       final data = response.data as List<dynamic>;
       return data
           .map((json) => CapaModel.fromJson(json as Map<String, dynamic>))
@@ -49,17 +49,17 @@ class CapaRemoteDatasource {
     }
   }
 
-  // GET /api/Capa/{id}
+  // GET /api/capas/{id}
   Future<CapaModel> getCapaDetail(String id) async {
     try {
-      final response = await apiService.client.get('/api/Capa/$id');
+      final response = await apiService.client.get('/api/capas/$id');
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to load CAPA details.'));
     }
   }
 
-  // POST /api/Capa/finding/{findingId}
+  // POST /api/capas/finding/{findingId}
   Future<CapaModel> createCapa({
     required String findingId,
     required String rootCause,
@@ -79,7 +79,7 @@ class CapaRemoteDatasource {
             '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
       final response = await apiService.client.post(
-        '/api/Capa/finding/$findingId',
+        '/api/capas/finding/$findingId',
         data: body,
       );
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
@@ -88,7 +88,7 @@ class CapaRemoteDatasource {
     }
   }
 
-  // PUT /api/Capa/{id}
+  // PUT /api/capas/{id}
   Future<CapaModel> updateCapa({
     required String id,
     required String rootCause,
@@ -107,14 +107,14 @@ class CapaRemoteDatasource {
         'deadline':
             '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
-      final response = await apiService.client.put('/api/Capa/$id', data: body);
+      final response = await apiService.client.put('/api/capas/$id', data: body);
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to update the CAPA.'));
     }
   }
 
-  // PATCH /api/Capa/{id}/status
+  // PATCH /api/capas/{id}/status
   Future<void> updateCapaStatus({
     required String id,
     required String status,
@@ -131,13 +131,13 @@ class CapaRemoteDatasource {
         'Closed': 3,
       };
       final statusInt = statusMap[status] ?? 0;
-      await apiService.client.patch('/api/Capa/$id/status', data: statusInt);
+      await apiService.client.patch('/api/capas/$id/status', data: statusInt);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to update the CAPA status.'));
     }
   }
 
-  // POST /api/Capa/{id}/closeout
+  // POST /api/capas/{id}/closeout
   Future<void> closeoutCapa({
     required String id,
     required bool isEffective,
@@ -151,7 +151,7 @@ class CapaRemoteDatasource {
         if (verifiedById.isNotEmpty && verifiedById.toLowerCase() != 'null')
           'verifiedById': verifiedById,
       };
-      await apiService.client.post('/api/Capa/$id/closeout', data: body);
+      await apiService.client.post('/api/capas/$id/closeout', data: body);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to close out the CAPA.'));
     }

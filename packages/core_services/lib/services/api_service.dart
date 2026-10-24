@@ -102,7 +102,7 @@ class ApiService {
           }
 
           if (error.response?.statusCode == 401) {
-            if (!error.requestOptions.path.contains('/api/Auth/login')) {
+            if (!error.requestOptions.path.contains('/api/auth/login')) {
               onUnauthorized?.call();
             }
           }

@@ -26,7 +26,7 @@ class AuthService {
   }) async {
     try {
       final response = await apiService.client.post(
-        '/api/Auth/login',
+        '/api/auth/login',
         data: {'email': email, 'password': password, 'role': role},
       );
       final data = response.data as Map<String, dynamic>;
@@ -87,7 +87,7 @@ class AuthService {
     return null;
   }
 
-  // POST /api/Auth/register
+  // POST /api/auth/register
   Future<void> register({
     required String fullName,
     required String email,
@@ -96,7 +96,7 @@ class AuthService {
   }) async {
     try {
       await apiService.client.post(
-        '/api/Auth/register',
+        '/api/auth/register',
         data: {
           'fullName': fullName,
           'email': email,
@@ -141,11 +141,11 @@ class AuthService {
     }
   }
 
-  // POST /api/Auth/verify-email
+  // POST /api/auth/verify-email
   Future<void> verifyEmail({required String email, required String otp}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/verify-email',
+        '/api/auth/verify-email',
         data: {'email': email, 'otp': otp},
       );
     } catch (e) {
@@ -153,11 +153,11 @@ class AuthService {
     }
   }
 
-  // POST /api/Auth/resend-otp
+  // POST /api/auth/resend-otp
   Future<void> resendOtp({required String email}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/resend-otp',
+        '/api/auth/resend-otp',
         data: {'email': email},
       );
     } catch (e) {
@@ -165,11 +165,11 @@ class AuthService {
     }
   }
 
-  // POST /api/Auth/forgot-password/request-otp
+  // POST /api/auth/forgot-password/request-otp
   Future<void> requestForgotPasswordOtp({required String email}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/forgot-password/request-otp',
+        '/api/auth/forgot-password/request-otp',
         data: {'email': email},
       );
     } catch (e) {
@@ -177,15 +177,14 @@ class AuthService {
     }
   }
 
-  // POST /api/Auth/forgot-password/verify-otp
-  // POST /api/Auth/forgot-password/verify-otp
+  // POST /api/auth/forgot-password/verify-otp
   Future<String> verifyForgotPasswordOtp({
     required String email,
     required String otp,
   }) async {
     try {
       final response = await apiService.client.post(
-        '/api/Auth/forgot-password/verify-otp',
+        '/api/auth/forgot-password/verify-otp',
         data: {'email': email, 'otp': otp},
       );
       final data = response.data as Map<String, dynamic>;
@@ -195,7 +194,7 @@ class AuthService {
     }
   }
 
-  // POST /api/Auth/forgot-password/reset
+  // POST /api/auth/forgot-password/reset
   Future<void> resetPassword({
     required String email,
     required String resetToken,
@@ -204,7 +203,7 @@ class AuthService {
   }) async {
     try {
       await apiService.client.post(
-        '/api/Auth/forgot-password/reset',
+        '/api/auth/forgot-password/reset',
         data: {
           'email': email,
           'resetToken': resetToken,
@@ -216,25 +215,6 @@ class AuthService {
       throw Exception('Failed to reset the password.');
     }
   }
-  // // POST /api/Auth/forgot-password (alur tanpa OTP - dinonaktifkan)
-  // Future<void> forgotPassword({
-  //   required String email,
-  //   required String newPassword,
-  //   required String confirmPassword,
-  // }) async {
-  //   try {
-  //     await apiService.client.post(
-  //       '/api/Auth/forgot-password',
-  //       data: {
-  //         'email': email,
-  //         'newPassword': newPassword,
-  //         'confirmPassword': confirmPassword,
-  //       },
-  //     );
-  //   } catch (e) {
-  //     throw Exception('Gagal reset password, pastikan email terdaftar');
-  //   }
-  // }
 
   // Logout
   Future<void> logout() async {
@@ -266,10 +246,7 @@ class AuthService {
 
   Future<void> updateProfile({required String name}) async {
     try {
-      await apiService.client.put(
-        '/api/Auth/update-profile',
-        data: {'fullName': name},
-      );
+      await apiService.client.put('/api/profile', data: {'fullName': name});
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', name);
     } catch (e) {
@@ -280,7 +257,7 @@ class AuthService {
   Future<void> requestEmailChangeOtp({required String newEmail}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/request-email-change-otp',
+        '/api/auth/request-email-change-otp',
         data: {'newEmail': newEmail},
       );
     } catch (e) {
@@ -300,7 +277,7 @@ class AuthService {
   Future<void> verifyEmailChange({required String otp}) async {
     try {
       final response = await apiService.client.post(
-        '/api/Auth/verify-email-change',
+        '/api/auth/verify-email-change',
         data: {'otp': otp},
       );
       final data = response.data as Map<String, dynamic>;
@@ -325,7 +302,7 @@ class AuthService {
   Future<void> changePassword({required String newPassword}) async {
     try {
       await apiService.client.post(
-        '/api/Auth/change-password',
+        '/api/auth/change-password',
         data: {'newPassword': newPassword},
       );
     } catch (e) {
@@ -335,7 +312,7 @@ class AuthService {
 
   Future<void> fetchProfile() async {
     try {
-      final response = await apiService.client.get('/api/Auth/profile');
+      final response = await apiService.client.get('/api/profile');
       final data = response.data as Map<String, dynamic>;
 
       final prefs = await SharedPreferences.getInstance();
@@ -358,7 +335,7 @@ class AuthService {
       });
 
       final response = await apiService.client.post(
-        '/api/Auth/upload-profile-photo',
+        '/api/profile/photo',
         data: formData,
       );
 

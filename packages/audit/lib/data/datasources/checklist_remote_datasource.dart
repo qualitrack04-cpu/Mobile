@@ -8,8 +8,8 @@ class ChecklistRemoteDatasource {
 
   ChecklistRemoteDatasource({required this.apiService});
 
-  // GET /api/Checklist?standard=ISO9001&department=Warehouse
-  // Lalu ambil items dari GET /api/Checklist/{id}/items
+  // GET /api/checklist?standard=ISO9001&department=Warehouse
+  // Lalu ambil items dari GET /api/checklist/{id}/items
   Future<List<ChecklistEntity>> getChecklistFor({
     required String isoTemplate,
     required String department,
@@ -17,7 +17,7 @@ class ChecklistRemoteDatasource {
     try {
       // Step 1: Cari checklist yang cocok
       final listResponse = await apiService.client.get(
-        '/api/Checklist',
+        '/api/checklists',
         queryParameters: {'standard': isoTemplate, 'department': department},
       );
 
@@ -27,7 +27,7 @@ class ChecklistRemoteDatasource {
       // Step 2: Ambil items dari checklist pertama yang cocok
       final checklistId = checklists[0]['id'] as String;
       final itemsResponse = await apiService.client.get(
-        '/api/Checklist/$checklistId/items',
+        '/api/checklist/$checklistId/items',
       );
 
       final items = itemsResponse.data['items'] as List<dynamic>;
@@ -62,7 +62,7 @@ class ChecklistRemoteDatasource {
   }) async {
     try {
       await apiService.client.post(
-        '/api/AuditSession/$sessionId/summary',
+        '/api/audit-sessions/$sessionId/summary',
         data: {'content': content},
       );
     } catch (e) {
@@ -74,7 +74,7 @@ class ChecklistRemoteDatasource {
   Future<String?> getAuditSummary(String sessionId) async {
     try {
       final response = await apiService.client.get(
-        '/api/AuditSession/$sessionId/summary',
+        '/api/audit-sessions/$sessionId/summary',
       );
       return response.data['data']['content'] as String?;
     } catch (e) {
@@ -82,13 +82,13 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // GET /api/AuditResponse/by-session/{sessionId}
+  // GET /api/audit-responses/by-session/{sessionId}
   Future<List<Map<String, dynamic>>> getChecklistResponses(
     String sessionId,
   ) async {
     try {
       final response = await apiService.client.get(
-        '/api/AuditResponse/by-session/$sessionId',
+        '/api/audit-responses/by-session/$sessionId',
       );
       final dataList = response.data['data'] as List<dynamic>;
       return dataList.cast<Map<String, dynamic>>();
@@ -102,11 +102,11 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // GET /api/Upload/audit-response/{responseId}
+  // GET /api/uploads/audit-response/{responseId}
   Future<List<String>> getEvidencesForResponse(String responseId) async {
     try {
       final response = await apiService.client.get(
-        '/api/Upload/audit-response/$responseId',
+        '/api/uploads/audit-response/$responseId',
       );
       final dataList = response.data as List<dynamic>;
       return dataList.map((e) => e['url'] as String).toList();
@@ -118,7 +118,7 @@ class ChecklistRemoteDatasource {
   Future<List<String>> getEvidencesForFinding(String findingId) async {
     try {
       final response = await apiService.client.get(
-        '/api/Upload/finding/$findingId',
+        '/api/uploads/finding/$findingId',
       );
       final data = response.data as List<dynamic>;
       return data.map((e) => e['url'] as String).toList();
@@ -127,13 +127,13 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // GET /api/Finding/by-session/{sessionId}
+  // GET /api/findings/by-session/{sessionId}
   Future<List<Map<String, dynamic>>> getFindingsBySession(
     String sessionId,
   ) async {
     try {
       final response = await apiService.client.get(
-        '/api/Finding/by-session/$sessionId',
+        '/api/findings/by-session/$sessionId',
       );
       final dataList = response.data['data'] as List<dynamic>;
       return dataList.cast<Map<String, dynamic>>();
@@ -142,15 +142,14 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // POST /api/AuditSession
-  // Buat sesi audit baru, kembalikan sessionId (String guid)
+  // POST /api/audit-sessions
   Future<String> createAuditSession({
     required String scheduleId,
     required String checklistId,
   }) async {
     try {
       final response = await apiService.client.post(
-        '/api/AuditSession',
+        '/api/audit-sessions',
         data: {'scheduleId': scheduleId, 'checklistId': checklistId},
       );
       final data = response.data['data'] as Map<String, dynamic>;
@@ -175,8 +174,8 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // POST /api/AuditResponse/batch  →  simpan semua jawaban PASS/FAIL
-  // PATCH /api/AuditSession/{id}/complete  →  tandai sesi selesai
+  // POST /api/audit-responses/batch  →  simpan semua jawaban PASS/FAIL
+  // PATCH /api/audit-sessions/{id}/complete  →  tandai sesi selesai
   Future<void> submitChecklistResponses({
     required String sessionId,
     required List<ChecklistEntity> checklists,
@@ -195,7 +194,7 @@ class ChecklistRemoteDatasource {
               .toList();
 
       await apiService.client.post(
-        '/api/AuditResponse/batch',
+        '/api/audit-responses/batch',
         data: {'sessionId': sessionId, 'responses': responses},
       );
 
@@ -238,7 +237,7 @@ class ChecklistRemoteDatasource {
   // Fungsi baru khusus untuk menandai audit selesai (setelah PDF digenerate)
   Future<void> markSessionComplete(String sessionId) async {
     try {
-      await apiService.client.patch('/api/AuditSession/$sessionId/complete');
+      await apiService.client.patch('/api/audit-sessions/$sessionId/complete');
     } catch (e) {
       throw Exception(
         ApiService.englishErrorMessage(
@@ -249,14 +248,14 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // GET /api/AuditResponse/by-session/{sessionId}
+  // GET /api/audit-responses/by-session/{sessionId}
   // Ambil jawaban yang sudah tersimpan untuk sesi ini
   Future<Map<String, Map<String, dynamic>>> getExistingResponses(
     String sessionId,
   ) async {
     try {
       final response = await apiService.client.get(
-        '/api/AuditResponse/by-session/$sessionId',
+        '/api/audit-responses/by-session/$sessionId',
       );
       final data = response.data['data'] as List<dynamic>;
 
@@ -273,14 +272,14 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // GET /api/Finding/by-session/{sessionId}
+  // GET /api/findings/by-session/{sessionId}
   // Ambil findings yang terkait dengan sesi ini
   Future<Map<String, Map<String, dynamic>>> getExistingFindings(
     String sessionId,
   ) async {
     try {
       final response = await apiService.client.get(
-        '/api/Finding/by-session/$sessionId',
+        '/api/findings/by-session/$sessionId',
       );
       final data = response.data['data'] as List<dynamic>;
 
@@ -298,9 +297,8 @@ class ChecklistRemoteDatasource {
     }
   }
 
-  // POST /api/AuditResponse/progress
   // Auto-save setiap kali user tap Pass/Fail (bukan final submit)
-  // POST /api/AuditResponse/progress — satu item per call
+  // POST /api/audit-responses/progress — satu item per call
   Future<void> saveProgress({
     required String sessionId,
     required String checklistItemId,
@@ -308,7 +306,7 @@ class ChecklistRemoteDatasource {
   }) async {
     try {
       await apiService.client.post(
-        '/api/AuditResponse/progress',
+        '/api/audit-responses/progress',
         data: {
           'sessionId': sessionId,
           'checklistItemId': checklistItemId,
@@ -335,7 +333,7 @@ class ChecklistRemoteDatasource {
       });
 
       final response = await apiService.client.post(
-        '/api/Upload/audit-response/$responseId',
+        '/api/uploads/audit-response/$responseId',
         data: formData,
       );
 
@@ -351,7 +349,7 @@ class ChecklistRemoteDatasource {
   Future<String?> getAuditEvidence(String responseId) async {
     try {
       final response = await apiService.client.get(
-        '/api/Upload/audit-response/$responseId',
+        '/api/uploads/audit-response/$responseId',
       );
       final data = response.data as List<dynamic>;
       if (data.isNotEmpty) {
@@ -367,7 +365,7 @@ class ChecklistRemoteDatasource {
     try {
       // 1. Ambil daftar semua evidence yang tersangkut di responseId ini
       final response = await apiService.client.get(
-        '/api/Upload/audit-response/$responseId',
+        '/api/uploads/audit-response/$responseId',
       );
       final data = response.data as List<dynamic>;
 
@@ -375,7 +373,7 @@ class ChecklistRemoteDatasource {
       for (var item in data) {
         final fileId = item['id'];
         if (fileId != null) {
-          await apiService.client.delete('/api/Upload/$fileId');
+          await apiService.client.delete('/api/uploads/$fileId');
         }
       }
     } catch (e) {

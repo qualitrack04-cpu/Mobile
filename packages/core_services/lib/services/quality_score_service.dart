@@ -39,7 +39,7 @@ class QualityScoreService {
     try {
       final targetYear = year ?? DateTime.now().year;
       final res = await apiService.client.get(
-        '/api/QualityScore/trend',
+        '/api/quality-scores/trend',
         queryParameters: {'year': targetYear},
       );
       final list = res.data as List? ?? [];

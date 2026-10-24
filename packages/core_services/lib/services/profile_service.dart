@@ -110,10 +110,10 @@ class ProfileService {
 
   ProfileService({required this.apiService});
 
-  /// Mengambil KPI user saat ini dari GET /api/Profile/kpi
+  /// Mengambil KPI user saat ini dari GET /api/profile/kpi
   Future<UserKpi?> getKpi() async {
     try {
-      final res = await apiService.client.get('/api/Profile/kpi');
+      final res = await apiService.client.get('/api/profile/kpi');
       if (res.data != null && res.data is Map<String, dynamic>) {
         return UserKpi.fromJson(res.data as Map<String, dynamic>);
       }
@@ -126,11 +126,11 @@ class ProfileService {
     }
   }
 
-  /// Mengambil aktivitas terbaru user saat ini dari GET /api/Profile/recent-activity
+  /// Mengambil aktivitas terbaru user saat ini dari GET /api/profile/recent-activity
   Future<List<UserRecentActivity>> getRecentActivity({int limit = 10}) async {
     try {
       final res = await apiService.client.get(
-        '/api/Profile/recent-activity',
+        '/api/profile/recent-activity',
         queryParameters: {'limit': limit},
       );
       final list = res.data as List? ?? [];

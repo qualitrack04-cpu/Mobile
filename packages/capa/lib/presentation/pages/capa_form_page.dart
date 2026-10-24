@@ -70,7 +70,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
 
     // Load findings
     try {
-      final fRes = await api.client.get('/api/Finding/without-capa');
+      final fRes = await api.client.get('/api/findings/without-capa');
       final dynamic fData = fRes.data;
       final findingsRaw =
           fData is List
@@ -92,7 +92,7 @@ class _CapaFormPageState extends State<CapaFormPage> {
 
     // Load users (PIC Candidates)
     try {
-      final uRes = await api.client.get('/api/Auth/pic-candidates');
+      final uRes = await api.client.get('/api/users/pic-candidates');
       final usersRaw = uRes.data['data'] as List<dynamic>? ?? [];
 
       fetchedUsers =

@@ -123,7 +123,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
       }
 
       final listResponse = await GetIt.instance<ApiService>().client.get(
-        '/api/Checklist',
+        '/api/checklists',
         queryParameters: {
           'standard':
               widget.audit.isoTemplates.isNotEmpty

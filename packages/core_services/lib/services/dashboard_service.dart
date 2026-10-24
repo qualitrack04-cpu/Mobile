@@ -279,7 +279,7 @@ class DashboardService {
         _ => '3m',
       };
       final res = await apiService.client.get(
-        '/api/QualityScore/overall-trend',
+        '/api/quality-scores/overall-trend',
         queryParameters: {'timeframe': timeframe},
       );
 
@@ -301,7 +301,7 @@ class DashboardService {
   // Fungsi 4: Ambil Laporan Audit Selesai
   Future<List<CompletedAuditReport>> getCompletedReports() async {
     try {
-      final res = await apiService.client.get('/api/AuditReport');
+      final res = await apiService.client.get('/api/audit-reports');
       final list = res.data['data'] as List? ?? [];
       return list
           .map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>))
@@ -317,7 +317,7 @@ class DashboardService {
   // Fungsi 1: Ambil Audit Summary
   Future<AuditSummary> getAuditSummary() async {
     try {
-      final res = await apiService.client.get('/api/Dashboard/summary');
+      final res = await apiService.client.get('/api/dashboard/summary');
       return AuditSummary.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
       if (kDebugMode) {
@@ -336,7 +336,7 @@ class DashboardService {
   Future<ComplianceScoreResponse> getComplianceScores() async {
     try {
       final res = await apiService.client.get(
-        '/api/Dashboard/compliance-score',
+        '/api/dashboard/compliance-score',
       );
       return ComplianceScoreResponse.fromJson(res.data as Map<String, dynamic>);
     } catch (e) {
@@ -355,10 +355,10 @@ class DashboardService {
     try {
       final responses = await Future.wait([
         apiService.client.get(
-          '/api/Dashboard/audit-schedule',
+          '/api/dashboard/audit-schedule',
           queryParameters: {'month': month, 'year': year},
         ),
-        apiService.client.get('/api/AuditPlan'),
+        apiService.client.get('/api/audit-plans'),
       ]);
 
       final scheduleResponse = AuditScheduleResponse.fromJson(
@@ -449,9 +449,9 @@ class DashboardService {
   Future<DashboardSummary> getSummary() async {
     // Panggil 3 endpoint sekaligus (paralel, lebih cepat)
     final results = await Future.wait([
-      apiService.client.get('/api/AuditPlan'),
-      apiService.client.get('/api/Finding'),
-      apiService.client.get('/api/Capa'),
+      apiService.client.get('/api/audit-plans'),
+      apiService.client.get('/api/findings'),
+      apiService.client.get('/api/capas'),
     ]);
 
     // Total audit — response: { total: int, data: [...] }

@@ -24,7 +24,7 @@ class ReportPdfService {
   Future<List<int>> fetchBytes(String sessionId) async {
     try {
       final response = await apiService.client.get<List<int>>(
-        '/api/Pdf/audit-report/$sessionId',
+        '/api/pdf/audit-report/$sessionId',
         options: Options(responseType: ResponseType.bytes),
       );
       final bytes = response.data;
