@@ -50,7 +50,7 @@ class AuditReportList extends StatelessWidget {
             child: Text(
               'Latest Report',
               style: GoogleFonts.inter(
-                fontSize: 20,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF172033),
               ),

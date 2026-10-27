@@ -60,7 +60,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final email = _emailController.text.trim();
     if (email.isEmpty) return false;
     return RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+      r'^[\w.+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
     ).hasMatch(email);
   }
 

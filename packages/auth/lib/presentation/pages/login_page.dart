@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w\.-]+@gmail\.com$', caseSensitive: false);
+    final emailRegex = RegExp(r'^[\w.+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$', caseSensitive: false);
     return emailRegex.hasMatch(email.trim());
   }
 
@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _emailError = 'Email is required');
       hasError = true;
     } else if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _emailError = 'Email must use @gmail.com');
+      setState(() => _emailError = 'Enter a valid email address');
       hasError = true;
     }
 
@@ -184,12 +184,12 @@ class _LoginPageState extends State<LoginPage> {
                                 val.trim().isEmpty
                                     ? 'Email is required'
                                     : !_isValidEmail(val.trim())
-                                    ? 'Email must use @gmail.com'
+                                    ? 'Enter a valid email address'
                                     : null;
                           });
                         },
                         decoration: customInputDecoration(
-                          hint: 'name@gmail.com',
+                          hint: 'name@company.com',
                           icon: Icons.mail_outline,
                         ),
                       ),

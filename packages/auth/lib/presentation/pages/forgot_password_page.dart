@@ -38,7 +38,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(
-      r'^[\w\.-]+@gmail\.com$',
+      r'^[\w.+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
       caseSensitive: false,
     );
     return emailRegex.hasMatch(email.trim());
@@ -50,7 +50,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
     if (!_isValidEmail(_emailController.text.trim())) {
-      setState(() => _errorMessage = 'Email must use @gmail.com');
+      setState(() => _errorMessage = 'Enter a valid email address');
       return;
     }
 
