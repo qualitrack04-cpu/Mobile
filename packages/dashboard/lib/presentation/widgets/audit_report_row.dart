@@ -22,9 +22,11 @@ class AuditReportRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final department = DepartmentStyle.normalize(report.department);
     final color = DepartmentStyle.colorOf(department);
-    final title = report.planTitle.isEmpty ? 'Audit report' : report.planTitle;
-    final subtitle =
-        department.isEmpty ? 'PDF' : '$department Department  ·  PDF';
+    final title =
+        department.isEmpty
+            ? 'Compliance report'
+            : 'Compliance report\n$department Department';
+    final subtitle = report.fileInfoLabel;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
