@@ -2,6 +2,7 @@ import 'package:core_services/services/api_service.dart';
 import 'package:audit/data/models/checklist_model.dart';
 import 'package:audit/domain/entities/checklist_entity.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class ChecklistRemoteDatasource {
   final ApiService apiService;
@@ -10,42 +11,49 @@ class ChecklistRemoteDatasource {
 
   // GET /api/checklist?standard=ISO9001&department=Warehouse
   // Lalu ambil items dari GET /api/checklist/{id}/items
-  Future<List<ChecklistEntity>> getChecklistFor({
+    Future<List<ChecklistEntity>> getChecklistFor({
     required String isoTemplate,
     required String department,
   }) async {
     try {
-      // Step 1: Cari checklist yang cocok
       final listResponse = await apiService.client.get(
         '/api/checklists',
         queryParameters: {'standard': isoTemplate, 'department': department},
       );
 
-      final checklists = listResponse.data as List<dynamic>;
+      final listBody = listResponse.data;
+      final checklists = listBody is List
+          ? listBody
+          : (listBody is Map ? (listBody['data'] as List? ?? []) : <dynamic>[]);
       if (checklists.isEmpty) return [];
 
-      // Step 2: Ambil items dari checklist pertama yang cocok
-      final checklistId = checklists[0]['id'] as String;
+      final checklistId = checklists[0]['id'].toString();
+
+      // PLURAL: /api/checklists/{id}/items
       final itemsResponse = await apiService.client.get(
-        '/api/checklist/$checklistId/items',
+        '/api/checklists/$checklistId/items',
       );
 
-      final items = itemsResponse.data['items'] as List<dynamic>;
+      final itemsBody = itemsResponse.data;
+      final items = itemsBody is List
+          ? itemsBody
+          : (itemsBody is Map
+              ? ((itemsBody['items'] ?? itemsBody['data']) as List? ?? [])
+              : <dynamic>[]);
 
-      // ✅ Map ChecklistItem backend ke ChecklistEntity mobile
       return items.map((item) {
         final json = item as Map<String, dynamic>;
         return ChecklistModel(
-          id: json['id'] as String,
-          title: json['question'] as String? ?? '', // Question → title
-          description:
-              json['description'] as String? ?? '', // Description → description
+          id: json['id'].toString(),
+          title: json['question'] as String? ?? '',
+          description: json['description'] as String? ?? '',
           category: department,
           isPassed: null,
           hasFinding: false,
         );
       }).toList();
     } catch (e) {
+      if (kDebugMode) debugPrint('Error getChecklistFor: $e');
       throw Exception(
         ApiService.englishErrorMessage(
           e,
@@ -54,7 +62,6 @@ class ChecklistRemoteDatasource {
       );
     }
   }
-
   // POST /api/AuditSession/{sessionId}/summary
   Future<void> submitAuditSummary({
     required String sessionId,

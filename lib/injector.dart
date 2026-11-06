@@ -40,6 +40,7 @@ import 'package:audit/domain/usecases/get_auditors.dart';
 import 'package:audit/domain/usecases/submit_checklist.dart';
 import 'package:audit/presentation/bloc/audit_bloc.dart';
 import 'package:core_services/services/report_pdf_service.dart';
+import 'package:core_services/services/department_service.dart';
 
 //SPC
 import 'package:spc/data/datasources/spc_remote_datasource.dart';
@@ -58,6 +59,7 @@ import 'package:spc/domain/usecases/get_spc_status_summary.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  sl.registerLazySingleton(() => DepartmentService(apiService: sl()));
   // ===== FINDING =====
   sl.registerLazySingleton(() => FindingRemoteDatasource(apiService: sl()));
 

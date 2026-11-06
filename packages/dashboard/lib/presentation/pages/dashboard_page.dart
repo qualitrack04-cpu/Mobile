@@ -43,7 +43,10 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _viewModel = DashboardViewModel(service: GetIt.I<DashboardService>());
+    _viewModel = DashboardViewModel(
+      service: GetIt.I<DashboardService>(),
+      departmentService: GetIt.I<DepartmentService>(),
+    );
     _viewModel.loadUser();
     _viewModel.load();
   }

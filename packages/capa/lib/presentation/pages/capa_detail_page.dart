@@ -67,11 +67,15 @@ class CapaDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDetail(BuildContext context, Capa capa) {
+   Widget _buildDetail(BuildContext context, Capa capa) {
+    final picName =
+        capa.picName.isNotEmpty ? capa.picName : capa.picId.toUpperCase();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Container(
         width: double.infinity,
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -79,10 +83,11 @@ class CapaDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Judul
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                capa.rootCause,
+                _breakable(capa.rootCause),
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -92,26 +97,33 @@ class CapaDetailPage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
+            // PIC
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.person_outline,
-                    size: 18,
-                    color: Colors.black54,
+                  const Padding(
+                    padding: EdgeInsets.only(top: 1),
+                    child: Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    capa.picName.isNotEmpty ? capa.picName : capa.picId.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                      letterSpacing: 0.5,
+                  Expanded(
+                    child: Text(
+                      _breakable(picName),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ],
@@ -121,7 +133,9 @@ class CapaDetailPage extends StatelessWidget {
 
             _buildSection(
               label: 'FINDINGS',
-              value: capa.findingTitle.isNotEmpty ? capa.findingTitle : capa.rootCause,
+              value: capa.findingTitle.isNotEmpty
+                  ? capa.findingTitle
+                  : capa.rootCause,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
@@ -131,6 +145,7 @@ class CapaDetailPage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
+            // Due date
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -150,12 +165,15 @@ class CapaDetailPage extends StatelessWidget {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    '${capa.deadline.day} ${_getMonth(capa.deadline.month)} ${capa.deadline.year}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${capa.deadline.day} ${_getMonth(capa.deadline.month)} ${capa.deadline.year}',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
                     ),
                   ),
                 ],
@@ -200,7 +218,7 @@ class CapaDetailPage extends StatelessWidget {
       ),
     );
   }
-
+  
   Widget _buildSection({
     required String label,
     required String value,
@@ -232,6 +250,7 @@ class CapaDetailPage extends StatelessWidget {
       ),
     );
   }
+  String _breakable(String text) => text.split('').join('\u200B');
 
   String _getMonth(int month) {
     const months = [

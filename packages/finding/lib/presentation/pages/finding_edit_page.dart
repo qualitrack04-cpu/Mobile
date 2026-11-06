@@ -12,6 +12,8 @@ import 'package:finding/data/datasources/finding_remote_datasource.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core_services/services/api_service.dart';
+import 'package:core/core.dart';
+import 'package:core_services/core_services.dart';
 
 class FindingEditPage extends StatefulWidget {
   final Finding finding;
@@ -47,12 +49,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   // ✅ Tracking fileId yang sedang dihapus (supaya bisa tampilkan loading per item)
   final Set<String> _deletingIds = {};
 
-  final Map<String, String> _departmentMap = {
-    'Production': 'Produksi',
-    'Warehouse': 'Warehouse',
-    'Quality Control': 'QC',
-    'Packaging': 'Packaging',
-  };
+  List<String> _departments = [];
 
   late final FocusNode _titleFocus;
   late final FocusNode _descriptionFocus;
@@ -76,19 +73,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _categories = [widget.finding.category];
     _loadCategories();
 
-    String deptValue = widget.finding.department;
-    String? matchedKey =
-        _departmentMap.entries
-            .where((e) => e.value == deptValue)
-            .map((e) => e.key)
-            .firstOrNull;
-
-    if (matchedKey != null) {
-      _selectedDepartment = matchedKey;
-    } else {
-      _departmentMap[deptValue] = deptValue;
-      _selectedDepartment = deptValue;
-    }
+    _selectedDepartment = widget.finding.department;
+    _loadDepartments();
 
     // ✅ Load evidence ke state (bukan Future) supaya bisa di-update saat hapus
     _loadExistingEvidences();
@@ -125,6 +111,18 @@ class _FindingEditPageState extends State<FindingEditPage> {
     } catch (_) {
       // Tetap pakai kategori bawaan finding.
     }
+  }
+
+  Future<void> _loadDepartments() async {
+    final list = await GetIt.instance<DepartmentService>().getDepartments();
+    if (!mounted) return;
+    setState(() {
+      _departments = list;
+      final current = _selectedDepartment;
+      if (current != null && !_departments.contains(current)) {
+        _departments = [current, ..._departments];
+      }
+    });
   }
 
   // ✅ Hapus evidence dari server lalu update UI
@@ -409,17 +407,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
   /// Department — read-only jika lockFields=true (dari audit checklist)
   Widget _buildDepartmentField() {
     if (widget.lockFields) {
-      final displayDept =
-          _departmentMap.entries
-              .firstWhere(
-                (e) => e.key == _selectedDepartment,
-                orElse:
-                    () => MapEntry(
-                      _selectedDepartment ?? '',
-                      _selectedDepartment ?? '',
-                    ),
-              )
-              .key;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
@@ -439,7 +426,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
               children: [
                 Expanded(
                   child: Text(
-                    displayDept,
+                    DepartmentStyle.normalize(_selectedDepartment ?? ''),
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   ),
                 ),
@@ -595,7 +582,10 @@ class _FindingEditPageState extends State<FindingEditPage> {
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDepartment,
+              value:
+                  _departments.contains(_selectedDepartment)
+                      ? _selectedDepartment
+                      : null,
               isExpanded: true,
               hint: const Text(
                 'Select Department',
@@ -606,11 +596,11 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 color: Colors.black54,
               ),
               items:
-                  _departmentMap.keys.map((deptKey) {
-                    return DropdownMenuItem(
-                      value: deptKey,
+                  _departments.map((raw) {
+                    return DropdownMenuItem<String>(
+                      value: raw,
                       child: Text(
-                        deptKey,
+                        DepartmentStyle.normalize(raw),
                         style: const TextStyle(
                           fontSize: 15,
                           color: Colors.black87,
@@ -1005,8 +995,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
         _descriptionController.text != widget.finding.description ||
         _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
-        _selectedDepartment != widget.finding.department &&
-            _departmentMap[_selectedDepartment] != widget.finding.department ||
+        _selectedDepartment != widget.finding.department ||
         _existingEvidences.length != _originalEvidenceCount ||
         _evidenceImages.isNotEmpty;
   }
@@ -1091,7 +1080,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
         categoryId: _selectedCategory.id,
         description: _descriptionController.text,
         clauseRef: _titleController.text,
-        department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
+        department: _selectedDepartment!,
         reporter: _reporterController.text,
         reporterId: widget.finding.reporterId,
         evidencePaths: _evidenceImages.map((e) => e.path).toList(),

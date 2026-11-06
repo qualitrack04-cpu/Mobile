@@ -78,12 +78,14 @@ class ComplianceScoreResponse {
       previousScore: (json['previousScore'] as num?)?.toDouble(),
       month: json['month'] as int?,
       year: json['year'] as int?,
-      data: list
-          .map((e) => ComplianceScore.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      data:
+          list
+              .map((e) => ComplianceScore.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
   }
 }
+
 // Level 3: detail satu departemen dalam jadwal
 class ScheduleDepartment {
   final String department;
@@ -323,7 +325,17 @@ class DashboardService {
   Future<List<CompletedAuditReport>> getCompletedReports() async {
     try {
       final res = await apiService.client.get('/api/audit-reports');
-      final list = res.data['data'] as List? ?? [];
+      if (kDebugMode) {
+        debugPrint('audit-reports status: ${res.statusCode}');
+        debugPrint('audit-reports body: ${res.data}');
+      }
+
+      final body = res.data;
+      final list =
+          body is List
+              ? body
+              : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
+
       return list
           .map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>))
           .toList();

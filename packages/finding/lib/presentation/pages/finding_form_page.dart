@@ -11,6 +11,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get_it/get_it.dart';
 import 'package:finding/data/datasources/finding_remote_datasource.dart';
+import 'package:core/core.dart';
+import 'package:core_services/core_services.dart';
 
 class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
@@ -53,29 +55,13 @@ class _FindingFormPageState extends State<FindingFormPage> {
       _selectedDepartment != null &&
       _selectedCategory != null;
 
-  final Map<String, String> _departmentMap = {
-    'Production': 'Produksi',
-    'Warehouse': 'Warehouse',
-    'Quality Control': 'QC',
-    'Packaging': 'Packaging',
-  };
+  List<String> _departments = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.initialDepartment != null) {
-      String? matchedKey =
-          _departmentMap.entries
-              .where((e) => e.value == widget.initialDepartment)
-              .map((e) => e.key)
-              .firstOrNull;
-
-      if (matchedKey != null) {
-        _selectedDepartment = matchedKey;
-      } else {
-        _departmentMap[widget.initialDepartment!] = widget.initialDepartment!;
-        _selectedDepartment = widget.initialDepartment;
-      }
+      _selectedDepartment = widget.initialDepartment;
     }
     // Selalu isi reporter dengan auditorName jika tersedia
     if (widget.auditorName != null && widget.auditorName!.isNotEmpty) {
@@ -90,6 +76,19 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _reporterFocus.addListener(() => setState(() {}));
     _descriptionFocus.addListener(() => setState(() {}));
     _loadCategories();
+    _loadDepartments();
+  }
+
+  Future<void> _loadDepartments() async {
+    final list = await GetIt.instance<DepartmentService>().getDepartments();
+    if (!mounted) return;
+    setState(() {
+      _departments = list;
+      final current = _selectedDepartment;
+      if (current != null && !_departments.contains(current)) {
+        _departments = [current, ..._departments];
+      }
+    });
   }
 
   @override
@@ -563,7 +562,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
               children: [
                 Expanded(
                   child: Text(
-                    _selectedDepartment ?? widget.initialDepartment!,
+                    DepartmentStyle.normalize(
+                      _selectedDepartment ?? widget.initialDepartment!,
+                    ),
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   ),
                 ),
@@ -592,7 +593,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDepartment,
+              value:
+                  _departments.contains(_selectedDepartment)
+                      ? _selectedDepartment
+                      : null,
               isExpanded: true,
               hint: const Text(
                 'Select Department',
@@ -603,11 +607,11 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 color: Colors.black54,
               ),
               items:
-                  _departmentMap.keys.map((deptKey) {
-                    return DropdownMenuItem(
-                      value: deptKey,
+                  _departments.map((raw) {
+                    return DropdownMenuItem<String>(
+                      value: raw, // nilai mentah, dikirim ke backend
                       child: Text(
-                        deptKey,
+                        DepartmentStyle.normalize(raw), // yang tampil
                         style: const TextStyle(
                           fontSize: 15,
                           color: Colors.black87,
@@ -876,7 +880,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
         categoryId: _selectedCategory!.id,
         description: _descriptionController.text,
         clauseRef: _titleController.text,
-        department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
+        department: _selectedDepartment!,
         reporter: _reporterController.text,
         reporterId: reporterId,
         sessionId: widget.sessionId, // ✅ TAMBAH

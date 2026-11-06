@@ -1,19 +1,33 @@
 import 'app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// Nama dan warna departemen untuk tampilan dashboard.
+/// Nama dan warna departemen untuk tampilan.
 abstract final class DepartmentStyle {
-  /// Departemen standar, berurutan seperti pada legend.
-  static const List<String> standard = [
+  static const List<String> _defaults = [
     'Production',
     'Packaging',
     'Warehouse',
     'Quality Control',
   ];
 
-  /// Menyeragamkan nama dari backend ke nama tampilan.
-  ///
-  /// Nama yang tidak dikenal dikembalikan apa adanya.
+  static List<String> _registered = _defaults;
+
+  /// Departemen yang dikenal aplikasi, urutannya mengikuti backend.
+  static List<String> get standard => _registered;
+
+  /// Dipanggil setelah daftar dari backend dimuat. Nama dinormalisasi
+  /// supaya "Produksi" dan "Production" tidak dihitung dua kali.
+  static void register(Iterable<String> rawNames) {
+    final names = <String>[];
+    for (final raw in rawNames) {
+      final name = normalize(raw);
+      if (name.isNotEmpty && !names.contains(name)) names.add(name);
+    }
+    if (names.isNotEmpty) _registered = List.unmodifiable(names);
+  }
+
+  /// Menyeragamkan alias lama dari backend. Nama yang tidak dikenal
+  /// (department baru dari admin) dikembalikan apa adanya.
   static String normalize(String raw) {
     switch (raw.trim().toLowerCase()) {
       case 'produksi':
@@ -28,13 +42,24 @@ abstract final class DepartmentStyle {
       case 'warehouse':
         return 'Warehouse';
       default:
-        return raw;
+        return raw.trim();
     }
   }
 
-  /// Warna departemen. Nama boleh mentah, akan dinormalisasi dulu.
+  static const List<Color> _extraPalette = [
+    Color(0xFFF59E0B),
+    Color(0xFF0D9488),
+    Color(0xFF7C3AED),
+    Color(0xFFDB2777),
+    Color(0xFF65A30D),
+    Color(0xFF0EA5E9),
+    Color(0xFFEA580C),
+    Color(0xFF64748B),
+  ];
+
   static Color colorOf(String raw) {
-    switch (normalize(raw)) {
+    final name = normalize(raw);
+    switch (name) {
       case 'Production':
         return AppColors.deptProduction;
       case 'Packaging':
@@ -44,7 +69,9 @@ abstract final class DepartmentStyle {
       case 'Quality Control':
         return AppColors.deptQualityControl;
       default:
-        return AppColors.primary;
+        if (name.isEmpty) return AppColors.primary;
+        final sum = name.codeUnits.fold<int>(0, (a, b) => a + b);
+        return _extraPalette[sum % _extraPalette.length];
     }
   }
 }

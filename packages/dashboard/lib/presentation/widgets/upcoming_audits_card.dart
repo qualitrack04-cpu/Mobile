@@ -296,46 +296,36 @@ class _DepartmentLegend extends StatelessWidget {
   const _DepartmentLegend();
 
   @override
+  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fontSize = constraints.maxWidth < 300 ? 6.5 : 8.0;
-
-        return Row(
-          children: DepartmentStyle.standard.map((name) {
-            return Expanded(
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: DepartmentStyle.colorOf(name),
-                      shape: BoxShape.circle,
-                    ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      children:
+          DepartmentStyle.standard.map((name) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: DepartmentStyle.colorOf(name),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 3),
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        name.toUpperCase(),
-                        maxLines: 1,
-                        style: GoogleFonts.inter(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  name.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }).toList(),
-        );
-      },
     );
   }
 }

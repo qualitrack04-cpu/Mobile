@@ -136,7 +136,7 @@ class _CapaListViewState extends State<_CapaListView> {
           );
 
           final filteredCapas = _filterCapas(capas);
-          
+
           // Urutkan agar yang 'Closed' berada di paling bawah
           filteredCapas.sort((a, b) {
             if (a.status == 'Closed' && b.status != 'Closed') return 1;
@@ -177,10 +177,11 @@ class _CapaListViewState extends State<_CapaListView> {
                         ...displayList.asMap().entries.map((entry) {
                           final index = entry.key;
                           final capa = entry.value;
-                                                    return _CapaCard(
-                            key: capa.id.isEmpty
-                                ? ValueKey('skeleton_$index')
-                                : ValueKey(capa.id),
+                          return _CapaCard(
+                            key:
+                                capa.id.isEmpty
+                                    ? ValueKey('skeleton_$index')
+                                    : ValueKey(capa.id),
                             capa: capa,
                             role: _role,
                             userId: _userId,
@@ -270,6 +271,7 @@ class _CapaCard extends StatefulWidget {
 
 class _CapaCardState extends State<_CapaCard> {
   late String _currentStatus;
+
   /// Auditee hanya boleh sampai Pending Verification.
   /// Status Closed khusus Quality Manager / Auditor Internal.
   List<String> get _availableStatuses =>
@@ -289,16 +291,19 @@ class _CapaCardState extends State<_CapaCard> {
     super.initState();
     _currentStatus = widget.capa.status;
   }
+
   /// PIC dicocokkan lewat ID atau nama user yang sedang login.
   bool get _isMyCapa {
     final picId = widget.capa.picId;
-    final sameId = picId.isNotEmpty &&
+    final sameId =
+        picId.isNotEmpty &&
         widget.userId.isNotEmpty &&
         widget.userId.toLowerCase() != 'null' &&
         picId.toLowerCase() == widget.userId.toLowerCase();
     String normalizeName(String value) =>
         value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
-    final sameName = widget.capa.picName.isNotEmpty &&
+    final sameName =
+        widget.capa.picName.isNotEmpty &&
         widget.userName.isNotEmpty &&
         normalizeName(widget.capa.picName) == normalizeName(widget.userName);
 
@@ -307,8 +312,7 @@ class _CapaCardState extends State<_CapaCard> {
 
   /// Status boleh diubah oleh Quality Manager, atau oleh PIC-nya sendiri.
   bool get _canChangeStatus =>
-      widget.role.canManageCapa ||
-      (widget.role.canFillOwnCapa && _isMyCapa);
+      widget.role.canManageCapa || (widget.role.canFillOwnCapa && _isMyCapa);
 
   @override
   Widget build(BuildContext context) {
@@ -370,19 +374,26 @@ class _CapaCardState extends State<_CapaCard> {
             const Divider(height: 24, thickness: 1, color: Color(0xFFEEEEEE)),
 
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  widget.capa.picName.isNotEmpty
-                      ? widget.capa.picName
-                      : widget.capa.picId.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0D2B55),
+                // Nama PIC dibatasi: ambil sisa ruang, dipotong "..." jika kepanjangan
+                Expanded(
+                  child: Text(
+                    widget.capa.picName.isNotEmpty
+                        ? widget.capa.picName
+                        : widget.capa.picId.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D2B55),
+                    ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                // Tombol Details selalu terlihat dan bisa ditekan
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -392,6 +403,7 @@ class _CapaCardState extends State<_CapaCard> {
                     );
                   },
                   child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'Details',
@@ -509,44 +521,67 @@ class _CapaCardState extends State<_CapaCard> {
                   ),
                 );
               }).toList(),
-          onChanged: widget.capa.status == 'Closed' ? null : (newStatus) async {
-            if (newStatus == null) return;
+          onChanged:
+              widget.capa.status == 'Closed'
+                  ? null
+                  : (newStatus) async {
+                    if (newStatus == null) return;
 
-            // Pengaman: hanya yang berhak boleh menutup CAPA
-            if (newStatus == 'Closed' && !widget.role.canManageCapa) return;
-            
-            if (newStatus == 'Closed') {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Confirmation'),
-                  content: const Text('Are you sure you want to close this CAPA? This action cannot be undone.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Yes, Close', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              );
+                    // Pengaman: hanya yang berhak boleh menutup CAPA
+                    if (newStatus == 'Closed' && !widget.role.canManageCapa)
+                      return;
 
-              if (confirm != true) return;
+                    if (newStatus == 'Closed') {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: const Text('Confirmation'),
+                              content: const Text(
+                                'Are you sure you want to close this CAPA? This action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'Yes, Close',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      );
 
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('capa_closed_at_${widget.capa.id}', DateTime.now().toUtc().toIso8601String());
-            }
+                      if (confirm != true) return;
 
-            setState(() => _currentStatus = newStatus);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString(
+                        'capa_closed_at_${widget.capa.id}',
+                        DateTime.now().toUtc().toIso8601String(),
+                      );
+                    }
 
-            if (!context.mounted) return;
-            context.read<CapaBloc>().add(
-              UpdateCapaStatusEvent(id: widget.capa.id, status: newStatus),
-            );
-          },
+                    setState(() => _currentStatus = newStatus);
+
+                    if (!context.mounted) return;
+                    context.read<CapaBloc>().add(
+                      UpdateCapaStatusEvent(
+                        id: widget.capa.id,
+                        status: newStatus,
+                      ),
+                    );
+                  },
         ),
       ),
     );

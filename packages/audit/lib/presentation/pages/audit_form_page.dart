@@ -8,6 +8,9 @@ import '../../domain/entities/auditor_entity.dart';
 import '../bloc/audit_bloc.dart';
 import '../bloc/audit_event.dart';
 import '../bloc/audit_state.dart';
+import 'package:core/core.dart';
+import 'package:core_services/core_services.dart';
+import 'package:get_it/get_it.dart';
 
 class AuditFormPage extends StatefulWidget {
   final AuditEntity? audit;
@@ -29,12 +32,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
   List<AuditorEntity> _auditors = [];
   bool _isLoadingAuditors = true;
 
-  final Map<String, String> _departments = {
-    'Production': 'Produksi',
-    'Warehouse': 'Warehouse',
-    'Quality Control': 'QC',
-    'Packaging': 'Packaging',
-  };
+  List<String> _departments = [];
 
   static const String _iso9001 = 'ISO9001';
   static const String _iso14001 = 'ISO14001';
@@ -59,9 +57,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   bool get _isEdit => widget.audit != null;
 
-  String get _departmentValue =>
-      _departments[_selectedDepartment] ?? _selectedDepartment ?? '';
-
+  String get _departmentValue => _selectedDepartment ?? '';
   // Apakah ada perubahan dari nilai awal (hanya relevan di mode edit)
   bool get _hasChanges {
     if (!_isEdit) return true; // mode create: selalu "ada perubahan"
@@ -99,19 +95,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedAuditorName = audit.auditorName;
       _selectedAuditorId = audit.auditorId;
       _initialAuditorId = audit.auditorId;
-      _selectedDepartment =
-          _departments.entries
-              .where(
-                (e) => e.value == audit.department || e.key == audit.department,
-              )
-              .map((e) => e.key)
-              .firstOrNull;
-
-      // Fallback: Jika tidak cocok dengan map, tambahkan ke map agar dropdown tidak null
-      if (_selectedDepartment == null && audit.department.isNotEmpty) {
-        _departments[audit.department] = audit.department;
-        _selectedDepartment = audit.department;
-      }
+      _selectedDepartment = audit.department.isEmpty ? null : audit.department;
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
       _selectedIso = audit.isoTemplates.firstWhere(
@@ -134,6 +118,21 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _descriptionController.addListener(() => _formNotifier.value++);
     _titleFocus.addListener(() => setState(() {}));
     _descriptionFocus.addListener(() => setState(() {}));
+    _loadDepartments();
+  }
+
+  Future<void> _loadDepartments() async {
+    final list = await GetIt.I<DepartmentService>().getDepartments();
+    if (!mounted) return;
+    setState(() {
+      _departments = list;
+      // Department audit lama bisa saja sudah dihapus admin,
+      // jadi tetap tampilkan supaya dropdown tidak error.
+      final current = _selectedDepartment;
+      if (current != null && !_departments.contains(current)) {
+        _departments = [current, ..._departments];
+      }
+    });
   }
 
   @override
@@ -203,10 +202,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
             // Auditor lama yang sudah nonaktif tidak ada di daftar backend.
             // Kosongkan pilihan supaya user memilih ulang, bukan mengirim id basi.
-            final activeIds = _auditors
-                .where((a) => a.role.startsWith('Auditor'))
-                .map((a) => a.id)
-                .toSet();
+            final activeIds =
+                _auditors
+                    .where((a) => a.role.startsWith('Auditor'))
+                    .map((a) => a.id)
+                    .toSet();
             if (_selectedAuditorId != null &&
                 !activeIds.contains(_selectedAuditorId)) {
               _selectedAuditorId = null;
@@ -683,7 +683,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: _selectedDepartment,
+              value:
+                  _departments.contains(_selectedDepartment)
+                      ? _selectedDepartment
+                      : null,
               isExpanded: true,
               hint: Text(
                 'Select department',
@@ -693,11 +696,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 ),
               ),
               items:
-                  _departments.keys.map((label) {
+                  _departments.map((raw) {
                     return DropdownMenuItem<String>(
-                      value: label,
+                      value: raw, // nilai mentah, ini yang dikirim ke backend
                       child: Text(
-                        label,
+                        DepartmentStyle.normalize(raw), // yang tampil di layar
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           color: Colors.black87,
@@ -706,8 +709,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     );
                   }).toList(),
               onChanged:
-                  (label) => setState(() {
-                    _selectedDepartment = label;
+                  (value) => setState(() {
+                    _selectedDepartment = value;
                     _formNotifier.value++;
                   }),
             ),

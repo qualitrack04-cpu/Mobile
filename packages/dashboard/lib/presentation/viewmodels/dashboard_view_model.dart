@@ -1,10 +1,17 @@
 import 'package:core_services/core_services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:core/core.dart';
 
 /// State dan pemuatan data halaman dashboard.
 class DashboardViewModel extends ChangeNotifier {
-  DashboardViewModel({required DashboardService service}) : _service = service;
+  DashboardViewModel({
+    required DashboardService service,
+    required DepartmentService departmentService,
+  }) : _service = service,
+       _departmentService = departmentService;
+
+  final DepartmentService _departmentService;
 
   /// Pilihan periode pada kartu Quality Trend.
   static const List<String> trendPeriods = ['3 Month', '6 Month', '1 Year'];
@@ -83,14 +90,17 @@ class DashboardViewModel extends ChangeNotifier {
 
     try {
       final now = DateTime.now();
-      final results = await (
-        _service.getAuditSummary(),
-        _service.getComplianceScores(),
-        _service.getAuditSchedule(month: now.month, year: now.year),
-        _service.getCompletedReports(),
-        _service.getQualityTrend(months: _trendMonths),
-      ).wait;
+      final results =
+          await (
+            _service.getAuditSummary(),
+            _service.getComplianceScores(),
+            _service.getAuditSchedule(month: now.month, year: now.year),
+            _service.getCompletedReports(),
+            _service.getQualityTrend(months: _trendMonths),
+            _departmentService.getDepartments(forceRefresh: true),
+          ).wait;
 
+      DepartmentStyle.register(results.$6);
       _summary = results.$1;
       _score = results.$2;
       _schedule = results.$3;

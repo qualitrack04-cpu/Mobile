@@ -20,13 +20,7 @@ class AuditReportPage extends StatefulWidget {
 }
 
 class _AuditReportPageState extends State<AuditReportPage> {
-  static const List<String> _filters = [
-    'All',
-    'Production',
-    'Packaging',
-    'Warehouse',
-    'Quality Control',
-  ];
+  List<String> get _filters => ['All', ...DepartmentStyle.standard];
 
   final DashboardService _service = GetIt.I<DashboardService>();
   final ReportPdfService _pdfService = GetIt.I<ReportPdfService>();
@@ -249,13 +243,14 @@ class _AuditReportPageState extends State<AuditReportPage> {
             size: 22,
             color: AppColors.textSecondary,
           ),
-          suffixIcon: _query.isEmpty
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  color: AppColors.textMuted,
-                  onPressed: _searchController.clear,
-                ),
+          suffixIcon:
+              _query.isEmpty
+                  ? null
+                  : IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    color: AppColors.textMuted,
+                    onPressed: _searchController.clear,
+                  ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
@@ -319,17 +314,18 @@ class _AuditReportPageState extends State<AuditReportPage> {
         child: ListView.builder(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           itemCount: 6,
-          itemBuilder: (context, index) => _RowCard(
-            child: AuditReportRow(
-              report: CompletedAuditReport(
-                sessionId: '',
-                department: 'Production',
-                planTitle: 'Loading audit plan title',
+          itemBuilder:
+              (context, index) => _RowCard(
+                child: AuditReportRow(
+                  report: CompletedAuditReport(
+                    sessionId: '',
+                    department: 'Production',
+                    planTitle: 'Loading audit plan title',
+                  ),
+                  onView: () {},
+                  onDownload: () {},
+                ),
               ),
-              onView: () {},
-              onDownload: () {},
-            ),
-          ),
         ),
       );
     }
@@ -339,9 +335,10 @@ class _AuditReportPageState extends State<AuditReportPage> {
     if (reports.isEmpty) {
       return _buildMessage(
         icon: Icons.description_outlined,
-        message: _reports.isEmpty
-            ? 'No completed audit reports yet.'
-            : 'No report matches your search.',
+        message:
+            _reports.isEmpty
+                ? 'No completed audit reports yet.'
+                : 'No report matches your search.',
       );
     }
 
