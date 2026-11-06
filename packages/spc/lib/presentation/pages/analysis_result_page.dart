@@ -191,6 +191,33 @@ class AnalysisResultPage extends StatelessWidget {
   }
 
   Widget _buildChart() {
+    // Backend mengirim UCL = LCL = 0 (plus pesan) kalau data tidak cukup.
+    if (result.ucl == 0 && result.lcl == 0) {
+      return SpcCard(
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              size: 26,
+              color: AppColors.textDisabled,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              result.message ??
+                  'There is not enough data to calculate control limits.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                height: 1.45,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (result.data.isEmpty) {
       return SpcCard(
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),

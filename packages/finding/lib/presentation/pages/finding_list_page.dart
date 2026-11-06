@@ -14,6 +14,7 @@ import 'package:core_services/core_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:finding/presentation/widgets/finding_category_style.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -106,7 +107,7 @@ class _FindingListViewState extends State<_FindingListView> {
             skeletonCount,
             (_) => Finding(
               id: '',
-              category: FindingCategory.ofi, // OFI untuk warna netral
+              category: const FindingCategory(id: '', name: 'OFI'),
               description: 'Loading Description Here',
               clauseRef: '-',
               foundAt: DateTime.now(),
@@ -134,9 +135,11 @@ class _FindingListViewState extends State<_FindingListView> {
 
           final displayList = isLoading ? skeletonList : filteredFindings;
 
-          // Urutkan berdasarkan kategori saja (tetap urut major, minor, ofi)
           final sortedFindings = List.of(displayList)..sort((a, b) {
-            return a.category.index.compareTo(b.category.index);
+            final r = FindingCategoryStyle.rank(
+              a.category.name,
+            ).compareTo(FindingCategoryStyle.rank(b.category.name));
+            return r != 0 ? r : a.category.name.compareTo(b.category.name);
           });
 
           return Stack(
@@ -400,33 +403,23 @@ class _FindingCard extends StatelessWidget {
     );
   }
 
-  Color _getCardBackgroundColor() {
-    if (finding.id.isEmpty) return Colors.grey.shade100; // Skeleton
-    switch (finding.category) {
-      case FindingCategory.majorNC:
-        return const Color(0xFFFFF0F0);
-      case FindingCategory.minorNC:
-        return Colors.white;
-      case FindingCategory.observation:
-        return Colors.white;
-      case FindingCategory.ofi:
-        return Colors.white;
-    }
-  }
+  Color _getCardBackgroundColor() =>
+      finding.id.isEmpty
+          ? Colors.grey.shade100
+          : FindingCategoryStyle.cardBackground(finding.category.name);
 
-  Color _getBorderColor() {
-    if (finding.id.isEmpty) return Colors.grey.shade300; // Skeleton
-    switch (finding.category) {
-      case FindingCategory.majorNC:
-        return Colors.red;
-      case FindingCategory.minorNC:
-        return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
-      case FindingCategory.ofi:
-        return const Color(0xFF3B6FD4);
-    }
-  }
+  Color _getBorderColor() =>
+      finding.id.isEmpty
+          ? Colors.grey.shade300
+          : FindingCategoryStyle.color(finding.category.name);
+
+  String _getBadgeLabel() => finding.category.label;
+
+  Color _getBadgeColor() =>
+      FindingCategoryStyle.badgeBackground(finding.category.name);
+
+  Color _getBadgeTextColor() =>
+      FindingCategoryStyle.color(finding.category.name);
 
   Widget _buildCategoryBadge() {
     if (finding.id.isEmpty) {
@@ -457,44 +450,5 @@ class _FindingCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getBadgeLabel() {
-    switch (finding.category) {
-      case FindingCategory.majorNC:
-        return 'Major NC';
-      case FindingCategory.minorNC:
-        return 'Minor NC';
-      case FindingCategory.observation:
-        return 'Observation';
-      case FindingCategory.ofi:
-        return 'OFI';
-    }
-  }
-
-  Color _getBadgeColor() {
-    switch (finding.category) {
-      case FindingCategory.majorNC:
-        return const Color(0xFFFFDDDD);
-      case FindingCategory.minorNC:
-        return const Color(0xFFFFEDD5);
-      case FindingCategory.observation:
-        return const Color(0xFFD5F5E3);
-      case FindingCategory.ofi:
-        return const Color(0xFFDDE8FF);
-    }
-  }
-
-  Color _getBadgeTextColor() {
-    switch (finding.category) {
-      case FindingCategory.majorNC:
-        return Colors.red;
-      case FindingCategory.minorNC:
-        return Colors.orange;
-      case FindingCategory.observation:
-        return Colors.green;
-      case FindingCategory.ofi:
-        return const Color(0xFF3B6FD4);
-    }
   }
 }

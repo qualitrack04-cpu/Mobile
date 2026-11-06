@@ -17,6 +17,7 @@ class LoadAudits extends AuditEvent {
 // Buat audit baru
 class CreateAuditEvent extends AuditEvent {
   final String title;
+  final String auditorId;
   final String auditorName;
   final List<String> isoTemplates;
   final String department;
@@ -26,6 +27,7 @@ class CreateAuditEvent extends AuditEvent {
 
   const CreateAuditEvent({
     required this.title,
+    required this.auditorId,
     required this.auditorName,
     required this.isoTemplates,
     required this.department,
@@ -37,6 +39,7 @@ class CreateAuditEvent extends AuditEvent {
   @override
   List<Object?> get props => [
         title,
+        auditorId,
         auditorName,
         isoTemplates,
         department,
@@ -50,6 +53,7 @@ class CreateAuditEvent extends AuditEvent {
 class UpdateAuditEvent extends AuditEvent {
   final AuditEntity audit;
   final String title;
+  final String auditorId;
   final String auditorName;
   final List<String> isoTemplates;
   final String department;
@@ -60,6 +64,7 @@ class UpdateAuditEvent extends AuditEvent {
   const UpdateAuditEvent({
     required this.audit,
     required this.title,
+    required this.auditorId,
     required this.auditorName,
     required this.isoTemplates,
     required this.department,
@@ -72,6 +77,7 @@ class UpdateAuditEvent extends AuditEvent {
   List<Object?> get props => [
         audit,
         title,
+        auditorId,
         auditorName,
         isoTemplates,
         department,
@@ -138,4 +144,4 @@ class SubmitChecklistEvent extends AuditEvent {
 
   @override
   List<Object?> get props => [sessionId, checklists, audit];
-}
+}

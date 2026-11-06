@@ -1,36 +1,21 @@
-enum FindingCategory {
-  majorNC,
-  minorNC,
-  observation,
-  ofi;
+import 'package:equatable/equatable.dart';
 
-  static FindingCategory fromString(String value) {
-    switch (value) {
-      case 'MajorNC':
-        return FindingCategory.majorNC;
-      case 'MinorNC':
-        return FindingCategory.minorNC;
-      case 'Observation':
-        return FindingCategory.observation;
-      case 'OFI':
-        return FindingCategory.ofi;
-      default:
-        throw Exception('Unknown finding category: $value');
-    }
-  }
+/// Kategori finding dari backend. Admin bisa menambah kategori,
+/// jadi ini data (id + nama), bukan enum.
+class FindingCategory extends Equatable {
+  final String id;
+  final String name;
 
-  String toBackendString() {
-    switch (this) {
-      case FindingCategory.majorNC:
-        return 'MajorNC';
-      case FindingCategory.minorNC:
-        return 'MinorNC';
-      case FindingCategory.observation:
-        return 'Observation';
-      case FindingCategory.ofi:
-        return 'OFI';
-    }
-  }
+  const FindingCategory({required this.id, required this.name});
+
+  /// "MajorNC" -> "Major NC", "OFI" tetap "OFI"
+  String get label => name.replaceAllMapped(
+        RegExp(r'(?<=[a-z])(?=[A-Z])'),
+        (_) => ' ',
+      );
+
+  @override
+  List<Object?> get props => [id];
 }
 
 enum FindingStatus {

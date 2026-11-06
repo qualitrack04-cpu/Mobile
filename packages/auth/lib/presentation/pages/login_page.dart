@@ -32,6 +32,21 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  void _clearErrors() {
+    if (!mounted) return;
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+      _generalError = null;
+    });
+  }
+
+  Future<void> _openPage(Widget page) async {
+    _clearErrors();
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    _clearErrors();
+  }
+
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w.+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$', caseSensitive: false);
     return emailRegex.hasMatch(email.trim());
@@ -180,6 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                         autofillHints: const [AutofillHints.email],
                         onChanged: (val) {
                           setState(() {
+                            _generalError = null;
                             _emailError =
                                 val.trim().isEmpty
                                     ? 'Email is required'
@@ -210,13 +226,9 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             TextButton(
                               onPressed:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => ForgotPasswordPage(
-                                            initialEmail: _emailController.text,
-                                          ),
+                                  () => _openPage(
+                                    ForgotPasswordPage(
+                                      initialEmail: _emailController.text,
                                     ),
                                   ),
                               style: TextButton.styleFrom(
@@ -242,6 +254,7 @@ class _LoginPageState extends State<LoginPage> {
                         obscureText: _isObscured,
                         onChanged: (val) {
                           setState(() {
+                            _generalError = null;
                             _passwordError =
                                 val.isEmpty ? 'Password is required' : null;
                           });
@@ -290,13 +303,7 @@ class _LoginPageState extends State<LoginPage> {
                               style: TextStyle(color: Colors.grey),
                             ),
                             TextButton(
-                              onPressed:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const RegisterPage(),
-                                    ),
-                                  ),
+                              onPressed: () => _openPage(const RegisterPage()),
                               child: const Text(
                                 'SIGN UP',
                                 style: TextStyle(

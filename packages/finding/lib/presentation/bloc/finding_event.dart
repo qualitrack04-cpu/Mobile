@@ -10,40 +10,39 @@ abstract class FindingEvent extends Equatable {
 
 class LoadFindings extends FindingEvent {
   final FindingStatus? status;
-  final FindingCategory? category;
 
-  const LoadFindings({this.status, this.category});
+  const LoadFindings({this.status});
 
   @override
-  List<Object?> get props => [status, category];
+  List<Object?> get props => [status];
 }
 
 class CreateFindingEvent extends FindingEvent {
-  final FindingCategory category;
+  final String categoryId;
   final String description;
   final String clauseRef;
   final String department;
   final String reporter;
   final String? reporterId;
-  final String? sessionId;         // ✅ TAMBAH
-  final String? checklistItemId;   // ✅ TAMBAH
+  final String? sessionId;
+  final String? checklistItemId;
   final List<String> evidencePaths;
 
   const CreateFindingEvent({
-    required this.category,
+    required this.categoryId,
     required this.description,
     required this.clauseRef,
     required this.department,
     required this.reporter,
     this.reporterId,
-    this.sessionId,                // ✅ TAMBAH
-    this.checklistItemId,          // ✅ TAMBAH
+    this.sessionId,
+    this.checklistItemId,
     this.evidencePaths = const [],
   });
 
   @override
   List<Object?> get props => [
-        category,
+        categoryId,
         description,
         clauseRef,
         department,
@@ -57,7 +56,7 @@ class CreateFindingEvent extends FindingEvent {
 
 class UpdateFindingEvent extends FindingEvent {
   final String id;
-  final FindingCategory category;
+  final String categoryId;
   final String description;
   final String clauseRef;
   final String department;
@@ -67,7 +66,7 @@ class UpdateFindingEvent extends FindingEvent {
 
   const UpdateFindingEvent({
     required this.id,
-    required this.category,
+    required this.categoryId,
     required this.description,
     required this.clauseRef,
     required this.department,
@@ -77,7 +76,16 @@ class UpdateFindingEvent extends FindingEvent {
   });
 
   @override
-  List<Object?> get props => [id, category, description, clauseRef, department, reporter, reporterId, evidencePaths];
+  List<Object?> get props => [
+        id,
+        categoryId,
+        description,
+        clauseRef,
+        department,
+        reporter,
+        reporterId,
+        evidencePaths,
+      ];
 }
 
 class LoadFindingDetail extends FindingEvent {

@@ -97,6 +97,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _titleController.text = audit.title;
       _descriptionController.text = audit.description;
       _selectedAuditorName = audit.auditorName;
+      _selectedAuditorId = audit.auditorId;
+      _initialAuditorId = audit.auditorId;
       _selectedDepartment =
           _departments.entries
               .where(
@@ -155,6 +157,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
         UpdateAuditEvent(
           audit: widget.audit!,
           title: _titleController.text.trim(),
+          auditorId: _selectedAuditorId!,
           auditorName: _selectedAuditorName ?? '',
           isoTemplates: [_selectedIso].whereType<String>().toList(),
           department: _departmentValue,
@@ -167,6 +170,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
       bloc.add(
         CreateAuditEvent(
           title: _titleController.text.trim(),
+          auditorId: _selectedAuditorId!,
           auditorName: _selectedAuditorName ?? '',
           isoTemplates: [_selectedIso].whereType<String>().toList(),
           department: _departmentValue,
@@ -196,6 +200,18 @@ class _AuditFormPageState extends State<AuditFormPage> {
           setState(() {
             _isLoadingAuditors = false;
             _auditors = state.auditors;
+
+            // Auditor lama yang sudah nonaktif tidak ada di daftar backend.
+            // Kosongkan pilihan supaya user memilih ulang, bukan mengirim id basi.
+            final activeIds = _auditors
+                .where((a) => a.role.startsWith('Auditor'))
+                .map((a) => a.id)
+                .toSet();
+            if (_selectedAuditorId != null &&
+                !activeIds.contains(_selectedAuditorId)) {
+              _selectedAuditorId = null;
+              _selectedAuditorName = null;
+            }
 
             if (_isEdit && _selectedAuditorId == null) {
               final match =
@@ -457,7 +473,10 @@ class _AuditFormPageState extends State<AuditFormPage> {
           else
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: _selectedAuditorId,
+                value:
+                    _auditors.any((a) => a.id == _selectedAuditorId)
+                        ? _selectedAuditorId
+                        : null,
                 isExpanded: true,
                 hint: Text(
                   'choose an auditor',

@@ -141,6 +141,21 @@ class AuthService {
     }
   }
 
+  /// Backend membatasi percobaan OTP (HTTP 429). `remainingTime` dalam detik.
+  String? _rateLimitMessage(Object e) {
+    if (e is! DioException || e.response?.statusCode != 429) return null;
+    final data = e.response?.data;
+    int? seconds;
+    if (data is Map) seconds = (data['remainingTime'] as num?)?.toInt();
+    seconds ??= int.tryParse(e.response?.headers.value('retry-after') ?? '');
+    if (seconds != null && seconds > 0) {
+      final minutes = (seconds / 60).ceil();
+      return 'Too many OTP attempts. Please try again in $minutes '
+          '${minutes == 1 ? 'minute' : 'minutes'}.';
+    }
+    return 'Too many OTP attempts. Please try again later.';
+  }
+
   // POST /api/auth/verify-email
   Future<void> verifyEmail({required String email, required String otp}) async {
     try {
@@ -149,7 +164,9 @@ class AuthService {
         data: {'email': email, 'otp': otp},
       );
     } catch (e) {
-      throw Exception('The OTP is incorrect or has expired.');
+      throw Exception(
+        _rateLimitMessage(e) ?? 'The OTP is incorrect or has expired.',
+      );
     }
   }
 
@@ -190,7 +207,9 @@ class AuthService {
       final data = response.data as Map<String, dynamic>;
       return data['resetToken'] as String;
     } catch (e) {
-      throw Exception('The OTP is incorrect or has expired.');
+      throw Exception(
+        _rateLimitMessage(e) ?? 'The OTP is incorrect or has expired.',
+      );
     }
   }
 
@@ -286,6 +305,8 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', newEmail);
     } catch (e) {
+      final limited = _rateLimitMessage(e);
+      if (limited != null) throw Exception(limited);
       if (e is DioException && e.response?.data != null) {
         final data = e.response!.data;
         throw Exception(
@@ -299,14 +320,62 @@ class AuthService {
     }
   }
 
-  Future<void> changePassword({required String newPassword}) async {
+  // Pesan backend (Indonesia) -> pesan UI (Inggris).
+  static const Map<String, String> _changePasswordMessages = {
+    'Password baru wajib diisi': 'Please enter a new password.',
+    'Konfirmasi password wajib diisi': 'Please confirm your new password.',
+    'Password baru dan konfirmasi password tidak sama':
+        'The new password and confirmation do not match.',
+    'Password minimal 8 karakter':
+        'The password must be at least 8 characters long.',
+    'Password harus mengandung huruf besar dan huruf kecil':
+        'The password must contain both uppercase and lowercase letters.',
+    'Password harus mengandung angka': 'The password must contain a number.',
+    'Password harus mengandung karakter spesial':
+        'The password must contain a special character.',
+    'Password baru tidak boleh sama dengan password lama':
+        'The new password must be different from your current password.',
+    'User tidak ditemukan': 'User not found.',
+  };
+
+  /// Baca `errors` dulu (key PascalCase, mis. ConfirmPassword), lalu `message`.
+  String _changePasswordError(Object e) {
+    const fallback = 'Failed to change the password on the server.';
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map) {
+        String? raw;
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final first = errors.values.first;
+          raw = first is List && first.isNotEmpty
+              ? first.first?.toString()
+              : first?.toString();
+        }
+        raw ??= data['message']?.toString();
+        if (raw != null && raw.trim().isNotEmpty) {
+          return _changePasswordMessages[raw.trim()] ?? fallback;
+        }
+      }
+      return ApiService.englishErrorMessage(e, fallback: fallback);
+    }
+    return fallback;
+  }
+
+  Future<void> changePassword({
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
     try {
       await apiService.client.post(
         '/api/auth/change-password',
-        data: {'newPassword': newPassword},
+        data: {
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        },
       );
     } catch (e) {
-      throw Exception('Failed to change the password on the server.');
+      throw Exception(_changePasswordError(e));
     }
   }
 

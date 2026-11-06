@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../data/datasources/spc_remote_datasource.dart';
 import '../../domain/entities/spc_analysis.dart';
 import '../bloc/new_analysis_bloc.dart';
 import '../bloc/new_analysis_event.dart';
@@ -49,12 +50,26 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
   final _descriptionController = TextEditingController();
 
   String? _selectedUnit;
+  List<String> _units = kSpcUnits;
 
   @override
   void initState() {
     super.initState();
     _bloc = GetIt.I<NewAnalysisBloc>();
     _targetController.addListener(_syncSpecLimits);
+    _loadUnits();
+  }
+
+  /// Unit diambil dari backend. Kalau gagal, daftar bawaan tetap dipakai.
+  Future<void> _loadUnits() async {
+    final units = await GetIt.I<SpcRemoteDatasource>().getUnits();
+    if (!mounted || units.isEmpty) return;
+    setState(() {
+      _units = units;
+      if (_selectedUnit != null && !units.contains(_selectedUnit)) {
+        _selectedUnit = null;
+      }
+    });
   }
 
   @override
@@ -264,6 +279,7 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
                       lslController: _lslController,
                       uslController: _uslController,
                       selectedUnit: _selectedUnit,
+                      units: _units,
                       enabled: !isSubmitting,
                       onUnitChanged: (value) {
                         setState(() => _selectedUnit = value);

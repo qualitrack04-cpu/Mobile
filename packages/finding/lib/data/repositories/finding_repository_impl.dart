@@ -9,13 +9,10 @@ class FindingRepositoryImpl implements FindingRepository {
 
   FindingRepositoryImpl({required this.datasource});
 
-  @override
-  Future<List<Finding>> getFindings({
-    FindingStatus? status,
-    FindingCategory? category,
-  }) async {
+    @override
+  Future<List<Finding>> getFindings({FindingStatus? status}) async {
     try {
-      return await datasource.getFindings(status: status, category: category);
+      return await datasource.getFindings(status: status);
     } catch (e) {
       throw Exception(
         ApiService.englishErrorMessage(
@@ -41,26 +38,27 @@ class FindingRepositoryImpl implements FindingRepository {
   }
 
   @override
+    @override
   Future<Finding> createFinding({
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
-    String? sessionId, // ✅ TAMBAH
-    String? checklistItemId, // ✅ TAMBAH
+    String? sessionId,
+    String? checklistItemId,
   }) async {
     try {
       return await datasource.createFinding(
-        category: category,
+        categoryId: categoryId,
         description: description,
         clauseRef: clauseRef,
         department: department,
         reporter: reporter,
         reporterId: reporterId,
-        sessionId: sessionId, // ✅ TAMBAH
-        checklistItemId: checklistItemId, // ✅ TAMBAH
+        sessionId: sessionId,
+        checklistItemId: checklistItemId,
       );
     } catch (e) {
       throw Exception(
@@ -72,10 +70,10 @@ class FindingRepositoryImpl implements FindingRepository {
     }
   }
 
-  @override
+    @override
   Future<Finding> updateFinding({
     required String id,
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
@@ -85,7 +83,7 @@ class FindingRepositoryImpl implements FindingRepository {
     try {
       return await datasource.updateFinding(
         id: id,
-        category: category,
+        categoryId: categoryId,
         description: description,
         clauseRef: clauseRef,
         department: department,

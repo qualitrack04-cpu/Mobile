@@ -7,6 +7,7 @@ abstract class AuditRepository {
   /// Membuat audit baru, mengembalikan entity yang sudah dibuat.
   Future<AuditEntity> createAudit({
     required String title,
+    required String auditorId,
     required String auditorName,
     required List<String> isoTemplates,
     required String department,
@@ -19,6 +20,7 @@ abstract class AuditRepository {
   Future<AuditEntity> updateAudit({
     required AuditEntity audit,
     required String title,
+    required String auditorId,
     required String auditorName,
     required List<String> isoTemplates,
     required String department,

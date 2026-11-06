@@ -67,6 +67,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
     try {
       final audit = await createAudit(
         title: event.title,
+        auditorId: event.auditorId,
         auditorName: event.auditorName,
         isoTemplates: event.isoTemplates,
         department: event.department,
@@ -93,6 +94,7 @@ class AuditBloc extends Bloc<AuditEvent, AuditState> {
       final audit = await updateAudit(
         audit: event.audit,
         title: event.title,
+        auditorId: event.auditorId,
         auditorName: event.auditorName,
         isoTemplates: event.isoTemplates,
         department: event.department,

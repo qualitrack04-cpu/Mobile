@@ -10,6 +10,7 @@ class AuditEntity {
   final bool isPriority;
   final bool isFinished;
   final DateTime? completedAt;
+  final String? auditorId;
 
   const AuditEntity({
     required this.id,
@@ -23,6 +24,7 @@ class AuditEntity {
     required this.isPriority,
     required this.isFinished,
     this.completedAt,
+    this.auditorId,
   });
 
   AuditEntity copyWith({
@@ -37,6 +39,7 @@ class AuditEntity {
     bool? isPriority,
     bool? isFinished,
     DateTime? completedAt,
+    String? auditorId,
   }) {
     return AuditEntity(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class AuditEntity {
       isPriority: isPriority ?? this.isPriority,
       isFinished: isFinished ?? this.isFinished,
       completedAt: completedAt ?? this.completedAt,
+      auditorId: auditorId ?? this.auditorId,
     );
   }
 }

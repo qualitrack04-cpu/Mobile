@@ -12,6 +12,7 @@ import 'package:core_services/core_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:finding/presentation/widgets/finding_category_style.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -552,19 +553,10 @@ class _CapaCardState extends State<_CapaCard> {
   }
 
   Color _getBorderColor() {
-    if (widget.capa.id.isEmpty) return Colors.grey.shade300; // Skeleton
-    switch (widget.capa.findingCategory) {
-      case 'MajorNC':
-        return Colors.red;
-      case 'MinorNC':
-        return Colors.orange;
-      case 'Observation':
-        return Colors.green;
-      case 'OFI':
-        return const Color(0xFF3B6FD4);
-      default:
-        return Colors.grey.shade300;
+    if (widget.capa.id.isEmpty || widget.capa.findingCategory.isEmpty) {
+      return Colors.grey.shade300;
     }
+    return FindingCategoryStyle.color(widget.capa.findingCategory);
   }
 
   String _getMonth(int month) {

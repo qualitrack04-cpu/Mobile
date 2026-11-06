@@ -17,7 +17,6 @@ class FindingModel extends Finding {
     super.capaClosedAt,
   });
 
-  // JSON dari backend → FindingModel
   factory FindingModel.fromJson(Map<String, dynamic> json) {
     bool isCapaClosed = false;
     DateTime? capaClosedAt;
@@ -26,9 +25,12 @@ class FindingModel extends Finding {
       final capaJson = json['capa'];
       final statusRaw = capaJson['status'];
       isCapaClosed = statusRaw == 3 || statusRaw == 'Closed';
-      
-      if (capaJson['closeOut'] != null && capaJson['closeOut']['verifiedAt'] != null) {
-        capaClosedAt = DateTime.tryParse(capaJson['closeOut']['verifiedAt'].toString());
+
+      if (capaJson['closeOut'] != null &&
+          capaJson['closeOut']['verifiedAt'] != null) {
+        capaClosedAt = DateTime.tryParse(
+          capaJson['closeOut']['verifiedAt'].toString(),
+        );
       } else if (capaJson['closedAt'] != null) {
         capaClosedAt = DateTime.tryParse(capaJson['closedAt'].toString());
       }
@@ -45,7 +47,10 @@ class FindingModel extends Finding {
     return FindingModel(
       id: json['id'] as String,
       sessionId: json['sessionId'] as String?,
-      category: FindingCategory.fromString(json['category'] as String),
+      category: FindingCategory(
+        id: (json['categoryId'] ?? '').toString(),
+        name: (json['categoryName'] ?? json['category'] ?? '').toString(),
+      ),
       description: json['description'] as String,
       clauseRef: json['clauseRef'] as String,
       foundAt: DateTime.parse(json['foundAt'] as String),
@@ -58,10 +63,9 @@ class FindingModel extends Finding {
     );
   }
 
-  // FindingModel → JSON untuk kirim ke backend
   Map<String, dynamic> toJson() {
     return {
-      'category': category.toBackendString(),
+      'categoryId': category.id,
       'description': description,
       'clauseRef': clauseRef,
       'department': department,

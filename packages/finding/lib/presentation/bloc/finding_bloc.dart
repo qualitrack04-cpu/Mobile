@@ -27,10 +27,7 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
   ) async {
     emit(FindingLoading());
     try {
-      final findings = await repository.getFindings(
-        status: event.status,
-        category: event.category,
-      );
+            final findings = await repository.getFindings(status: event.status);
       emit(FindingLoaded(findings: findings));
     } catch (e) {
       emit(FindingError(message: e.toString()));
@@ -57,7 +54,7 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
     emit(FindingLoading());
     try {
       final finding = await createFinding(
-        category: event.category,
+        categoryId: event.categoryId,
         description: event.description,
         clauseRef: event.clauseRef,
         department: event.department,
@@ -93,7 +90,7 @@ class FindingBloc extends Bloc<FindingEvent, FindingState> {
     try {
       final finding = await updateFinding(
         id: event.id,
-        category: event.category,
+        categoryId: event.categoryId,
         description: event.description,
         clauseRef: event.clauseRef,
         department: event.department,

@@ -9,6 +9,7 @@ class UpdateAudit {
   Future<AuditEntity> call({
     required AuditEntity audit,
     required String title,
+    required String auditorId,
     required String auditorName,
     required List<String> isoTemplates,
     required String department,
@@ -19,6 +20,7 @@ class UpdateAudit {
     return await repository.updateAudit(
       audit: audit,
       title: title,
+      auditorId: auditorId,
       auditorName: auditorName,
       isoTemplates: isoTemplates,
       department: department,

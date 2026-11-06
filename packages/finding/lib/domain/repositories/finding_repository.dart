@@ -2,27 +2,24 @@ import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
 
 abstract class FindingRepository {
-  Future<List<Finding>> getFindings({
-    FindingStatus? status,
-    FindingCategory? category,
-  });
+  Future<List<Finding>> getFindings({FindingStatus? status});
 
   Future<Finding> getFindingDetail(String id);
 
   Future<Finding> createFinding({
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
-    String? sessionId,          // ✅ TAMBAH
-    String? checklistItemId,    // ✅ TAMBAH
+    String? sessionId,
+    String? checklistItemId,
   });
 
   Future<Finding> updateFinding({
     required String id,
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,

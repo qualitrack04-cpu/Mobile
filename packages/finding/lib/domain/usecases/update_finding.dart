@@ -1,5 +1,4 @@
 import 'package:finding/domain/entities/finding.dart';
-import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:finding/domain/repositories/finding_repository.dart';
 
 class UpdateFinding {
@@ -9,7 +8,7 @@ class UpdateFinding {
 
   Future<Finding> call({
     required String id,
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
@@ -18,7 +17,7 @@ class UpdateFinding {
   }) async {
     return await repository.updateFinding(
       id: id,
-      category: category,
+      categoryId: categoryId,
       description: description,
       clauseRef: clauseRef,
       department: department,

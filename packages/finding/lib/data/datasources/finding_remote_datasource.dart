@@ -9,8 +9,24 @@ class FindingRemoteDatasource {
 
   FindingRemoteDatasource({required this.apiService});
 
-  /// Ambil daftar evidence (id + url) untuk finding tertentu
-  /// GET /api/Upload/finding/{findingId}
+  /// Daftar kategori dari backend. Tanpa cache permanen,
+  /// karena admin bisa menambah kategori kapan saja.
+  Future<List<FindingCategory>> getCategories() async {
+    final res = await apiService.client.get('/api/finding-categories/dropdown');
+    final raw = res.data is List
+        ? res.data as List
+        : (res.data['data'] as List? ?? []);
+    return raw
+        .map(
+          (e) => FindingCategory(
+            id: e['id'].toString(),
+            name: e['name'].toString(),
+          ),
+        )
+        .toList();
+  }
+
+  /// GET /api/uploads/finding/{findingId}
   Future<List<Map<String, String>>> getEvidences(String findingId) async {
     try {
       final response = await apiService.client.get(
@@ -19,7 +35,6 @@ class FindingRemoteDatasource {
       final List<dynamic> data = response.data as List<dynamic>;
       return data.map((e) {
         final urlStr = e['url'] as String;
-        // Ambil id evidence — sesuaikan key-nya jika berbeda dari backend
         final id = e['id'] as String? ?? e['fileId'] as String? ?? '';
         var fullUrl =
             urlStr.startsWith('http') ? urlStr : '${ApiService.baseUrl}$urlStr';
@@ -35,7 +50,6 @@ class FindingRemoteDatasource {
     }
   }
 
-  /// Upload foto evidence untuk finding
   Future<void> uploadEvidence(String findingId, String filePath) async {
     final fileName = filePath.split('/').last;
     final formData = FormData.fromMap({
@@ -47,18 +61,13 @@ class FindingRemoteDatasource {
     );
   }
 
-  /// Hapus satu evidence — DELETE /api/Upload/{fileId}
   Future<void> deleteEvidence(String fileId) async {
     await apiService.client.delete('/api/uploads/$fileId');
   }
 
-  Future<List<FindingModel>> getFindings({
-    FindingStatus? status,
-    FindingCategory? category,
-  }) async {
+  Future<List<FindingModel>> getFindings({FindingStatus? status}) async {
     final params = <String, dynamic>{};
     if (status != null) params['status'] = status.toBackendString();
-    if (category != null) params['category'] = category.toBackendString();
 
     final response = await apiService.client.get(
       '/api/findings',
@@ -75,7 +84,6 @@ class FindingRemoteDatasource {
       final capaResponse = await apiService.client.get('/api/capas');
       final capaData = capaResponse.data as List<dynamic>;
 
-      // Map findingId -> Capa
       final capaMap = <String, Map<String, dynamic>>{};
       for (final capa in capaData) {
         final fId = capa['findingId'] as String?;
@@ -127,7 +135,6 @@ class FindingRemoteDatasource {
           }
         }
 
-        // Recreate the FindingModel with updated capa status
         findings[i] = FindingModel(
           id: finding.id,
           sessionId: finding.sessionId,
@@ -158,7 +165,7 @@ class FindingRemoteDatasource {
   }
 
   Future<FindingModel> createFinding({
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
@@ -174,7 +181,7 @@ class FindingRemoteDatasource {
         'department': department,
         'sessionId': sessionId,
         'checklistItemId': checklistItemId,
-        'category': category.toBackendString(),
+        'categoryId': categoryId,
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,
@@ -187,7 +194,7 @@ class FindingRemoteDatasource {
 
   Future<FindingModel> updateFinding({
     required String id,
-    required FindingCategory category,
+    required String categoryId,
     required String description,
     required String clauseRef,
     required String department,
@@ -199,7 +206,7 @@ class FindingRemoteDatasource {
       data: {
         'title': description,
         'department': department,
-        'category': category.toBackendString(),
+        'categoryId': categoryId,
         'description': description,
         'clauseRef': clauseRef,
         'reporterName': reporter,

@@ -174,6 +174,10 @@ class SpcAnalysisResult extends Equatable {
   final double? target;
   final String? unit;
 
+  /// Catatan dari backend, mis. "Insufficient data for control limits"
+  /// saat UCL/LCL tidak bisa dihitung.
+  final String? message;
+
   const SpcAnalysisResult({
     required this.id,
     required this.parameterName,
@@ -193,6 +197,7 @@ class SpcAnalysisResult extends Equatable {
     this.data = const [],
     this.target,
     this.unit,
+    this.message,
   });
 
   @override
@@ -215,6 +220,7 @@ class SpcAnalysisResult extends Equatable {
         data,
         target,
         unit,
+        message,
       ];
 }
 class SpcStatusSummary extends Equatable {

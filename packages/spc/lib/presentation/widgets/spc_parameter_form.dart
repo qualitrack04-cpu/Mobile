@@ -22,6 +22,7 @@ class SpcParameterForm extends StatelessWidget {
     required this.uslController,
     required this.selectedUnit,
     required this.onUnitChanged,
+    this.units = kSpcUnits,
     this.enabled = true,
   });
 
@@ -31,6 +32,9 @@ class SpcParameterForm extends StatelessWidget {
   final TextEditingController uslController;
   final String? selectedUnit;
   final ValueChanged<String?> onUnitChanged;
+
+  /// Pilihan unit. Default ke [kSpcUnits] bila API belum memberi daftar.
+  final List<String> units;
   final bool enabled;
 
   @override
@@ -104,7 +108,7 @@ class SpcParameterForm extends StatelessWidget {
                           Icons.keyboard_arrow_down,
                           color: AppColors.textSecondary,
                         ),
-                        items: kSpcUnits
+                        items: units
                             .map(
                               (unit) => DropdownMenuItem(
                                 value: unit,

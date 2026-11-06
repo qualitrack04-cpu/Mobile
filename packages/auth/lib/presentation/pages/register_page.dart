@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import '../widgets/input_label.dart';
 import '../widgets/custom_input_decoration.dart';
 import '../widgets/role_dropdown.dart';
+import '../widgets/password_checklist.dart';
 import 'otp_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -71,8 +72,10 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_passwordController.text.isEmpty) {
       setState(() => _passwordError = 'Password is required');
       hasError = true;
-    } else if (_passwordController.text.length < 8) {
-      setState(() => _passwordError = 'Password min 8 characters');
+    } else if (!PasswordPolicy.isStrong(_passwordController.text)) {
+      setState(
+        () => _passwordError = PasswordPolicy.validate(_passwordController.text),
+      );
       hasError = true;
     }
 
@@ -261,9 +264,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   _passwordError =
                                       val.isEmpty
                                           ? 'Password is required'
-                                          : val.length < 8
-                                          ? 'Password min 8 characters'
-                                          : null;
+                                          : PasswordPolicy.validate(val);
                                 });
                               },
                               decoration: customInputDecoration(
@@ -284,6 +285,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                             _buildErrorText(_passwordError),
+                            PasswordChecklist(
+                              password: _passwordController.text,
+                            ),
 
                             const InputLabel('Password Verification'),
                             TextField(

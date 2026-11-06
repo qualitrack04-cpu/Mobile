@@ -33,6 +33,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   late final TextEditingController _reporterController;
   String? _selectedDepartment;
   late FindingCategory _selectedCategory;
+  List<FindingCategory> _categories = [];
 
   // Evidence baru dari device (lokal)
   final List<XFile> _evidenceImages = [];
@@ -72,6 +73,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _reporterController = TextEditingController(text: widget.finding.reporter)
       ..addListener(() => setState(() {}));
     _selectedCategory = widget.finding.category;
+    _categories = [widget.finding.category];
+    _loadCategories();
 
     String deptValue = widget.finding.department;
     String? matchedKey =
@@ -104,6 +107,23 @@ class _FindingEditPageState extends State<FindingEditPage> {
       }
     } catch (_) {
       if (mounted) setState(() => _evidencesLoading = false);
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final list =
+          await GetIt.instance<FindingRemoteDatasource>().getCategories();
+      if (!mounted) return;
+      setState(() {
+        // Kategori lama bisa saja sudah dihapus/dinonaktifkan admin.
+        _categories =
+            list.any((c) => c.id == widget.finding.category.id)
+                ? list
+                : [widget.finding.category, ...list];
+      });
+    } catch (_) {
+      // Tetap pakai kategori bawaan finding.
     }
   }
 
@@ -511,12 +531,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
   }
 
   Widget _buildCategoryDropdown() {
-    final categories = {
-      FindingCategory.majorNC: 'Major NC',
-      FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
-      FindingCategory.ofi: 'OFI',
-    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
@@ -540,18 +554,20 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 color: Colors.black54,
               ),
               items:
-                  categories.entries.map((e) {
-                    return DropdownMenuItem(
-                      value: e.key,
-                      child: Text(
-                        e.value,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
+                  _categories
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(
+                            c.label,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      )
+                      .toList(),
               onChanged: (value) {
                 if (value != null) setState(() => _selectedCategory = value);
               },
@@ -1012,7 +1028,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
                 : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withValues(alpha: 0.6),
+          disabledBackgroundColor: const Color(
+            0xFF0D2B55,
+          ).withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1070,7 +1088,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     context.read<FindingBloc>().add(
       UpdateFindingEvent(
         id: widget.finding.id,
-        category: _selectedCategory,
+        categoryId: _selectedCategory.id,
         description: _descriptionController.text,
         clauseRef: _titleController.text,
         department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,

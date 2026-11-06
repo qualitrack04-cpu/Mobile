@@ -8,6 +8,7 @@ class CreateAudit {
 
   Future<AuditEntity> call({
     required String title,
+    required String auditorId,
     required String auditorName,
     required List<String> isoTemplates,
     required String department,
@@ -17,6 +18,7 @@ class CreateAudit {
   }) async {
     return await repository.createAudit(
       title: title,
+      auditorId: auditorId,
       auditorName: auditorName,
       isoTemplates: isoTemplates,
       department: department,

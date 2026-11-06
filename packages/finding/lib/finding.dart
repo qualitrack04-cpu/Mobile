@@ -19,3 +19,4 @@ export 'presentation/pages/finding_list_page.dart';
 export 'presentation/widgets/evidence_grid.dart';
 export 'presentation/widgets/finding_card.dart';
 export 'presentation/widgets/severity_badge.dart';
+export 'presentation/widgets/finding_category_style.dart';

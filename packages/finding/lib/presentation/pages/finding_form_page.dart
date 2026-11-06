@@ -9,21 +9,23 @@ import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:core/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_it/get_it.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 
 class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
   final String? auditorName;
   final String? clauseRef;
-  final String? sessionId;          // ✅ TAMBAH
-  final String? checklistItemId;    // ✅ TAMBAH
+  final String? sessionId; // ✅ TAMBAH
+  final String? checklistItemId; // ✅ TAMBAH
 
   const FindingFormPage({
     super.key,
     this.initialDepartment,
     this.auditorName,
     this.clauseRef,
-    this.sessionId,          // ✅ TAMBAH
-    this.checklistItemId,    // ✅ TAMBAH
+    this.sessionId, // ✅ TAMBAH
+    this.checklistItemId, // ✅ TAMBAH
   });
 
   @override
@@ -38,6 +40,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final _reporterFocus = FocusNode();
   final _descriptionFocus = FocusNode();
   String? _selectedDepartment;
+  List<FindingCategory> _categories = [];
+  bool _loadingCategories = true;
   FindingCategory? _selectedCategory;
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
@@ -53,18 +57,19 @@ class _FindingFormPageState extends State<FindingFormPage> {
     'Production': 'Produksi',
     'Warehouse': 'Warehouse',
     'Quality Control': 'QC',
-    'Packaging': 'Packaging'
+    'Packaging': 'Packaging',
   };
 
   @override
   void initState() {
     super.initState();
     if (widget.initialDepartment != null) {
-      String? matchedKey = _departmentMap.entries
-          .where((e) => e.value == widget.initialDepartment)
-          .map((e) => e.key)
-          .firstOrNull;
-          
+      String? matchedKey =
+          _departmentMap.entries
+              .where((e) => e.value == widget.initialDepartment)
+              .map((e) => e.key)
+              .firstOrNull;
+
       if (matchedKey != null) {
         _selectedDepartment = matchedKey;
       } else {
@@ -84,6 +89,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
     _titleFocus.addListener(() => setState(() {}));
     _reporterFocus.addListener(() => setState(() {}));
     _descriptionFocus.addListener(() => setState(() {}));
+    _loadCategories();
   }
 
   @override
@@ -107,6 +113,21 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
   }
 
+  Future<void> _loadCategories() async {
+    setState(() => _loadingCategories = true);
+    try {
+      final list =
+          await GetIt.instance<FindingRemoteDatasource>().getCategories();
+      if (!mounted) return;
+      setState(() {
+        _categories = list;
+        _loadingCategories = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingCategories = false);
+    }
+  }
+
   // ✅ Tampilkan pilihan: Kamera atau Galeri
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
@@ -114,56 +135,60 @@ class _FindingFormPageState extends State<FindingFormPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      builder:
+          (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Tambah Evidence',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D2B55),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFEEF2F7),
+                      child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
+                    ),
+                    title: const Text('Take a Photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.camera);
+                    },
+                  ),
+                  ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFEEF2F7),
+                      child: Icon(
+                        Icons.photo_library,
+                        color: Color(0xFF0D2B55),
+                      ),
+                    ),
+                    title: const Text('Choose from Gallery'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickMultipleImages();
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Tambah Evidence',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0D2B55),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF2F7),
-                  child: Icon(Icons.camera_alt, color: Color(0xFF0D2B55)),
-                ),
-                title: const Text('Take a Photo'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEEF2F7),
-                  child: Icon(Icons.photo_library, color: Color(0xFF0D2B55)),
-                ),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickMultipleImages();
-                },
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -302,7 +327,8 @@ class _FindingFormPageState extends State<FindingFormPage> {
                         label: 'DESCRIPTION',
                         controller: _descriptionController,
                         focusNode: _descriptionFocus,
-                        hint: 'Detail the non-conformance observed during the audit...',
+                        hint:
+                            'Detail the non-conformance observed during the audit...',
                         maxLines: 5,
                         minLength: 10,
                         maxLength: 1000,
@@ -372,19 +398,24 @@ class _FindingFormPageState extends State<FindingFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
             focusNode: focusNode,
             maxLines: maxLines,
             maxLength: maxLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter:
+                (_, {required currentLength, required isFocused, maxLength}) =>
+                    null,
             style: const TextStyle(fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
@@ -398,14 +429,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
             builder: (context, _) {
               final int len = controller.text.length;
               final bool belowMin = minLength != null && len < minLength;
-              
+
               String charHint = '';
               Color hintColor = Colors.transparent;
 
               if (belowMin) {
-                charHint = len == 0 
-                  ? 'Required (Min. $minLength characters)'
-                  : 'Min. $minLength characters ($len/$minLength)';
+                charHint =
+                    len == 0
+                        ? 'Required (Min. $minLength characters)'
+                        : 'Min. $minLength characters ($len/$minLength)';
                 hintColor = Colors.red;
               } else if (maxLength != null) {
                 if (!focusNode.hasFocus) return const SizedBox.shrink();
@@ -417,7 +449,10 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(charHint, style: TextStyle(fontSize: 11, color: hintColor)),
+                child: Text(
+                  charHint,
+                  style: TextStyle(fontSize: 11, color: hintColor),
+                ),
               );
             },
           ),
@@ -427,42 +462,80 @@ class _FindingFormPageState extends State<FindingFormPage> {
   }
 
   Widget _buildCategoryDropdown() {
-    final categories = {
-      FindingCategory.majorNC: 'Major NC',
-      FindingCategory.minorNC: 'Minor NC',
-      FindingCategory.observation: 'Observation',
-      FindingCategory.ofi: 'OFI',
-    };
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('CATEGORY',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<FindingCategory>(
-              value: _selectedCategory,
-              isExpanded: true,
-              hint: const Text('Select Category',
-                  style: TextStyle(color: Colors.black26, fontSize: 14)),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: categories.entries.map((e) {
-                return DropdownMenuItem(
-                  value: e.key,
-                  child: Text(e.value,
-                      style: const TextStyle(fontSize: 15, color: Colors.black87)),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) setState(() => _selectedCategory = value);
-              },
+          const Text(
+            'CATEGORY',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
             ),
           ),
+          if (_loadingCategories)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_categories.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Row(
+                children: [
+                  const Text(
+                    'No categories available.',
+                    style: TextStyle(color: Colors.black45, fontSize: 14),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _loadCategories,
+                    child: const Text(
+                      'Refresh',
+                      style: TextStyle(color: Colors.blue, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            DropdownButtonHideUnderline(
+              child: DropdownButton<FindingCategory>(
+                value: _selectedCategory,
+                isExpanded: true,
+                hint: const Text(
+                  'Select Category',
+                  style: TextStyle(color: Colors.black26, fontSize: 14),
+                ),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: Colors.black54,
+                ),
+                items:
+                    _categories
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c,
+                            child: Text(
+                              c.label,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (v) => setState(() => _selectedCategory = v),
+              ),
+            ),
         ],
       ),
     );
@@ -476,12 +549,15 @@ class _FindingFormPageState extends State<FindingFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('DEPARTMENT',
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black54,
-                    letterSpacing: 0.5)),
+            const Text(
+              'DEPARTMENT',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -505,26 +581,40 @@ class _FindingFormPageState extends State<FindingFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('DEPARTMENT',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5)),
+          const Text(
+            'DEPARTMENT',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+              letterSpacing: 0.5,
+            ),
+          ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedDepartment,
               isExpanded: true,
-              hint: const Text('Select Department',
-                  style: TextStyle(color: Colors.black26, fontSize: 14)),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              items: _departmentMap.keys.map((deptKey) {
-                return DropdownMenuItem(
-                  value: deptKey,
-                  child: Text(deptKey,
-                      style: const TextStyle(fontSize: 15, color: Colors.black87)),
-                );
-              }).toList(),
+              hint: const Text(
+                'Select Department',
+                style: TextStyle(color: Colors.black26, fontSize: 14),
+              ),
+              icon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.black54,
+              ),
+              items:
+                  _departmentMap.keys.map((deptKey) {
+                    return DropdownMenuItem(
+                      value: deptKey,
+                      child: Text(
+                        deptKey,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) => setState(() => _selectedDepartment = value),
             ),
           ),
@@ -545,14 +635,19 @@ class _FindingFormPageState extends State<FindingFormPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('EVIDENCE',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                      letterSpacing: 0.5)),
-              Text('${_evidenceImages.length} photo',
-                  style: const TextStyle(fontSize: 11, color: Colors.black38)),
+              const Text(
+                'EVIDENCE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                '${_evidenceImages.length} photo',
+                style: const TextStyle(fontSize: 11, color: Colors.black38),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -576,39 +671,41 @@ class _FindingFormPageState extends State<FindingFormPage> {
   void _showImageDialog(BuildContext context, String imagePath) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            InteractiveViewer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
+      builder:
+          (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InteractiveViewer(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(File(imagePath), fit: BoxFit.contain),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
                 ),
-              ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -667,11 +764,16 @@ class _FindingFormPageState extends State<FindingFormPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_photo_alternate_outlined,
-                color: Colors.grey[600], size: 28),
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: Colors.grey[600],
+              size: 28,
+            ),
             const SizedBox(height: 4),
-            Text('Add Image',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+            Text(
+              'Add Image',
+              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -683,33 +785,44 @@ class _FindingFormPageState extends State<FindingFormPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (state is FindingLoading || !_isFormValid)
-            ? null
-            : () => _onSubmit(context),
+        onPressed:
+            (state is FindingLoading || !_isFormValid)
+                ? null
+                : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          disabledBackgroundColor: const Color(
+            0xFF0D2B55,
+          ).withValues(alpha: 0.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        child: state is FindingLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              )
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Submit Findings',
+        child:
+            state is FindingLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Submit Findings',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                  SizedBox(width: 8),
-                  Icon(Icons.send, color: Colors.white, size: 18),
-                ],
-              ),
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.send, color: Colors.white, size: 18),
+                  ],
+                ),
       ),
     );
   }
@@ -717,27 +830,39 @@ class _FindingFormPageState extends State<FindingFormPage> {
   void _onSubmit(BuildContext context) async {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text('Title cannot be empty!'),
-          backgroundColor: Colors.orange));
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
     if (_selectedDepartment == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text('Department cannot be empty!'),
-          backgroundColor: Colors.orange));
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
     if (_descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text('Description cannot be empty!'),
-          backgroundColor: Colors.orange));
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text('Category cannot be empty!'),
-          backgroundColor: Colors.orange));
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
@@ -747,17 +872,17 @@ class _FindingFormPageState extends State<FindingFormPage> {
     if (!context.mounted) return;
 
     context.read<FindingBloc>().add(
-          CreateFindingEvent(
-            category: _selectedCategory!,
-            description: _descriptionController.text,
-            clauseRef: _titleController.text,
-            department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
-            reporter: _reporterController.text,
-            reporterId: reporterId,
-            sessionId: widget.sessionId,           // ✅ TAMBAH
-            checklistItemId: widget.checklistItemId, // ✅ TAMBAH
-            evidencePaths: _evidenceImages.map((e) => e.path).toList(),
-          ),
-        );
+      CreateFindingEvent(
+        categoryId: _selectedCategory!.id,
+        description: _descriptionController.text,
+        clauseRef: _titleController.text,
+        department: _departmentMap[_selectedDepartment] ?? _selectedDepartment!,
+        reporter: _reporterController.text,
+        reporterId: reporterId,
+        sessionId: widget.sessionId, // ✅ TAMBAH
+        checklistItemId: widget.checklistItemId, // ✅ TAMBAH
+        evidencePaths: _evidenceImages.map((e) => e.path).toList(),
+      ),
+    );
   }
 }

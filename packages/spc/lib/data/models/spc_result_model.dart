@@ -21,6 +21,7 @@ class SpcResultModel extends SpcAnalysisResult {
     super.data,
     super.target,
     super.unit,
+    super.message,
   });
 
   factory SpcResultModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +52,7 @@ class SpcResultModel extends SpcAnalysisResult {
       // jadi untuk sekarang selalu null.
       target: json['target'] == null ? null : _toDouble(json['target']),
       unit: json['unit']?.toString(),
+      message: json['message']?.toString(),
     );
   }
 

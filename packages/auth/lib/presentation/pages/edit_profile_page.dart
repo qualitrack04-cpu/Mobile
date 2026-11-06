@@ -6,6 +6,7 @@ import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
+import '../widgets/password_checklist.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String name;
@@ -46,6 +47,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _emailController = TextEditingController(text: widget.email);
     _emailController.addListener(_onEmailChanged);
     _passwordController.text = '********';
+    _newPasswordController.addListener(() => setState(() {}));
+    _confirmPasswordController.addListener(() => setState(() {}));
   }
 
   void _onEmailChanged() {
@@ -441,8 +444,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     } catch (e) {
                                       setModalState(
                                         () =>
-                                            otpError =
-                                                'The OTP is incorrect or has expired.',
+                                            otpError = e
+                                                .toString()
+                                                .replaceAll('Exception: ', ''),
                                       );
                                     } finally {
                                       if (mounted) {
@@ -498,12 +502,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() => _errorMessage = 'The new passwords do not match.');
         return;
       }
-      if (_newPasswordController.text.length < 8) {
-        setState(
-          () =>
-              _errorMessage =
-                  'The new password must be at least 8 characters long.',
-        );
+      final policyError = PasswordPolicy.validate(_newPasswordController.text);
+      if (policyError != null) {
+        setState(() => _errorMessage = policyError);
         return;
       }
     }
@@ -659,14 +660,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       bool nameChanged = _usernameController.text.trim() != widget.name;
       bool emailChanged = _emailController.text.trim() != widget.email;
 
-      if (nameChanged) {
-        await authService.updateProfile(name: _usernameController.text.trim());
-      }
-
+      // Password duluan: kalau ditolak server (mis. sama dengan password
+      // lama), perubahan lain belum tersimpan.
       if (_newPasswordController.text.isNotEmpty) {
         await authService.changePassword(
           newPassword: _newPasswordController.text,
+          confirmPassword: _confirmPasswordController.text,
         );
+      }
+
+      if (nameChanged) {
+        await authService.updateProfile(name: _usernameController.text.trim());
       }
 
       if (_selectedPhoto != null) {
@@ -973,6 +977,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           () =>
                               setState(() => _isObscuredNew = !_isObscuredNew),
                     ),
+                    PasswordChecklist(password: _newPasswordController.text),
                     Divider(height: 1, color: AppColors.borderLight),
                     _buildPasswordField(
                       label: 'New Password Verivication',
@@ -1003,7 +1008,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _isLoading
                         ? const CircularProgressIndicator()
                         : ElevatedButton.icon(
-                          onPressed: _onSaveChanges,
+                          onPressed: _canSavePassword ? _onSaveChanges : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             shape: RoundedRectangleBorder(
@@ -1085,6 +1090,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ],
       ),
     );
+  }
+
+  /// Tombol simpan dikunci selama password baru diisi tapi belum memenuhi
+  /// 4/4 kriteria atau belum sama dengan konfirmasi.
+  bool get _canSavePassword {
+    final p = _newPasswordController.text;
+    if (p.isEmpty && _confirmPasswordController.text.isEmpty) return true;
+    return PasswordPolicy.isStrong(p) && p == _confirmPasswordController.text;
   }
 
   Widget _buildPasswordField({

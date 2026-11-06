@@ -113,7 +113,9 @@ class _OtpPageState extends State<OtpPage> {
         );
       }
     } catch (e) {
-      setState(() => _errorMessage = 'Invalid or expired OTP');
+      setState(
+        () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

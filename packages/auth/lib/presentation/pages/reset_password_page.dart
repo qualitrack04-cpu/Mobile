@@ -3,6 +3,7 @@ import 'package:core/app_colors.dart';
 import 'package:core_services/core_services.dart';
 import 'package:get_it/get_it.dart';
 import '../widgets/action_button.dart';
+import '../widgets/password_checklist.dart';
 import 'login_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
@@ -47,9 +48,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (_passwordController.text.isEmpty) {
       setState(() => _passwordError = 'Password is required.');
       hasError = true;
-    } else if (_passwordController.text.length < 8) {
+    } else if (!PasswordPolicy.isStrong(_passwordController.text)) {
       setState(
-        () => _passwordError = 'Password must be at least 8 characters long.',
+        () => _passwordError = PasswordPolicy.validate(_passwordController.text),
       );
       hasError = true;
     }
@@ -189,9 +190,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           _passwordError =
                               val.isEmpty
                                   ? 'Password is required.'
-                                  : val.length < 8
-                                  ? 'Password must be at least 8 characters long.'
-                                  : null;
+                                  : PasswordPolicy.validate(val);
                         });
                       },
                       decoration: InputDecoration(
@@ -231,6 +230,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                     ),
                     _buildErrorText(_passwordError),
+                    PasswordChecklist(password: _passwordController.text),
                     const SizedBox(height: 8),
 
                     // Password Verification
