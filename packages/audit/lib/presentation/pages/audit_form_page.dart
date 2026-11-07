@@ -138,10 +138,6 @@ class _AuditFormPageState extends State<AuditFormPage> {
     });
   }
 
-  /// "ISO9001" -> "ISO 9001", "GMP" tetap "GMP".
-  static String _isoLabel(String raw) =>
-      raw.replaceAllMapped(RegExp(r'(?<=[A-Za-z])(?=\d)'), (_) => ' ');
-
   Future<void> _loadDepartments() async {
     final list = await GetIt.I<DepartmentService>().getDepartments();
     if (!mounted) return;
@@ -736,7 +732,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                     RadioListTile<String>(
                       value: iso, // nilai mentah, dikirim ke backend
                       title: Text(
-                        _isoLabel(iso),
+                        iso, // code ISO apa adanya, sama dengan yang dikirim ke backend
                         style: GoogleFonts.inter(fontSize: 12),
                       ),
                       controlAffinity: ListTileControlAffinity.leading,

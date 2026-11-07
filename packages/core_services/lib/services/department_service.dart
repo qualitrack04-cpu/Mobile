@@ -18,7 +18,7 @@ class DepartmentService {
   ];
   static const List<String> fallbackStandards = ['ISO9001', 'ISO14001', 'GMP'];
 
-  List<String>? _departmentCache;
+List<DepartmentInfo>? _infoCache;
   List<String>? _standardCache;
 
   List<dynamic> _asList(dynamic body) =>
@@ -41,42 +41,63 @@ class DepartmentService {
     return _asList(res.data);
   }
 
-  Future<List<String>> getDepartments({bool forceRefresh = false}) async {
-    if (!forceRefresh && _departmentCache != null) return _departmentCache!;
+  Future<List<DepartmentInfo>> getDepartmentInfos({
+  bool forceRefresh = false,
+}) async {
+  if (!forceRefresh && _infoCache != null) return _infoCache!;
 
-    // 1. Endpoint department (array langsung, ada isActive)
-    try {
-      final res = await apiService.client.get('/api/departments');
-      final active =
-          _asList(res.data).where((e) {
-            return e is! Map || e['isActive'] != false;
-          }).toList();
-      final names = _names(active);
-      if (names.isNotEmpty) return _departmentCache = names;
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error getDepartments: $e');
+  // 1. Endpoint department (ada name, color, isActive)
+  try {
+    final res = await apiService.client.get('/api/departments');
+    final infos = <DepartmentInfo>[];
+    for (final e in _asList(res.data)) {
+      if (e is Map && e['isActive'] == false) continue;
+      final name = (e is Map ? e['name'] : e)?.toString().trim() ?? '';
+      if (name.isEmpty || infos.any((i) => i.name == name)) continue;
+
+      final color = e is Map ? e['color']?.toString().trim() : null;
+      infos.add(
+        DepartmentInfo(
+          name: name,
+          color: (color == null || color.isEmpty) ? null : color,
+        ),
+      );
     }
-
-    // 2. Cadangan: turunan dari checklist
-    try {
-      final names = _names(await _fetchChecklists(), 'department');
-      if (names.isNotEmpty) return _departmentCache = names;
-    } catch (_) {}
-
-    return _departmentCache ?? fallback;
+    if (infos.isNotEmpty) return _infoCache = infos;
+  } catch (e) {
+    if (kDebugMode) debugPrint('Error getDepartments: $e');
   }
 
-    List<String> _isoNames(List<dynamic> list) {
+  // 2. Cadangan: turunan dari checklist (tanpa warna)
+  try {
+    final names = _names(await _fetchChecklists(), 'department');
+    if (names.isNotEmpty) {
+      return _infoCache = names.map((n) => DepartmentInfo(name: n)).toList();
+    }
+  } catch (_) {}
+
+  return _infoCache ?? fallback.map((n) => DepartmentInfo(name: n)).toList();
+}
+
+/// Hanya nama, untuk dropdown di form audit dan finding.
+Future<List<String>> getDepartments({bool forceRefresh = false}) async {
+  final infos = await getDepartmentInfos(forceRefresh: forceRefresh);
+  return infos.map((i) => i.name).toList();
+}
+
+  List<String> _isoNames(List<dynamic> list) {
     final result = <String>[];
     for (final e in list) {
       String? v;
       if (e is Map) {
-        v = (e['name'] ??
-                e['code'] ??
-                e['standard'] ??
-                e['standardName'] ??
-                e['title'])
-            ?.toString();
+        // Code (mis. "ISO 14001:2015") didahulukan; name hanya cadangan.
+        v =
+            (e['code'] ??
+                    e['standard'] ??
+                    e['standardName'] ??
+                    e['name'] ??
+                    e['title'])
+                ?.toString();
       } else {
         v = e?.toString();
       }
@@ -96,9 +117,10 @@ class DepartmentService {
       if (kDebugMode) {
         debugPrint('iso-standards ${res.statusCode}: ${res.data}');
       }
-      final active = _asList(res.data).where((e) {
-        return e is! Map || e['isActive'] != false;
-      }).toList();
+      final active =
+          _asList(res.data).where((e) {
+            return e is! Map || e['isActive'] != false;
+          }).toList();
       final names = _isoNames(active);
       if (names.isNotEmpty) return _standardCache = names;
     } catch (e) {
@@ -108,4 +130,13 @@ class DepartmentService {
 
     return _standardCache ?? [];
   }
+}
+class DepartmentInfo {
+  const DepartmentInfo({required this.name, this.color});
+
+  /// Nama mentah dari backend, mis. "Warehouse".
+  final String name;
+
+  /// Hex dari backend, mis. "#059669". Null jika tidak ada.
+  final String? color;
 }

@@ -15,40 +15,29 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  late final List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _pages = [
-      DashboardPage(
-        onOpenAuditPlan: () {
-          setState(() {
-            _currentIndex = 1;
-          });
-        },
-      ),
-      const AuditListPage(),
-      const FindingListPage(),
-      const CapaListPage(),
-    ];
-  }
+  // Halaman lain tetap const dan dibuat sekali.
+  final List<Widget> _otherPages = const [
+    AuditListPage(),
+    FindingListPage(),
+    CapaListPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: [
+          DashboardPage(
+            isActive: _currentIndex == 0,
+            onOpenAuditPlan: () => setState(() => _currentIndex = 1),
+          ),
+          ..._otherPages,
+        ],
       ),
       bottomNavigationBar: CustomBottomNavbar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
       ),
     );
   }

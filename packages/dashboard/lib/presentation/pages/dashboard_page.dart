@@ -25,15 +25,20 @@ import 'audit_report_page.dart';
 /// Halaman utama dashboard. Hanya merakit widget dan menangani navigasi;
 /// data dan state ada di [DashboardViewModel].
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key, this.onOpenAuditPlan});
+  const DashboardPage({super.key, this.onOpenAuditPlan, this.isActive = true});
 
   final VoidCallback? onOpenAuditPlan;
+
+  /// True saat tab Dashboard sedang terlihat. Dipakai untuk memuat ulang
+  /// departemen dan warnanya setiap tab ini dibuka lagi.
+  final bool isActive;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with WidgetsBindingObserver {
   late final DashboardViewModel _viewModel;
   final ReportPdfService _pdfService = GetIt.I<ReportPdfService>();
 
@@ -43,6 +48,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _viewModel = DashboardViewModel(
       service: GetIt.I<DashboardService>(),
       departmentService: GetIt.I<DepartmentService>(),
@@ -53,8 +59,26 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _viewModel.dispose();
     super.dispose();
+  }
+
+  /// App kembali dari background (mis. setelah warna diubah di web).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _viewModel.refreshDepartments();
+    }
+  }
+
+  /// Tab Dashboard dibuka lagi dari tab lain.
+  @override
+  void didUpdateWidget(covariant DashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _viewModel.refreshDepartments();
+    }
   }
 
   Future<void> _openProfile() async {
