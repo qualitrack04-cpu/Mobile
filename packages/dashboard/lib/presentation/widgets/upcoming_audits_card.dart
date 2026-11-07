@@ -296,36 +296,47 @@ class _DepartmentLegend extends StatelessWidget {
   const _DepartmentLegend();
 
   @override
-  @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      children:
-          DepartmentStyle.standard.map((name) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: DepartmentStyle.colorOf(name),
-                    shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children:
+              DepartmentStyle.standard.map((name) {
+                return ConstrainedBox(
+                  // Satu item tidak boleh lebih lebar dari kartu.
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: DepartmentStyle.colorOf(name),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          name.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  name.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
+                );
+              }).toList(),
+        );
+      },
     );
   }
 }

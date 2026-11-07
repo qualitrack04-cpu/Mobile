@@ -34,9 +34,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   List<String> _departments = [];
 
-  static const String _iso9001 = 'ISO9001';
-  static const String _iso14001 = 'ISO14001';
-  static const String _gmp = 'GMP';
+  List<String> _standards = [];
+  bool _isLoadingStandards = true;
 
   String? _selectedDepartment;
   DateTime? _selectedDate;
@@ -98,10 +97,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
       _selectedDepartment = audit.department.isEmpty ? null : audit.department;
       _selectedDate = audit.date;
       _isPriority = audit.isPriority;
-      _selectedIso = audit.isoTemplates.firstWhere(
-        (t) => t == _iso9001 || t == _iso14001 || t == _gmp,
-        orElse: () => '',
-      );
+      _selectedIso =
+          audit.isoTemplates.isNotEmpty ? audit.isoTemplates.first : null;
 
       // Simpan snapshot awal
       _initialTitle = audit.title;
@@ -119,7 +116,31 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _titleFocus.addListener(() => setState(() {}));
     _descriptionFocus.addListener(() => setState(() {}));
     _loadDepartments();
+    _loadStandards();
   }
+
+  Future<void> _loadStandards() async {
+    setState(() => _isLoadingStandards = true);
+    final list = await GetIt.I<DepartmentService>().getStandards(
+      forceRefresh: true,
+    );
+    if (!mounted) return;
+    setState(() {
+      _standards = list;
+      _isLoadingStandards = false;
+      // Standard audit lama yang sudah dihapus admin tetap ditampilkan.
+      final current = _selectedIso;
+      if (current != null &&
+          current.isNotEmpty &&
+          !_standards.contains(current)) {
+        _standards = [current, ..._standards];
+      }
+    });
+  }
+
+  /// "ISO9001" -> "ISO 9001", "GMP" tetap "GMP".
+  static String _isoLabel(String raw) =>
+      raw.replaceAllMapped(RegExp(r'(?<=[A-Za-z])(?=\d)'), (_) => ' ');
 
   Future<void> _loadDepartments() async {
     final list = await GetIt.I<DepartmentService>().getDepartments();
@@ -613,52 +634,119 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   Widget _buildIsoSection() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
-      child: RadioGroup<String>(
-        groupValue: _selectedIso,
-        onChanged:
-            (value) => setState(() {
-              _selectedIso = value;
-              _formNotifier.value++;
-            }),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ISO TEMPLATE',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-                color: AppColors.textSecondary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ISO TEMPLATE',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingStandards)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text('Loading ISO list...'),
+                ],
+              ),
+            )
+          else if (_standards.isEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryMuted.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.primaryLight,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'ISO list is not available',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.primaryLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: _loadStandards,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Reload',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            RadioGroup<String>(
+              groupValue: _selectedIso,
+              onChanged:
+                  (value) => setState(() {
+                    _selectedIso = value;
+                    _formNotifier.value++;
+                  }),
+              child: Column(
+                children: [
+                  for (final iso in _standards)
+                    RadioListTile<String>(
+                      value: iso, // nilai mentah, dikirim ke backend
+                      title: Text(
+                        _isoLabel(iso),
+                        style: GoogleFonts.inter(fontSize: 12),
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: AppColors.primaryLight,
+                    ),
+                ],
               ),
             ),
-            RadioListTile<String>(
-              value: _iso9001,
-              title: Text('ISO 9001', style: GoogleFonts.inter(fontSize: 12)),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primaryLight,
-            ),
-            RadioListTile<String>(
-              value: _iso14001,
-              title: Text('ISO 14001', style: GoogleFonts.inter(fontSize: 12)),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primaryLight,
-            ),
-            RadioListTile<String>(
-              value: _gmp,
-              title: Text('GMP', style: GoogleFonts.inter(fontSize: 12)),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.primaryLight,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
