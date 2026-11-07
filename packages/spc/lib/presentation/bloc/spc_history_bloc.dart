@@ -8,7 +8,7 @@ class SpcHistoryBloc extends Bloc<SpcHistoryEvent, SpcHistoryState> {
   final GetAnalysesHistory getAnalysesHistory;
 
   SpcHistoryBloc({required this.getAnalysesHistory})
-      : super(const SpcHistoryState()) {
+    : super(const SpcHistoryState()) {
     on<LoadAnalysesHistory>(_onLoad);
     on<ChangeHistoryStatus>(_onChangeStatus);
     on<ChangeHistoryPeriod>(_onChangePeriod);
@@ -24,9 +24,7 @@ class SpcHistoryBloc extends Bloc<SpcHistoryEvent, SpcHistoryState> {
         period: state.period,
         status: state.statusFilter,
       );
-      emit(
-        state.copyWith(status: SectionStatus.success, analyses: analyses),
-      );
+      emit(state.copyWith(status: SectionStatus.success, analyses: analyses));
     } catch (e) {
       emit(
         state.copyWith(
@@ -37,19 +35,20 @@ class SpcHistoryBloc extends Bloc<SpcHistoryEvent, SpcHistoryState> {
     }
   }
 
-  /// Filter diubah lalu langsung memicu pemuatan ulang, karena penyaringan
-  /// dilakukan server lewat query parameter, bukan di sisi mobile.
   Future<void> _onChangeStatus(
     ChangeHistoryStatus event,
     Emitter<SpcHistoryState> emit,
   ) async {
     emit(
-      state.copyWith(
-        statusFilter: event.status,
-        clearStatusFilter: event.status == null,
+      SpcHistoryState(
+        status: state.status,
+        analyses: state.analyses,
+        errorMessage: state.errorMessage,
+        period: state.period,
+        statusFilter: event.status, // null = All status, di-set eksplisit
       ),
     );
-    add(const LoadAnalysesHistory());
+    await _onLoad(const LoadAnalysesHistory(), emit);
   }
 
   Future<void> _onChangePeriod(
@@ -57,6 +56,6 @@ class SpcHistoryBloc extends Bloc<SpcHistoryEvent, SpcHistoryState> {
     Emitter<SpcHistoryState> emit,
   ) async {
     emit(state.copyWith(period: event.period));
-    add(const LoadAnalysesHistory());
+    await _onLoad(const LoadAnalysesHistory(), emit);
   }
 }

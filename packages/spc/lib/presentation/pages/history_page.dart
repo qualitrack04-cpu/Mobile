@@ -163,6 +163,10 @@ class _AnalysesHistoryPageState extends State<AnalysesHistoryPage> {
 }
 
 /// Dropdown filter dengan label di atas kotaknya.
+/// Dropdown filter dengan label di atas kotaknya.
+///
+/// Opsi dibungkus [_Option] karena PopupMenuButton tidak memanggil
+/// onSelected untuk value null, sehingga "All status" (null) tidak bisa dipilih.
 class _FilterDropdown<T> extends StatelessWidget {
   const _FilterDropdown({
     required this.label,
@@ -184,6 +188,8 @@ class _FilterDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = options.indexOf(value);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -192,27 +198,28 @@ class _FilterDropdown<T> extends StatelessWidget {
           style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
         ),
         const SizedBox(height: 6),
-        PopupMenuButton<T>(
-          initialValue: value,
+        // Value menu berupa index (int, tidak pernah null), jadi pilihan
+        // "All status" (null) tetap terdeteksi dan tidak butuh operator ==.
+        PopupMenuButton<int>(
+          initialValue: selectedIndex < 0 ? null : selectedIndex,
           offset: const Offset(0, 40),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          onSelected: onChanged,
-          itemBuilder: (context) => options
-              .map(
-                (option) => PopupMenuItem<T>(
-                  value: option,
-                  child: Text(
-                    optionLabel(option),
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                    ),
+          onSelected: (index) => onChanged(options[index]),
+          itemBuilder: (context) => [
+            for (var i = 0; i < options.length; i++)
+              PopupMenuItem<int>(
+                value: i,
+                child: Text(
+                  optionLabel(options[i]),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-              )
-              .toList(),
+              ),
+          ],
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             decoration: BoxDecoration(
