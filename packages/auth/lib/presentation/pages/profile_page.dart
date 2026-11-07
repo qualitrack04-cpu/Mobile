@@ -69,8 +69,8 @@ class _ProfilePageState extends State<ProfilePage>
     // kalau KPI tidak membawa qualityScore. Hapus baris `score ??= ...`
     // kalau cadangan ini justru menampilkan angka yang menyesatkan.
     double? score = kpi?.qualityScore;
-    score ??= await GetIt.instance<QualityScoreService>()
-        .getLatestQualityScore();
+    score ??=
+        await GetIt.instance<QualityScoreService>().getLatestQualityScore();
 
     if (!mounted) return;
     setState(() {
@@ -113,11 +113,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _refreshAll() async {
-    await Future.wait([
-      _loadUserData(),
-      _loadKpi(),
-      _loadRecentActivities(),
-    ]);
+    await Future.wait([_loadUserData(), _loadKpi(), _loadRecentActivities()]);
   }
 
   Future<void> _loadUserData() async {
@@ -205,7 +201,15 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
 
                   // Dropdown menu
-                  if (_showMenu)
+                  if (_showMenu) ...[
+                    // Lapisan transparan: tap di luar menu menutupnya.
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(() => _showMenu = false),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
                     Positioned(
                       top: 0,
                       right: 16,
@@ -299,6 +303,7 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
     );
