@@ -99,10 +99,36 @@ class _FindingListViewState extends State<_FindingListView> {
               state is FindingLoaded ? state.findings : _lastFindings;
 
           if (state is FindingError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<FindingBloc>().add(const LoadFindings());
+                await Future.delayed(const Duration(milliseconds: 800));
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  Icon(
+                    Icons.cloud_off_outlined,
+                    size: 40,
+                    color: AppColors.textDisabled,
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Text(
+                      state.message.replaceFirst('Exception: ', ''),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed:
+                        () => context.read<FindingBloc>().add(
+                          const LoadFindings(),
+                        ),
+                    child: const Text('Try again'),
+                  ),
+                ],
               ),
             );
           }

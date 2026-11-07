@@ -4,6 +4,11 @@ import 'package:core/core.dart';
 import 'package:capa/presentation/pages/capa_list_page.dart';
 import 'package:finding/presentation/pages/finding_list_page.dart';
 import 'dashboard_page.dart';
+import 'package:get_it/get_it.dart';
+import 'package:finding/presentation/bloc/finding_bloc.dart';
+import 'package:finding/presentation/bloc/finding_event.dart';
+import 'package:capa/presentation/bloc/capa_bloc.dart';
+import 'package:capa/presentation/bloc/capa_event.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,7 +42,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       bottomNavigationBar: CustomBottomNavbar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+          if (index == 2) GetIt.I<FindingBloc>().add(const LoadFindings());
+          if (index == 3) GetIt.I<CapaBloc>().add(const LoadCapas());
+        },
       ),
     );
   }

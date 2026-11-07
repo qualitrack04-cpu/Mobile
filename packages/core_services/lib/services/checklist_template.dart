@@ -13,7 +13,9 @@ class ChecklistTemplateInfo {
   final String id;
   final String title;
 
-  /// Field `isoStandardName`, mis. "ISO14001".
+  /// Kode standar, mis. "ISO14001" atau "ISO 22000:2018".
+  /// Diambil dari `isoStandardName` jika terlihat seperti kode, kalau tidak
+  /// diambil dari awal `title`.
   final String standard;
 
   /// Field `departmentName`, mis. "Production".
@@ -49,12 +51,35 @@ class ChecklistTemplateInfo {
   bool matches(String iso, String dept) =>
       matchesStandard(iso) && matchesDepartment(dept);
 
+  static final RegExp _codePattern = RegExp(r'^([A-Za-z]+)[\s_-]*(\d+)');
+
+  /// "ISO14001" dan "ISO 22000:2018" terlihat seperti kode.
+  /// "(Food Safety Management Systems)" tidak.
+  static bool _looksLikeCode(String s) => _codePattern.hasMatch(s.trim());
+
+  /// "ISO 22000:2018 - IT" -> "ISO 22000:2018".
+  /// Mengambil bagian sebelum " - " terakhir kalau ada.
+  static String? _codeFromTitle(String title) {
+    final t = title.trim();
+    if (!_looksLikeCode(t)) return null;
+    final idx = t.indexOf(' - ');
+    return (idx > 0 ? t.substring(0, idx) : t).trim();
+  }
+
   factory ChecklistTemplateInfo.fromJson(Map<String, dynamic> json) {
+    final rawStandard =
+        (json['isoStandardName'] ?? json['standard'] ?? '').toString().trim();
+    final title = json['title']?.toString().trim() ?? '';
+
+    final standard =
+        _looksLikeCode(rawStandard)
+            ? rawStandard
+            : (_codeFromTitle(title) ?? rawStandard);
+
     return ChecklistTemplateInfo(
       id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? '',
-      standard:
-          (json['isoStandardName'] ?? json['standard'] ?? '').toString().trim(),
+      title: title,
+      standard: standard,
       department:
           (json['departmentName'] ?? json['department'] ?? '')
               .toString()
@@ -73,8 +98,15 @@ class ChecklistTemplateInfo {
 
     return raw
         .whereType<Map>()
-        .map((e) => ChecklistTemplateInfo.fromJson(Map<String, dynamic>.from(e)))
-        .where((t) => t.id.isNotEmpty && t.standard.isNotEmpty && t.department.isNotEmpty)
+        .map(
+          (e) => ChecklistTemplateInfo.fromJson(Map<String, dynamic>.from(e)),
+        )
+        .where(
+          (t) =>
+              t.id.isNotEmpty &&
+              t.standard.isNotEmpty &&
+              t.department.isNotEmpty,
+        )
         .toList();
   }
 }
