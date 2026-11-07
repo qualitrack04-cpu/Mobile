@@ -1,5 +1,6 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:core_services/services/checklist_template.dart';
 
 /// Daftar department dan standard (ISO) dari backend.
 /// Department: GET /api/departments (hanya yang isActive).
@@ -18,7 +19,7 @@ class DepartmentService {
   ];
   static const List<String> fallbackStandards = ['ISO9001', 'ISO14001', 'GMP'];
 
-List<DepartmentInfo>? _infoCache;
+  List<DepartmentInfo>? _infoCache;
   List<String>? _standardCache;
 
   List<dynamic> _asList(dynamic body) =>
@@ -36,54 +37,70 @@ List<DepartmentInfo>? _infoCache;
     return result;
   }
 
+  List<ChecklistTemplateInfo>? _templateCache;
+
+  /// Daftar template checklist. Gagal: pakai cache lama, atau kosong
+  /// (kosong berarti form tidak memfilter apa pun).
+  Future<List<ChecklistTemplateInfo>> getChecklistTemplates({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _templateCache != null) return _templateCache!;
+    try {
+      return _templateCache = await ChecklistTemplateInfo.fetchAll(apiService);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error getChecklistTemplates: $e');
+      return _templateCache ?? [];
+    }
+  }
+
   Future<List<dynamic>> _fetchChecklists() async {
     final res = await apiService.client.get('/api/checklists');
     return _asList(res.data);
   }
 
   Future<List<DepartmentInfo>> getDepartmentInfos({
-  bool forceRefresh = false,
-}) async {
-  if (!forceRefresh && _infoCache != null) return _infoCache!;
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _infoCache != null) return _infoCache!;
 
-  // 1. Endpoint department (ada name, color, isActive)
-  try {
-    final res = await apiService.client.get('/api/departments');
-    final infos = <DepartmentInfo>[];
-    for (final e in _asList(res.data)) {
-      if (e is Map && e['isActive'] == false) continue;
-      final name = (e is Map ? e['name'] : e)?.toString().trim() ?? '';
-      if (name.isEmpty || infos.any((i) => i.name == name)) continue;
+    // 1. Endpoint department (ada name, color, isActive)
+    try {
+      final res = await apiService.client.get('/api/departments');
+      final infos = <DepartmentInfo>[];
+      for (final e in _asList(res.data)) {
+        if (e is Map && e['isActive'] == false) continue;
+        final name = (e is Map ? e['name'] : e)?.toString().trim() ?? '';
+        if (name.isEmpty || infos.any((i) => i.name == name)) continue;
 
-      final color = e is Map ? e['color']?.toString().trim() : null;
-      infos.add(
-        DepartmentInfo(
-          name: name,
-          color: (color == null || color.isEmpty) ? null : color,
-        ),
-      );
+        final color = e is Map ? e['color']?.toString().trim() : null;
+        infos.add(
+          DepartmentInfo(
+            name: name,
+            color: (color == null || color.isEmpty) ? null : color,
+          ),
+        );
+      }
+      if (infos.isNotEmpty) return _infoCache = infos;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error getDepartments: $e');
     }
-    if (infos.isNotEmpty) return _infoCache = infos;
-  } catch (e) {
-    if (kDebugMode) debugPrint('Error getDepartments: $e');
+
+    // 2. Cadangan: turunan dari checklist (tanpa warna)
+    try {
+      final names = _names(await _fetchChecklists(), 'department');
+      if (names.isNotEmpty) {
+        return _infoCache = names.map((n) => DepartmentInfo(name: n)).toList();
+      }
+    } catch (_) {}
+
+    return _infoCache ?? fallback.map((n) => DepartmentInfo(name: n)).toList();
   }
 
-  // 2. Cadangan: turunan dari checklist (tanpa warna)
-  try {
-    final names = _names(await _fetchChecklists(), 'department');
-    if (names.isNotEmpty) {
-      return _infoCache = names.map((n) => DepartmentInfo(name: n)).toList();
-    }
-  } catch (_) {}
-
-  return _infoCache ?? fallback.map((n) => DepartmentInfo(name: n)).toList();
-}
-
-/// Hanya nama, untuk dropdown di form audit dan finding.
-Future<List<String>> getDepartments({bool forceRefresh = false}) async {
-  final infos = await getDepartmentInfos(forceRefresh: forceRefresh);
-  return infos.map((i) => i.name).toList();
-}
+  /// Hanya nama, untuk dropdown di form audit dan finding.
+  Future<List<String>> getDepartments({bool forceRefresh = false}) async {
+    final infos = await getDepartmentInfos(forceRefresh: forceRefresh);
+    return infos.map((i) => i.name).toList();
+  }
 
   List<String> _isoNames(List<dynamic> list) {
     final result = <String>[];
@@ -119,18 +136,21 @@ Future<List<String>> getDepartments({bool forceRefresh = false}) async {
       }
       final active =
           _asList(res.data).where((e) {
-            return e is! Map || e['isActive'] != false;
+            if (e is! Map) return true;
+            final flag = e['isActive'] ?? e['active'] ?? e['isEnabled'];
+            return flag != false && flag != 0 && flag?.toString() != 'false';
           }).toList();
-      final names = _isoNames(active);
-      if (names.isNotEmpty) return _standardCache = names;
+      // Hasil kosong yang valid (semua dihapus) tetap disimpan.
+      return _standardCache = _isoNames(active);
     } catch (e) {
-      // Cek status code di sini (403 = tidak punya akses, 404 = path salah).
       if (kDebugMode) debugPrint('Error getStandards: $e');
     }
 
-    return _standardCache ?? [];
+    // Gagal: kosong, bukan data usang.
+    return [];
   }
 }
+
 class DepartmentInfo {
   const DepartmentInfo({required this.name, this.color});
 

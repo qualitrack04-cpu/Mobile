@@ -3,6 +3,7 @@ import 'package:audit/data/models/checklist_model.dart';
 import 'package:audit/domain/entities/checklist_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:core_services/services/checklist_template.dart';
 
 class ChecklistRemoteDatasource {
   final ApiService apiService;
@@ -11,35 +12,59 @@ class ChecklistRemoteDatasource {
 
   // GET /api/checklist?standard=ISO9001&department=Warehouse
   // Lalu ambil items dari GET /api/checklist/{id}/items
-    Future<List<ChecklistEntity>> getChecklistFor({
+  /// Mencari id template yang cocok dengan ISO + department, dengan
+  /// pencocokan toleran (ISO14001 = ISO 14001:2015, Produksi = Production).
+  Future<String?> findChecklistId({
     required String isoTemplate,
     required String department,
   }) async {
     try {
-      final listResponse = await apiService.client.get(
+      final all = await ChecklistTemplateInfo.fetchAll(apiService);
+      for (final t in all) {
+        if (t.matches(isoTemplate, department)) return t.id;
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error findChecklistId: $e');
+    }
+
+    // Cadangan: query lama, kalau list tidak membawa nama ISO/department.
+    try {
+      final res = await apiService.client.get(
         '/api/checklists',
         queryParameters: {'standard': isoTemplate, 'department': department},
       );
+      final body = res.data;
+      final list =
+          body is List
+              ? body
+              : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
+      if (list.isNotEmpty) return list[0]['id']?.toString();
+    } catch (_) {}
+    return null;
+  }
 
-      final listBody = listResponse.data;
-      final checklists = listBody is List
-          ? listBody
-          : (listBody is Map ? (listBody['data'] as List? ?? []) : <dynamic>[]);
-      if (checklists.isEmpty) return [];
+  Future<List<ChecklistEntity>> getChecklistFor({
+    required String isoTemplate,
+    required String department,
+  }) async {
+    try {
+      final checklistId = await findChecklistId(
+        isoTemplate: isoTemplate,
+        department: department,
+      );
+      if (checklistId == null) return [];
 
-      final checklistId = checklists[0]['id'].toString();
-
-      // PLURAL: /api/checklists/{id}/items
       final itemsResponse = await apiService.client.get(
         '/api/checklists/$checklistId/items',
       );
 
       final itemsBody = itemsResponse.data;
-      final items = itemsBody is List
-          ? itemsBody
-          : (itemsBody is Map
-              ? ((itemsBody['items'] ?? itemsBody['data']) as List? ?? [])
-              : <dynamic>[]);
+      final items =
+          itemsBody is List
+              ? itemsBody
+              : (itemsBody is Map
+                  ? ((itemsBody['items'] ?? itemsBody['data']) as List? ?? [])
+                  : <dynamic>[]);
 
       return items.map((item) {
         final json = item as Map<String, dynamic>;
@@ -62,6 +87,7 @@ class ChecklistRemoteDatasource {
       );
     }
   }
+
   // POST /api/AuditSession/{sessionId}/summary
   Future<void> submitAuditSummary({
     required String sessionId,

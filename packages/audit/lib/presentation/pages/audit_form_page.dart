@@ -35,6 +35,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
   List<String> _departments = [];
 
   List<String> _standards = [];
+  List<ChecklistTemplateInfo> _templates = [];
   bool _isLoadingStandards = true;
 
   String? _selectedDepartment;
@@ -117,6 +118,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     _descriptionFocus.addListener(() => setState(() {}));
     _loadDepartments();
     _loadStandards();
+    _loadTemplates();
   }
 
   Future<void> _loadStandards() async {
@@ -128,27 +130,56 @@ class _AuditFormPageState extends State<AuditFormPage> {
     setState(() {
       _standards = list;
       _isLoadingStandards = false;
-      // Standard audit lama yang sudah dihapus admin tetap ditampilkan.
-      final current = _selectedIso;
-      if (current != null &&
-          current.isNotEmpty &&
-          !_standards.contains(current)) {
-        _standards = [current, ..._standards];
-      }
     });
   }
+
+  Future<void> _loadTemplates() async {
+    final list = await GetIt.I<DepartmentService>().getChecklistTemplates(
+      forceRefresh: true,
+    );
+    if (!mounted) return;
+    setState(() => _templates = list);
+  }
+
+  /// Apakah ada template untuk pasangan ini. Null = tidak dibatasi.
+  /// Kalau template gagal dimuat, tidak ada yang diblokir.
+bool _hasTemplate(String? iso, String? dept) {
+  if (iso == null && dept == null) return true; // belum ada pilihan: semua tampil
+  if (_templates.isEmpty) return true;          // template gagal dimuat: jangan blokir
+  return _templates.any(
+    (t) =>
+        (iso == null || t.matchesStandard(iso)) &&
+        (dept == null || t.matchesDepartment(dept)),
+  );
+}
+
+List<String> get _visibleStandards {
+  final list =
+      _standards.where((s) => _hasTemplate(s, _selectedDepartment)).toList();
+  final current = _selectedIso;
+  if (_isEdit && current != null && current == _initialIso &&
+      !list.contains(current)) {
+    list.insert(0, current);
+  }
+  return list;
+}
+
+List<String> get _visibleDepartments {
+  final list =
+      _departments.where((d) => _hasTemplate(_selectedIso, d)).toList();
+  final current = _selectedDepartment;
+  if (_isEdit && current != null && current == _initialDepartment &&
+      !list.contains(current)) {
+    list.insert(0, current);
+  }
+  return list;
+}
 
   Future<void> _loadDepartments() async {
     final list = await GetIt.I<DepartmentService>().getDepartments();
     if (!mounted) return;
     setState(() {
       _departments = list;
-      // Department audit lama bisa saja sudah dihapus admin,
-      // jadi tetap tampilkan supaya dropdown tidak error.
-      final current = _selectedDepartment;
-      if (current != null && !_departments.contains(current)) {
-        _departments = [current, ..._departments];
-      }
     });
   }
 
@@ -724,11 +755,16 @@ class _AuditFormPageState extends State<AuditFormPage> {
               onChanged:
                   (value) => setState(() {
                     _selectedIso = value;
+                    // Department yang tidak punya checklist untuk ISO ini dilepas.
+                    if (_selectedDepartment != null &&
+                        !_hasTemplate(value, _selectedDepartment)) {
+                      _selectedDepartment = null;
+                    }
                     _formNotifier.value++;
                   }),
               child: Column(
                 children: [
-                  for (final iso in _standards)
+                  for (final iso in _visibleStandards)
                     RadioListTile<String>(
                       value: iso, // nilai mentah, dikirim ke backend
                       title: Text(
@@ -768,23 +804,25 @@ class _AuditFormPageState extends State<AuditFormPage> {
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value:
-                  _departments.contains(_selectedDepartment)
+                  _visibleDepartments.contains(_selectedDepartment)
                       ? _selectedDepartment
                       : null,
               isExpanded: true,
               hint: Text(
-                'Select department',
+                _selectedIso != null && _visibleDepartments.isEmpty
+                    ? 'No department has a checklist for this ISO'
+                    : 'Select department',
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   color: AppColors.textDisabled,
                 ),
               ),
               items:
-                  _departments.map((raw) {
+                  _visibleDepartments.map((raw) {
                     return DropdownMenuItem<String>(
-                      value: raw, // nilai mentah, ini yang dikirim ke backend
+                      value: raw,
                       child: Text(
-                        DepartmentStyle.normalize(raw), // yang tampil di layar
+                        DepartmentStyle.normalize(raw),
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           color: Colors.black87,
@@ -795,6 +833,11 @@ class _AuditFormPageState extends State<AuditFormPage> {
               onChanged:
                   (value) => setState(() {
                     _selectedDepartment = value;
+                    // ISO yang tidak punya checklist di department ini dilepas.
+                    if (_selectedIso != null &&
+                        !_hasTemplate(_selectedIso, value)) {
+                      _selectedIso = null;
+                    }
                     _formNotifier.value++;
                   }),
             ),

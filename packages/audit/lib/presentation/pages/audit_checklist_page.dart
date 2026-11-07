@@ -123,27 +123,32 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
         return;
       }
 
-      final listResponse = await GetIt.instance<ApiService>().client.get(
-        '/api/checklists',
-        queryParameters: {
-          'standard':
-              widget.audit.isoTemplates.isNotEmpty
-                  ? widget.audit.isoTemplates.first
-                  : '',
-          'department':
-              widget.audit.department == 'Produksi'
-                  ? 'Production'
-                  : widget.audit.department,
-        },
+      final datasource = GetIt.instance<ChecklistRemoteDatasource>();
+
+      final checklistId = await datasource.findChecklistId(
+        isoTemplate:
+            widget.audit.isoTemplates.isNotEmpty
+                ? widget.audit.isoTemplates.first
+                : '',
+        department: widget.audit.department,
       );
-      final checklists = listResponse.data as List<dynamic>;
-      if (checklists.isEmpty) {
-        if (mounted) setState(() => _isInitializing = false);
+
+      if (checklistId == null) {
+        if (mounted) {
+          setState(() => _isInitializing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No checklist template for this ISO and department.',
+              ),
+              backgroundColor: AppColors.danger,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
         return;
       }
-      final checklistId = checklists[0]['id'] as String;
 
-      final datasource = GetIt.instance<ChecklistRemoteDatasource>();
       final sessionId = await datasource.createAuditSession(
         scheduleId: widget.audit.scheduleId,
         checklistId: checklistId,
@@ -262,7 +267,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
   }
 
   String get _formattedDate =>
-    AppClock.formatDate(widget.audit.date, convert: false);
+      AppClock.formatDate(widget.audit.date, convert: false);
 
   int get _completedCount =>
       _checklists.where((e) => e.isPassed != null).length;
