@@ -5,14 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'spc_card.dart';
 
-/// Satuan yang bisa dipilih. Backend menerima string bebas, daftar ini
-/// hanya untuk menyeragamkan input.
-const List<String> kSpcUnits = ['mm', 'g', 'kg', 'mL', 'L', '°C', '%'];
-
-/// Kartu berisi seluruh isian parameter analisis.
-///
-/// Controller dikelola halaman, bukan widget ini, supaya halaman bisa
-/// membaca nilainya saat submit tanpa perlu callback per field.
 class SpcParameterForm extends StatelessWidget {
   const SpcParameterForm({
     super.key,
@@ -22,7 +14,8 @@ class SpcParameterForm extends StatelessWidget {
     required this.uslController,
     required this.selectedUnit,
     required this.onUnitChanged,
-    this.units = kSpcUnits,
+    this.units = const [],
+    this.isLoadingUnits = false,
     this.enabled = true,
   });
 
@@ -35,6 +28,7 @@ class SpcParameterForm extends StatelessWidget {
 
   /// Pilihan unit. Default ke [kSpcUnits] bila API belum memberi daftar.
   final List<String> units;
+  final bool isLoadingUnits;
   final bool enabled;
 
   @override
@@ -101,9 +95,9 @@ class SpcParameterForm extends StatelessWidget {
                         isExpanded: true,
                         dropdownColor: AppColors.surface,
                         borderRadius: BorderRadius.circular(10),
-                        decoration: _inputDecoration('Select Unit'),
+                        decoration: _inputDecoration(_unitHint),
                         style: _inputStyle,
-                        hint: Text('Select Unit', style: _hintStyle),
+                        hint: Text(_unitHint, style: _hintStyle),
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
                           color: AppColors.textSecondary,
@@ -190,6 +184,11 @@ class SpcParameterForm extends StatelessWidget {
       errorStyle: GoogleFonts.inter(fontSize: 10),
     );
   }
+    String get _unitHint => isLoadingUnits
+      ? 'Loading units...'
+      : units.isEmpty
+          ? 'Units unavailable'
+          : 'Select Unit';
 }
 
 /// Satu sel isian: label kecil di atas, field di bawahnya.

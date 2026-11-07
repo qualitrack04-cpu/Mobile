@@ -110,22 +110,31 @@ class SpcRemoteDatasource {
   ///
   /// Mengembalikan nama unit saja. Daftar kosong berarti gagal atau belum ada
   /// data, dan pemanggil memakai daftar bawaan.
+    /// GET /api/admin/spc-units
+  ///
+  /// Hanya unit aktif. Daftar kosong berarti gagal atau belum ada data.
   Future<List<String>> getUnits() async {
     try {
-      final response = await apiService.client.get('/api/spc-units/dropdown');
+      final response = await apiService.client.get('/api/admin/spc-units');
       final body = response.data;
-      final list = body is Map ? body['data'] : body;
+      final list = body is List ? body : (body is Map ? body['data'] : null);
       if (list is! List) return [];
-      return list
-          .map((e) => e is Map ? e['name']?.toString() : e?.toString())
-          .whereType<String>()
-          .where((name) => name.isNotEmpty)
-          .toList();
+
+      final names = <String>[];
+      for (final e in list) {
+        if (e is Map && e['isActive'] == false) continue;
+        final raw = e is Map
+            ? (e['name'] ?? e['symbol'] ?? e['code'] ?? e['unit'])
+            : e;
+        final name = raw?.toString().trim() ?? '';
+        if (name.isNotEmpty && !names.contains(name)) names.add(name);
+      }
+      return names;
     } catch (_) {
       return [];
     }
   }
-
+  
   /// GET /api/Spc/{id}
   Future<SpcResultModel> getById(String id) async {
     try {

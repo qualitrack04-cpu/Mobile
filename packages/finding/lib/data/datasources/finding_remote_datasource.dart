@@ -11,22 +11,37 @@ class FindingRemoteDatasource {
 
   /// Daftar kategori dari backend. Tanpa cache permanen,
   /// karena admin bisa menambah kategori kapan saja.
+    /// GET /api/system-config/finding-categories
+  ///
+  /// Tanpa cache, karena admin bisa menambah, mengubah, atau menonaktifkan
+  /// kategori kapan saja. Hanya kategori aktif yang dikembalikan.
   Future<List<FindingCategory>> getCategories() async {
-    final res = await apiService.client.get('/api/finding-categories/dropdown');
-    final raw = res.data is List
-        ? res.data as List
-        : (res.data['data'] as List? ?? []);
-    return raw
-        .map(
-          (e) => FindingCategory(
-            id: e['id'].toString(),
-            name: e['name'].toString(),
-          ),
-        )
-        .toList();
-  }
+    final res = await apiService.client.get(
+      '/api/system-config/finding-categories',
+    );
+    final body = res.data;
+    final raw = body is List
+        ? body
+        : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
 
-  /// GET /api/uploads/finding/{findingId}
+    final result = <FindingCategory>[];
+    for (final e in raw) {
+      if (e is! Map) continue;
+      if (e['isActive'] == false) continue;
+
+      final id = e['id']?.toString() ?? '';
+      final name = (e['name'] ?? e['categoryName'] ?? e['title'])
+              ?.toString()
+              .trim() ??
+          '';
+      if (id.isEmpty || name.isEmpty) continue;
+      if (result.any((c) => c.id == id)) continue;
+
+      result.add(FindingCategory(id: id, name: name));
+    }
+    return result;
+  }
+    /// GET /api/uploads/finding/{findingId}
   Future<List<Map<String, String>>> getEvidences(String findingId) async {
     try {
       final response = await apiService.client.get(

@@ -56,7 +56,8 @@ class _AuditReportPageState extends State<AuditReportPage> {
       _error = null;
     });
     try {
-      final data = await _service.getCompletedReports();
+  // _load(): error sekarang benar-benar sampai ke UI
+      final data = await _service.getCompletedReports(throwOnError: true);
       if (!mounted) return;
       setState(() {
         _reports = data;
@@ -77,8 +78,11 @@ class _AuditReportPageState extends State<AuditReportPage> {
 
       if (_selectedFilter != 'All' && dept != _selectedFilter) return false;
 
+  // pencarian mencakup departemen, standard, dan auditor
       if (_query.isNotEmpty) {
-        final haystack = '$dept ${report.planTitle}'.toLowerCase();
+        final haystack =
+            '$dept ${report.planTitle} ${report.standard} ${report.auditorName}'
+                .toLowerCase();
         if (!haystack.contains(_query)) return false;
       }
       return true;
@@ -117,7 +121,7 @@ class _AuditReportPageState extends State<AuditReportPage> {
     final file = await _runWithLoading(
       () => _pdfService.saveForViewing(
         sessionId: report.sessionId,
-        title: report.planTitle,
+                title: report.fileTitle,
       ),
       errorPrefix: 'Failed to open PDF',
     );
@@ -129,7 +133,7 @@ class _AuditReportPageState extends State<AuditReportPage> {
     final done = await _runWithLoading<bool>(() async {
       await _pdfService.download(
         sessionId: report.sessionId,
-        title: report.planTitle,
+        title: report.fileTitle,
       );
       return true;
     }, errorPrefix: 'Failed to download PDF');

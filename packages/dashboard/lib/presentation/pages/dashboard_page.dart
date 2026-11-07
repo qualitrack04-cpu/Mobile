@@ -125,8 +125,8 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
           AuditReportList(
             reports: _viewModel.reports,
-            onView: (r) => _viewPdf(r.sessionId, r.planTitle),
-            onDownload: (r) => _downloadAndSavePdf(r.sessionId, r.planTitle),
+            onView: (r) => _viewPdf(r.sessionId, r.fileTitle),
+            onDownload: (r) => _downloadAndSavePdf(r.sessionId, r.fileTitle),
             onViewAll:
                 () => Navigator.push(
                   context,

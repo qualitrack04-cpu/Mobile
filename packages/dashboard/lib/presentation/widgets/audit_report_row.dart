@@ -23,7 +23,10 @@ class AuditReportRow extends StatelessWidget {
     final department = DepartmentStyle.normalize(report.department);
     final color = DepartmentStyle.colorOf(department);
     final title = report.planTitle.isEmpty ? 'Audit report' : report.planTitle;
-    final subtitle = report.fileInfoLabel;
+    final subtitle = [
+      department,
+      report.fileInfoLabel,
+    ].where((s) => s.isNotEmpty).join(' · ');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -57,7 +60,7 @@ class AuditReportRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 12,

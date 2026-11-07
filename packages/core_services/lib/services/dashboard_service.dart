@@ -175,38 +175,82 @@ class CompletedAuditReport {
   final String sessionId;
   final String department;
   final String planTitle;
+  final String standard;
+  final String auditorName;
+  final DateTime? scheduledDate;
+  final DateTime? completedAt;
   final int? pageCount;
   final int? fileSizeBytes;
   final String? fileSizeFormatted;
+  final int totalFindings;
+  final int totalMajorNC;
+  final int totalMinorNC;
+  final int totalCapas;
+  final int closedCapas;
 
   CompletedAuditReport({
     required this.sessionId,
     required this.department,
     required this.planTitle,
+    this.standard = '',
+    this.auditorName = '',
+    this.scheduledDate,
+    this.completedAt,
     this.pageCount,
     this.fileSizeBytes,
     this.fileSizeFormatted,
+    this.totalFindings = 0,
+    this.totalMajorNC = 0,
+    this.totalMinorNC = 0,
+    this.totalCapas = 0,
+    this.closedCapas = 0,
   });
 
   factory CompletedAuditReport.fromJson(Map<String, dynamic> json) {
+    int asInt(dynamic v) => (v as num?)?.toInt() ?? 0;
+
     return CompletedAuditReport(
-      sessionId: json['sessionId'] ?? '',
-      department: json['department'] ?? '',
-      planTitle: json['auditPlanTitle'] ?? '',
+      sessionId: json['sessionId']?.toString() ?? '',
+      department: json['department']?.toString() ?? '',
+      planTitle: json['auditPlanTitle']?.toString() ?? '',
+      standard: json['standard']?.toString() ?? '',
+      auditorName: json['auditorName']?.toString() ?? '',
+      scheduledDate: DateTime.tryParse(json['scheduledDate']?.toString() ?? ''),
+      completedAt: DateTime.tryParse(json['completedAt']?.toString() ?? ''),
       pageCount: (json['pageCount'] as num?)?.toInt(),
       fileSizeBytes: (json['fileSizeBytes'] as num?)?.toInt(),
       fileSizeFormatted: json['fileSizeFormatted'] as String?,
+      totalFindings: asInt(json['totalFindings']),
+      totalMajorNC: asInt(json['totalMajorNC']),
+      totalMinorNC: asInt(json['totalMinorNC']),
+      totalCapas: asInt(json['totalCAPAs']),
+      closedCapas: asInt(json['closedCAPAs']),
     );
   }
 
-  /// Info file untuk subtitle, contoh: "PDF · 14 pages · 2.4 MB".
-  /// Bagian yang datanya belum ada (report lama) dilewati.
+  /// Nama untuk file PDF dan judul notifikasi. Departemen disertakan karena
+  /// satu plan bisa punya banyak laporan dengan judul yang sama.
+  String get fileTitle =>
+      department.isEmpty ? planTitle : '$planTitle - $department';
+
+  /// Ukuran file. Memakai teks dari backend, atau dihitung dari byte.
+  String? get fileSizeLabel {
+    final formatted = fileSizeFormatted;
+    if (formatted != null && formatted.isNotEmpty) return formatted;
+    final bytes = fileSizeBytes;
+    if (bytes == null) return null;
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// Contoh: "PDF · 1 page · 39.47 KB". Bagian yang kosong dilewati.
   String get fileInfoLabel {
-    final size = fileSizeFormatted;
+    final size = fileSizeLabel;
     final parts = <String>[
       'PDF',
       if (pageCount != null) '$pageCount ${pageCount == 1 ? 'page' : 'pages'}',
-      if (size != null && size.isNotEmpty) size,
+      if (size != null) size,
     ];
     return parts.join(' · ');
   }
@@ -321,14 +365,11 @@ class DashboardService {
     }
   }
 
-  // Fungsi 4: Ambil Laporan Audit Selesai
-  Future<List<CompletedAuditReport>> getCompletedReports() async {
+  Future<List<CompletedAuditReport>> getCompletedReports({
+    bool throwOnError = false,
+  }) async {
     try {
       final res = await apiService.client.get('/api/audit-reports');
-      if (kDebugMode) {
-        debugPrint('audit-reports status: ${res.statusCode}');
-        debugPrint('audit-reports body: ${res.data}');
-      }
 
       final body = res.data;
       final list =
@@ -336,13 +377,26 @@ class DashboardService {
               ? body
               : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
 
-      return list
-          .map((e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final reports =
+          list
+              .map(
+                (e) => CompletedAuditReport.fromJson(e as Map<String, dynamic>),
+              )
+              .where(
+                (r) => r.sessionId.isNotEmpty,
+              ) // tanpa sessionId tidak bisa dibuka PDF-nya
+              .toList();
+
+      // Terbaru di atas, supaya "Latest Report" benar-benar yang terbaru.
+      reports.sort((a, b) {
+        final da = a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final db = b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return db.compareTo(da);
+      });
+      return reports;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error getCompletedReports: $e');
-      }
+      if (kDebugMode) debugPrint('Error getCompletedReports: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }

@@ -50,7 +50,8 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
   final _descriptionController = TextEditingController();
 
   String? _selectedUnit;
-  List<String> _units = kSpcUnits;
+  List<String> _units = [];
+  bool _isLoadingUnits = true;
 
   @override
   void initState() {
@@ -61,11 +62,14 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
   }
 
   /// Unit diambil dari backend. Kalau gagal, daftar bawaan tetap dipakai.
-  Future<void> _loadUnits() async {
+   Future<void> _loadUnits() async {
+    setState(() => _isLoadingUnits = true);
     final units = await GetIt.I<SpcRemoteDatasource>().getUnits();
-    if (!mounted || units.isEmpty) return;
+    if (!mounted) return;
     setState(() {
       _units = units;
+      _isLoadingUnits = false;
+      // Unit yang sudah dihapus/dinonaktifkan admin tidak boleh terkirim.
       if (_selectedUnit != null && !units.contains(_selectedUnit)) {
         _selectedUnit = null;
       }
@@ -280,6 +284,7 @@ class _NewSpcAnalysisPageState extends State<NewSpcAnalysisPage> {
                       uslController: _uslController,
                       selectedUnit: _selectedUnit,
                       units: _units,
+                      isLoadingUnits: _isLoadingUnits,
                       enabled: !isSubmitting,
                       onUnitChanged: (value) {
                         setState(() => _selectedUnit = value);
