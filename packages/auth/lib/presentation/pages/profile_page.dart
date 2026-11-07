@@ -22,9 +22,14 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isLoading = true;
   bool _showMenu = false;
 
-  // Quality Score dari API
+  // Quality Score
   double _qualityScore = 0;
   bool _qualityScoreLoading = true;
+
+  /// Skor yang sudah diketahui tapi animasinya belum boleh mulai
+  /// (menunggu halaman selesai menampilkan spinner).
+  double? _pendingScore;
+
   late AnimationController _scoreAnimController;
   late Animation<double> _scoreAnim;
 
@@ -47,7 +52,6 @@ class _ProfilePageState extends State<ProfilePage>
       CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
     );
     _loadUserData();
-    _loadQualityScore();
     _loadKpi();
     _loadRecentActivities();
   }
@@ -58,32 +62,39 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
-  Future<void> _loadQualityScore() async {
-    final service = GetIt.instance<QualityScoreService>();
-    final score = await service.getLatestQualityScore();
-    _updateQualityScore(_kpi?.qualityScore ?? score ?? 0);
-  }
-
   Future<void> _loadKpi() async {
-    final service = GetIt.instance<ProfileService>();
-    final kpi = await service.getKpi();
-    if (mounted) {
-      setState(() {
-        _kpi = kpi;
-        _kpiLoading = false;
-      });
-      if (kpi?.qualityScore != null) {
-        _updateQualityScore(kpi!.qualityScore!);
-      }
-    }
+    final kpi = await GetIt.instance<ProfileService>().getKpi();
+
+    // KPI user adalah sumber utama. Trend (skor keseluruhan) hanya cadangan
+    // kalau KPI tidak membawa qualityScore. Hapus baris `score ??= ...`
+    // kalau cadangan ini justru menampilkan angka yang menyesatkan.
+    double? score = kpi?.qualityScore;
+    score ??= await GetIt.instance<QualityScoreService>()
+        .getLatestQualityScore();
+
+    if (!mounted) return;
+    setState(() {
+      _kpi = kpi;
+      _kpiLoading = false;
+    });
+    _updateQualityScore(score ?? 0);
   }
 
   void _updateQualityScore(double score) {
-    if (!mounted) return;
+    _pendingScore = score.clamp(0, 100).toDouble();
+    _startScoreAnimation();
+  }
 
-    _qualityScore = score.clamp(0, 100).toDouble();
+  void _startScoreAnimation() {
+    final target = _pendingScore;
+    // Tunggu sampai halaman tidak lagi menampilkan spinner, kalau tidak
+    // animasinya selesai sebelum terlihat.
+    if (!mounted || _isLoading || target == null) return;
+
+    _pendingScore = null;
+    _qualityScore = target;
     _qualityScoreLoading = false;
-    _scoreAnim = Tween<double>(begin: 0, end: _qualityScore / 100).animate(
+    _scoreAnim = Tween<double>(begin: 0, end: target / 100).animate(
       CurvedAnimation(parent: _scoreAnimController, curve: Curves.easeOutCubic),
     );
     _scoreAnimController.forward(from: 0);
@@ -104,7 +115,6 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _refreshAll() async {
     await Future.wait([
       _loadUserData(),
-      _loadQualityScore(),
       _loadKpi(),
       _loadRecentActivities(),
     ]);
@@ -125,6 +135,8 @@ class _ProfilePageState extends State<ProfilePage>
         _photoPath = user['photo'] ?? '';
         _isLoading = false;
       });
+      // Kalau skor sudah datang duluan, animasinya mulai sekarang.
+      _startScoreAnimation();
     }
   }
 

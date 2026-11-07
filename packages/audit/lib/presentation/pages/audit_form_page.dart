@@ -154,8 +154,14 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   List<String> get _visibleStandards {
+    // Belum pilih department: tampilkan semua ISO aktif dari admin.
     final list =
-        _standards.where((s) => _hasTemplate(s, _selectedDepartment)).toList();
+        _selectedDepartment == null
+            ? List<String>.from(_standards)
+            : _standards
+                .where((s) => _hasTemplate(s, _selectedDepartment))
+                .toList();
+
     final current = _selectedIso;
     if (_isEdit &&
         current != null &&
@@ -167,8 +173,12 @@ class _AuditFormPageState extends State<AuditFormPage> {
   }
 
   List<String> get _visibleDepartments {
+    // Belum pilih ISO: tampilkan semua department aktif dari admin.
     final list =
-        _departments.where((d) => _hasTemplate(_selectedIso, d)).toList();
+        _selectedIso == null
+            ? List<String>.from(_departments)
+            : _departments.where((d) => _hasTemplate(_selectedIso, d)).toList();
+
     final current = _selectedDepartment;
     if (_isEdit &&
         current != null &&
@@ -751,6 +761,17 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 ],
               ),
             )
+          else if (_visibleStandards.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No ISO has a checklist for this department',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.textDisabled,
+                ),
+              ),
+            )
           else
             RadioGroup<String>(
               groupValue: _selectedIso,
@@ -769,10 +790,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                   for (final iso in _visibleStandards)
                     RadioListTile<String>(
                       value: iso, // nilai mentah, dikirim ke backend
-                      title: Text(
-                        iso, // code ISO apa adanya, sama dengan yang dikirim ke backend
-                        style: GoogleFonts.inter(fontSize: 12),
-                      ),
+                      title: Text(iso, style: GoogleFonts.inter(fontSize: 12)),
                       controlAffinity: ListTileControlAffinity.leading,
                       contentPadding: EdgeInsets.zero,
                       activeColor: AppColors.primaryLight,
