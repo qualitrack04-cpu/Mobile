@@ -128,7 +128,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
     );
     if (!mounted) return;
     setState(() {
-      _standards = list;
+      _standards = list; // persis daftar ISO aktif dari admin
       _isLoadingStandards = false;
     });
   }
@@ -143,44 +143,46 @@ class _AuditFormPageState extends State<AuditFormPage> {
 
   /// Apakah ada template untuk pasangan ini. Null = tidak dibatasi.
   /// Kalau template gagal dimuat, tidak ada yang diblokir.
-bool _hasTemplate(String? iso, String? dept) {
-  if (iso == null && dept == null) return true; // belum ada pilihan: semua tampil
-  if (_templates.isEmpty) return true;          // template gagal dimuat: jangan blokir
-  return _templates.any(
-    (t) =>
-        (iso == null || t.matchesStandard(iso)) &&
-        (dept == null || t.matchesDepartment(dept)),
-  );
-}
-
-List<String> get _visibleStandards {
-  final list =
-      _standards.where((s) => _hasTemplate(s, _selectedDepartment)).toList();
-  final current = _selectedIso;
-  if (_isEdit && current != null && current == _initialIso &&
-      !list.contains(current)) {
-    list.insert(0, current);
+  bool _hasTemplate(String? iso, String? dept) {
+    if (iso == null && dept == null) return true;
+    if (_templates.isEmpty) return true;
+    return _templates.any(
+      (t) =>
+          (iso == null || t.matchesStandard(iso)) &&
+          (dept == null || t.matchesDepartment(dept)),
+    );
   }
-  return list;
-}
 
-List<String> get _visibleDepartments {
-  final list =
-      _departments.where((d) => _hasTemplate(_selectedIso, d)).toList();
-  final current = _selectedDepartment;
-  if (_isEdit && current != null && current == _initialDepartment &&
-      !list.contains(current)) {
-    list.insert(0, current);
+  List<String> get _visibleStandards {
+    final list =
+        _standards.where((s) => _hasTemplate(s, _selectedDepartment)).toList();
+    final current = _selectedIso;
+    if (_isEdit &&
+        current != null &&
+        current == _initialIso &&
+        !list.contains(current)) {
+      list.insert(0, current);
+    }
+    return list;
   }
-  return list;
-}
+
+  List<String> get _visibleDepartments {
+    final list =
+        _departments.where((d) => _hasTemplate(_selectedIso, d)).toList();
+    final current = _selectedDepartment;
+    if (_isEdit &&
+        current != null &&
+        current == _initialDepartment &&
+        !list.contains(current)) {
+      list.insert(0, current);
+    }
+    return list;
+  }
 
   Future<void> _loadDepartments() async {
-    final list = await GetIt.I<DepartmentService>().getDepartments();
+    final list = await GetIt.I<DepartmentService>().getActiveDepartments();
     if (!mounted) return;
-    setState(() {
-      _departments = list;
-    });
+    setState(() => _departments = list); // persis department aktif dari admin
   }
 
   @override

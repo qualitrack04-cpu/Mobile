@@ -58,6 +58,28 @@ class DepartmentService {
     return _asList(res.data);
   }
 
+  /// Department aktif dari admin saja, untuk dropdown form.
+  /// Tanpa cache, tanpa cadangan checklist, tanpa hardcode.
+  Future<List<String>> getActiveDepartments() async {
+    try {
+      final res = await apiService.client.get('/api/departments');
+      final names = <String>[];
+      for (final e in _asList(res.data)) {
+        if (e is Map) {
+          final flag = e['isActive'] ?? e['active'] ?? e['isEnabled'];
+          if (flag == false || flag == 0 || flag?.toString() == 'false')
+            continue;
+        }
+        final name = (e is Map ? e['name'] : e)?.toString().trim() ?? '';
+        if (name.isNotEmpty && !names.contains(name)) names.add(name);
+      }
+      return names;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error getActiveDepartments: $e');
+      return [];
+    }
+  }
+
   Future<List<DepartmentInfo>> getDepartmentInfos({
     bool forceRefresh = false,
   }) async {
