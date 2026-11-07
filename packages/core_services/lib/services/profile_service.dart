@@ -1,5 +1,6 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:core/core.dart';
 
 class UserKpi {
   final int totalCapaAssigned;
@@ -102,6 +103,14 @@ class UserRecentActivity {
               : null,
       relatedId: json['relatedId'] as String? ?? '',
     );
+  }
+  static DateTime? _tryParseUtc(dynamic raw) {
+    if (raw == null) return null;
+    try {
+      return AppClock.parseUtc(raw.toString());
+    } catch (_) {
+      return null;
+    }
   }
 }
 
