@@ -41,13 +41,27 @@ class ApiService {
   }
 
   static String fixImageUrl(String url) {
-    if (url.startsWith('http://localhost:5144')) {
-      return url.replaceFirst('http://localhost:5144', baseUrl);
+    var u = url.trim();
+    if (u.isEmpty) return u;
+
+    // localhost / emulator -> server asli
+    final local = RegExp(
+      r'^https?://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?',
+    );
+    if (local.hasMatch(u)) u = u.replaceFirst(local, baseUrl);
+
+    // http ke host server sendiri -> https
+    final host = Uri.parse(baseUrl).host;
+    if (u.startsWith('http://$host')) u = u.replaceFirst('http://', 'https://');
+
+    // Path relatif, dengan atau tanpa "/" di depan.
+    if (!u.startsWith('http')) {
+      u = '$baseUrl${u.startsWith('/') ? '' : '/'}$u';
     }
-    if (url.startsWith('/uploads')) {
-      return '$baseUrl$url';
-    }
-    return url;
+
+    // Encode spasi, tanda kurung, dll. Uri.parse + toString tidak
+    // meng-encode ulang yang sudah ter-encode (%20).
+    return Uri.parse(u).toString();
   }
 
   late final Dio _dio;
