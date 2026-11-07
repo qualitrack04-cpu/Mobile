@@ -176,41 +176,49 @@ class CapaDetailPage extends StatelessWidget {
               ),
             ),
 
-            if (capa.isClosed)
+            // Status: warna dan nama mengikuti /api/system-config/capa-statuses.
+            if (capa.status.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green.shade700,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Closed',
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildStatusChip(capa),
                 ),
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(Capa capa) {
+    final color = CapaStatusStyle.color(capa.status);
+    final isTerminal = CapaStatusStyle.isTerminal(capa.status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: CapaStatusStyle.background(capa.status),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isTerminal ? Icons.check_circle : Icons.circle,
+            size: isTerminal ? 16 : 8,
+            color: color,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            capa.status,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }

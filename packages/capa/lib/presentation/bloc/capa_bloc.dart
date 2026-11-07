@@ -7,6 +7,7 @@ import 'package:capa/domain/usecases/closeout_capa.dart';
 import 'package:capa/domain/repositories/capa_repository.dart';
 import 'capa_event.dart';
 import 'capa_state.dart';
+import 'package:core/core.dart';
 
 class CapaBloc extends Bloc<CapaEvent, CapaState> {
   final GetCapas getCapas;
@@ -39,7 +40,10 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onLoadCapaDetail(LoadCapaDetail event, Emitter<CapaState> emit) async {
+  Future<void> _onLoadCapaDetail(
+    LoadCapaDetail event,
+    Emitter<CapaState> emit,
+  ) async {
     emit(CapaLoading());
     try {
       final capa = await getCapaDetail(event.id);
@@ -49,7 +53,10 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onCreateCapa(CreateCapaEvent event, Emitter<CapaState> emit) async {
+  Future<void> _onCreateCapa(
+    CreateCapaEvent event,
+    Emitter<CapaState> emit,
+  ) async {
     emit(CapaLoading());
     try {
       final capa = await createCapa(
@@ -69,12 +76,15 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
   }
 
   // ✅ handler baru untuk update status dari card
-  Future<void> _onUpdateCapaStatus(UpdateCapaStatusEvent event, Emitter<CapaState> emit) async {
+  Future<void> _onUpdateCapaStatus(
+    UpdateCapaStatusEvent event,
+    Emitter<CapaState> emit,
+  ) async {
     try {
-      if (event.status == 'Closed') {
+      if (CapaStatusStyle.isTerminal(event.status)) {
         final prefs = await SharedPreferences.getInstance();
         String userId = prefs.getString('user_id') ?? '';
-        
+
         await closeoutCapa(
           id: event.id,
           isEffective: true,
@@ -84,7 +94,7 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
       } else {
         await repository.updateCapaStatus(id: event.id, status: event.status);
       }
-      
+
       final capas = await getCapas();
       emit(CapaLoaded(capas: capas));
     } catch (e) {
@@ -92,7 +102,10 @@ class CapaBloc extends Bloc<CapaEvent, CapaState> {
     }
   }
 
-  Future<void> _onCloseoutCapa(CloseoutCapaEvent event, Emitter<CapaState> emit) async {
+  Future<void> _onCloseoutCapa(
+    CloseoutCapaEvent event,
+    Emitter<CapaState> emit,
+  ) async {
     emit(CapaLoading());
     try {
       await closeoutCapa(

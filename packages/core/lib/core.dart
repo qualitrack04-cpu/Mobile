@@ -5,3 +5,4 @@ export 'app_clock.dart';
 export 'custom_bottom_navbar.dart';
 export 'department_style.dart';
 export 'pdf_thumbnail_widget.dart';
+export 'capa_status_style.dart';

@@ -20,24 +20,7 @@ class CapaModel extends Capa {
   });
 
   factory CapaModel.fromJson(Map<String, dynamic> json) {
-    const statusIntMap = {
-      0: 'Open',
-      1: 'In Progress',
-      2: 'Pending Verification',
-      3: 'Closed',
-    };
-    const statusStrMap = {
-      'Open': 'Open',
-      'InProgress': 'In Progress',
-      'PendingVerification': 'Pending Verification',
-      'Closed': 'Closed',
-    };
-
-    final statusRaw = json['status'];
-    final statusStr =
-        statusRaw is int
-            ? (statusIntMap[statusRaw] ?? 'Open')
-            : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
+    final statusStr = _parseStatus(json['statusName'] ?? json['status']);
 
     String findingTitle = json['findingTitle'] as String? ?? '';
     String findingCategory = json['findingCategory'] as String? ?? '';
@@ -94,7 +77,7 @@ class CapaModel extends Capa {
       picName: picName,
       findingTitle: findingTitle,
       deadline: DateTime.parse(json['deadline'] as String),
-      isClosed: statusStr == 'Closed',
+      isClosed: CapaStatusStyle.isTerminal(statusStr),
       createdAt: AppClock.parseUtc(json['createdAt'] as String),
       status: statusStr,
       closedAt: closedAt, // ← tambah ini
@@ -110,5 +93,19 @@ class CapaModel extends Capa {
       'picId': picId,
       'deadline': deadline.toIso8601String(),
     };
+  }
+
+  static String _parseStatus(dynamic raw) {
+    const legacy = {
+      0: 'Open',
+      1: 'In Progress',
+      2: 'Pending Verification',
+      3: 'Closed',
+    };
+    if (raw is int) return legacy[raw] ?? 'Open';
+    if (raw is Map) return _parseStatus(raw['name']);
+    final text = raw?.toString().trim() ?? '';
+    if (text.isEmpty) return 'Open';
+    return CapaStatusStyle.canonical(text);
   }
 }

@@ -1,6 +1,8 @@
 import 'package:core_services/services/api_service.dart';
 import 'package:capa/data/models/capa_model.dart';
 import 'package:dio/dio.dart';
+import 'package:core/core.dart';
+import 'dart:convert';
 
 String _parseError(Object e, String fallback) {
   if (e is DioException) {
@@ -36,10 +38,46 @@ class CapaRemoteDatasource {
 
   CapaRemoteDatasource({required this.apiService});
 
+  /// GET /api/system-config/capa-statuses. Gagal diam-diam: status lama dipakai.
+  Future<void> syncStatuses() async {
+    try {
+      final res = await apiService.client.get(
+        '/api/system-config/capa-statuses',
+      );
+      final body = res.data;
+      final raw =
+          body is List
+              ? body
+              : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
+
+      final list = <CapaStatusInfo>[];
+      for (final e in raw) {
+        if (e is! Map) continue;
+        final id = e['id']?.toString() ?? '';
+        final name = e['name']?.toString().trim() ?? '';
+        if (id.isEmpty || name.isEmpty) continue;
+        final hex = e['hexaCode']?.toString().trim();
+        list.add(
+          CapaStatusInfo(
+            id: id,
+            name: name,
+            colorHex: (hex == null || hex.isEmpty) ? null : hex,
+            orderIndex: (e['orderIndex'] as num?)?.toInt() ?? 0,
+            isTerminal: e['isTerminal'] == true,
+            isActive: e['isActive'] != false,
+          ),
+        );
+      }
+      CapaStatusStyle.register(list);
+    } catch (_) {}
+  }
+
   // GET /api/capas
   Future<List<CapaModel>> getCapas() async {
     try {
-      final response = await apiService.client.get('/api/capas');
+      // Status dimuat dulu (paralel) supaya registry siap sebelum CapaModel di-parse.
+      final (response, _) =
+          await (apiService.client.get('/api/capas'), syncStatuses()).wait;
       final data = response.data as List<dynamic>;
       return data
           .map((json) => CapaModel.fromJson(json as Map<String, dynamic>))
@@ -52,11 +90,44 @@ class CapaRemoteDatasource {
   // GET /api/capas/{id}
   Future<CapaModel> getCapaDetail(String id) async {
     try {
-      final response = await apiService.client.get('/api/capas/$id');
+      final (response, _) =
+          await (apiService.client.get('/api/capas/$id'), syncStatuses()).wait;
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to load CAPA details.'));
     }
+  }
+
+  // PATCH /api/capas/{id}/status
+  Future<void> updateCapaStatus({
+    required String id,
+    required String status,
+  }) async {
+    try {
+      await apiService.client.patch(
+        '/api/capas/$id/status',
+        data: jsonEncode(_statusPayload(status)),
+        options: Options(contentType: Headers.jsonContentType),
+      );
+    } catch (e) {
+      throw Exception(_parseError(e, 'Failed to update the CAPA status.'));
+    }
+  }
+
+  /// Status sekarang baris database dengan id, bukan enum 0..3.
+  /// Id dikirim kalau ada; kalau registry belum termuat, jatuh ke angka lama.
+  dynamic _statusPayload(String status) {
+    final id = CapaStatusStyle.find(status)?.id;
+    if (id != null && id.isNotEmpty) return id;
+
+    const legacy = {
+      'open': 0,
+      'inprogress': 1,
+      'pendingverification': 2,
+      'done': 3,
+      'closed': 3,
+    };
+    return legacy[status.replaceAll(RegExp(r'[\s_-]'), '').toLowerCase()] ?? 0;
   }
 
   // POST /api/capas/finding/{findingId}
@@ -107,33 +178,13 @@ class CapaRemoteDatasource {
         'deadline':
             '${deadline.year}-${deadline.month.toString().padLeft(2, '0')}-${deadline.day.toString().padLeft(2, '0')}',
       };
-      final response = await apiService.client.put('/api/capas/$id', data: body);
+      final response = await apiService.client.put(
+        '/api/capas/$id',
+        data: body,
+      );
       return CapaModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception(_parseError(e, 'Failed to update the CAPA.'));
-    }
-  }
-
-  // PATCH /api/capas/{id}/status
-  Future<void> updateCapaStatus({
-    required String id,
-    required String status,
-  }) async {
-    try {
-      // Backend menerima CAPAStatus enum: 0=Open, 1=InProgress, 2=Closed
-      final statusMap = {
-        'Open': 0,
-        'InProgress': 1,
-        'In Progress': 1,
-        'Pending Verification': 2,
-        'PendingVerification': 2,
-        'Done': 3,
-        'Closed': 3,
-      };
-      final statusInt = statusMap[status] ?? 0;
-      await apiService.client.patch('/api/capas/$id/status', data: statusInt);
-    } catch (e) {
-      throw Exception(_parseError(e, 'Failed to update the CAPA status.'));
     }
   }
 

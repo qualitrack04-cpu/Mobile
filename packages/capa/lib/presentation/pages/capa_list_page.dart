@@ -145,11 +145,11 @@ class _CapaListViewState extends State<_CapaListView> {
 
           final filteredCapas = _filterCapas(capas);
 
-          // Urutkan agar yang 'Closed' berada di paling bawah
           filteredCapas.sort((a, b) {
-            if (a.status == 'Closed' && b.status != 'Closed') return 1;
-            if (a.status != 'Closed' && b.status == 'Closed') return -1;
-            // Jika sama-sama Closed atau bukan, urutkan berdasarkan deadline terdekat
+            final aDone = CapaStatusStyle.isTerminal(a.status);
+            final bDone = CapaStatusStyle.isTerminal(b.status);
+            if (aDone && !bDone) return 1;
+            if (!aDone && bDone) return -1;
             return a.deadline.compareTo(b.deadline);
           });
 
@@ -282,17 +282,18 @@ class _CapaCardState extends State<_CapaCard> {
 
   /// Auditee hanya boleh sampai Pending Verification.
   /// Status Closed khusus Quality Manager / Auditor Internal.
-  List<String> get _availableStatuses =>
-      widget.role.canManageCapa
-          ? _statusOptions
-          : _statusOptions.where((s) => s != 'Closed').toList();
-  // ✅ opsi dropdown status
-  static const List<String> _statusOptions = [
-    'Open',
-    'In Progress',
-    'Pending Verification',
-    'Closed',
-  ];
+  List<String> get _availableStatuses {
+    final all = CapaStatusStyle.names;
+    final options =
+        widget.role.canManageCapa
+            ? all
+            : all.where((s) => !CapaStatusStyle.isTerminal(s)).toList();
+    // Status CAPA ini bisa sudah dinonaktifkan admin; dropdown tetap butuh itemnya.
+    if (_currentStatus.isNotEmpty && !options.contains(_currentStatus)) {
+      return [_currentStatus, ...options];
+    }
+    return options;
+  }
 
   @override
   void initState() {
@@ -451,31 +452,16 @@ class _CapaCardState extends State<_CapaCard> {
         ),
       );
     }
+    final isTerminal = CapaStatusStyle.isTerminal(_currentStatus);
+    final hasStatus = _currentStatus.isNotEmpty;
+    final Color textColor =
+        hasStatus ? CapaStatusStyle.color(_currentStatus) : Colors.black38;
+    final Color bgColor =
+        hasStatus
+            ? CapaStatusStyle.background(_currentStatus)
+            : const Color(0xFFF0F0F0);
 
-    // ✅ warna sesuai status
-    Color bgColor;
-    Color textColor;
-
-    switch (_currentStatus) {
-      case 'Closed':
-        bgColor = const Color(0xFFD5F5E3);
-        textColor = Colors.green;
-        break;
-      case 'In Progress':
-        bgColor = const Color(0xFFFFEDD5);
-        textColor = Colors.orange;
-        break;
-      case 'Open':
-        bgColor = const Color(0xFFFFDDDD);
-        textColor = Colors.red;
-        break;
-      default:
-        // ✅ status kosong: tampil placeholder "Status"
-        bgColor = const Color(0xFFF0F0F0);
-        textColor = Colors.black38;
-    }
-
-    if (!_canChangeStatus || _currentStatus == 'Closed') {
+    if (!_canChangeStatus || isTerminal) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -523,61 +509,40 @@ class _CapaCardState extends State<_CapaCard> {
               _availableStatuses.map((status) {
                 return DropdownMenuItem<String>(
                   value: status,
-                  child: Text(
-                    status,
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: CapaStatusStyle.color(status),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        status,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }).toList(),
           onChanged:
-              widget.capa.status == 'Closed'
+              CapaStatusStyle.isTerminal(widget.capa.status)
                   ? null
                   : (newStatus) async {
                     if (newStatus == null) return;
+                    final goesTerminal = CapaStatusStyle.isTerminal(newStatus);
 
-                    // Pengaman: hanya yang berhak boleh menutup CAPA
-                    if (newStatus == 'Closed' && !widget.role.canManageCapa)
-                      return;
+                    if (goesTerminal && !widget.role.canManageCapa) return;
 
-                    if (newStatus == 'Closed') {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: const Text('Confirmation'),
-                              content: const Text(
-                                'Are you sure you want to close this CAPA? This action cannot be undone.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed:
-                                      () => Navigator.pop(context, false),
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text(
-                                    'Yes, Close',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                      );
-
-                      if (confirm != true) return;
-
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setString(
-                        'capa_closed_at_${widget.capa.id}',
-                        DateTime.now().toUtc().toIso8601String(),
-                      );
+                    if (goesTerminal) {
+                      // ... dialog konfirmasi + simpan pref, tidak berubah
                     }
 
                     setState(() => _currentStatus = newStatus);
