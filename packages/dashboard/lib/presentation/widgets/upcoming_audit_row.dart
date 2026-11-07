@@ -11,28 +11,14 @@ class UpcomingAuditRow extends StatelessWidget {
   final UpcomingAuditItem audit;
   final VoidCallback onTap;
 
-  static const List<String> _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final color = DepartmentStyle.colorOf(audit.department);
     final daysLeft = audit.daysLeft;
-    final daysLabel = daysLeft == 0
-        ? 'today'
-        : '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left';
+    final daysLabel =
+        daysLeft == 0
+            ? 'today'
+            : '$daysLeft ${daysLeft == 1 ? 'day' : 'days'} left';
 
     return Column(
       children: [
@@ -65,7 +51,7 @@ class UpcomingAuditRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        _months[audit.date.month - 1],
+                        AppClock.monthShort(audit.date.month),
                         style: GoogleFonts.inter(fontSize: 8, color: color),
                       ),
                     ],

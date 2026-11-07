@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:core_services/core_services.dart';
 import 'package:get_it/get_it.dart';
 import 'login_page.dart';
@@ -943,37 +944,20 @@ class _ProfilePageState extends State<ProfilePage>
 
   String _formatActivityTime(DateTime? dt) {
     if (dt == null) return '-';
-    final now = DateTime.now();
-    final local = dt.toLocal();
-    final diff = now.difference(local);
 
-    if (diff.inDays == 0) {
-      // Today — tampilkan jam
-      final h = local.hour.toString().padLeft(2, '0');
-      final m = local.minute.toString().padLeft(2, '0');
-      return 'Today, $h:$m ${local.hour < 12 ? "AM" : "PM"}';
-    } else if (diff.inDays == 1) {
-      final h = local.hour.toString().padLeft(2, '0');
-      final m = local.minute.toString().padLeft(2, '0');
-      return 'Yesterday, $h:$m ${local.hour < 12 ? "AM" : "PM"}';
-    } else {
-      const months = [
-        '',
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[local.month]} ${local.day}, ${local.year}';
-    }
+    final then = AppClock.toSystem(dt);
+    final now = AppClock.nowSystem();
+    final diffDays =
+        DateTime.utc(
+          now.year,
+          now.month,
+          now.day,
+        ).difference(DateTime.utc(then.year, then.month, then.day)).inDays;
+
+    final time = AppClock.formatTime(dt);
+    if (diffDays == 0) return 'Today, $time';
+    if (diffDays == 1) return 'Yesterday, $time';
+    return AppClock.formatDate(dt);
   }
 
   void _showLogoutDialog(BuildContext context) {

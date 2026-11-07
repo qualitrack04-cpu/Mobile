@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
-
+import 'package:core/core.dart';
 import '../../domain/entities/audit_entity.dart';
 
 class AuditCard extends StatelessWidget {
@@ -34,9 +34,8 @@ class AuditCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: isOverdue
-            ? Border.all(color: AppColors.danger, width: 1.5)
-            : null,
+        border:
+            isOverdue ? Border.all(color: AppColors.danger, width: 1.5) : null,
 
         boxShadow: [
           BoxShadow(
@@ -76,7 +75,12 @@ class AuditCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDateSection(bool isFinished, bool isPriority, double sw, bool isOverdue) {
+  Widget _buildDateSection(
+    bool isFinished,
+    bool isPriority,
+    double sw,
+    bool isOverdue,
+  ) {
     Color sectionColor;
 
     if (audit.id.isEmpty) {
@@ -117,7 +121,7 @@ class AuditCard extends StatelessWidget {
 
         children: [
           Text(
-            _monthAbbr(audit.date.month),
+            AppClock.monthShort(audit.date.month).toUpperCase(),
             style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 14,
@@ -163,7 +167,10 @@ class AuditCard extends StatelessWidget {
               if (isOverdue) ...[
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFDF2F2), // Latar pink muda (Red 50)
                     borderRadius: BorderRadius.circular(8),
@@ -177,7 +184,9 @@ class AuditCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFFC81E1E), // Teks merah tua (Red 700)
+                      color: const Color(
+                        0xFFC81E1E,
+                      ), // Teks merah tua (Red 700)
                     ),
                   ),
                 ),
@@ -187,9 +196,8 @@ class AuditCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: isFinished
-                      ? const Color(0xFF7A93AA)
-                      : AppColors.primary,
+                  color:
+                      isFinished ? const Color(0xFF7A93AA) : AppColors.primary,
                   height: 1.2,
                 ),
               ),
@@ -218,9 +226,7 @@ class AuditCard extends StatelessWidget {
   }
 
   Widget _buildMetaRow(bool isFinished) {
-    final Color metaColor = isFinished
-        ? const Color(0xFFB0B7C3)
-        : Colors.grey;
+    final Color metaColor = isFinished ? const Color(0xFFB0B7C3) : Colors.grey;
 
     return Row(
       children: [
@@ -231,7 +237,9 @@ class AuditCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  audit.department == 'Produksi' ? 'Production' : audit.department,
+                  audit.department == 'Produksi'
+                      ? 'Production'
+                      : audit.department,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -305,7 +313,9 @@ class AuditCard extends StatelessWidget {
     }
 
     if (audit.id.isEmpty) {
-      return const SizedBox(height: 46); // Sembunyikan tombol saat skeleton loading
+      return const SizedBox(
+        height: 46,
+      ); // Sembunyikan tombol saat skeleton loading
     }
 
     return Row(
@@ -387,13 +397,5 @@ class AuditCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  static String _monthAbbr(int month) {
-    const months = [
-      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
-    ];
-    return months[month - 1];
   }
 }

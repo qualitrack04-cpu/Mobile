@@ -9,21 +9,6 @@ class ComplianceScoreCard extends StatelessWidget {
 
   final ComplianceScoreResponse scoreResponse;
 
-  static const List<String> _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   static const double _tileGap = 12;
 
   @override
@@ -31,7 +16,7 @@ class ComplianceScoreCard extends StatelessWidget {
     final now = DateTime.now();
     final month = scoreResponse.month ?? now.month;
     final year = scoreResponse.year ?? now.year;
-    final monthLabel = '${_months[month - 1]} $year';
+    final monthLabel = '${AppClock.monthShort(month)} $year';
     final change = scoreResponse.change ?? 3;
 
     final tiles = DepartmentStyle.standard.map(_buildTile).toList();

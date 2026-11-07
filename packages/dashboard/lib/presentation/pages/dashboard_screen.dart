@@ -30,15 +30,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          DashboardPage(
-            isActive: _currentIndex == 0,
-            onOpenAuditPlan: () => setState(() => _currentIndex = 1),
-          ),
-          ..._otherPages,
-        ],
+      // Dibungkus ValueListenableBuilder: setiap config tanggal/zona waktu
+      // berubah (AppClock.revision naik), halaman selain Dashboard dibuat
+      // ulang lewat key baru sehingga formatnya ikut berubah.
+      body: ValueListenableBuilder<int>(
+        valueListenable: AppClock.revision,
+        builder: (context, rev, _) {
+          return IndexedStack(
+            index: _currentIndex,
+            children: [
+              DashboardPage(
+                isActive: _currentIndex == 0,
+                onOpenAuditPlan: () => setState(() => _currentIndex = 1),
+              ),
+              for (final page in _otherPages)
+                KeyedSubtree(
+                  key: ValueKey('${page.runtimeType}-$rev'),
+                  child: page,
+                ),
+            ],
+          );
+        },
       ),
       bottomNavigationBar: CustomBottomNavbar(
         currentIndex: _currentIndex,

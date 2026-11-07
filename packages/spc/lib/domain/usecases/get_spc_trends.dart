@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:spc/domain/entities/spc_analysis.dart';
 import 'package:spc/domain/repositories/spc_repository.dart';
 
@@ -6,32 +7,20 @@ import 'package:spc/domain/repositories/spc_repository.dart';
 /// Backend belum punya endpoint agregat, jadi pengelompokan dilakukan di sini.
 /// Kalau nanti tersedia GET /api/Spc/trends, cukup ganti isi [call] — bloc dan
 /// UI tidak perlu diubah sama sekali.
+///
+/// Bulan dan labelnya mengikuti zona waktu sistem dari [AppClock], bukan zona
+/// waktu perangkat.
 class GetSpcTrends {
   final SpcRepository repository;
 
   GetSpcTrends({required this.repository});
-
-  static const List<String> _monthLabels = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
-  ];
 
   Future<List<SpcAnalysisTrend>> call(SpcPeriod period) async {
     final analyses = await repository.getHistory(period: period);
 
     // Siapkan ember kosong untuk tiap bulan dalam periode, supaya bulan yang
     // tidak punya analisis tetap muncul sebagai bar kosong.
-    final now = DateTime.now();
+    final now = AppClock.nowSystem();
     final buckets = <String, Map<SpcStatus, int>>{};
     final order = <String>[];
 
@@ -43,9 +32,10 @@ class GetSpcTrends {
     }
 
     for (final analysis in analyses) {
-      final key = _keyOf(analysis.analyzedAt);
+      // Bulan analisis dihitung di zona waktu sistem, sama seperti ember di atas.
+      final key = _keyOf(AppClock.toSystem(analysis.analyzedAt));
       final bucket = buckets[key];
-      // Data di luar rentang diabaikan, misal karena selisih zona waktu.
+      // Data di luar rentang diabaikan.
       if (bucket == null) continue;
       bucket[analysis.status] = (bucket[analysis.status] ?? 0) + 1;
     }
@@ -55,7 +45,7 @@ class GetSpcTrends {
       final month = int.parse(key.split('-')[1]);
 
       return SpcAnalysisTrend(
-        monthLabel: _monthLabels[month - 1],
+        monthLabel: AppClock.monthShort(month),
         capable: (bucket[SpcStatus.capable] ?? 0).toDouble(),
         marginal: (bucket[SpcStatus.marginal] ?? 0).toDouble(),
         notCapable: (bucket[SpcStatus.notCapable] ?? 0).toDouble(),

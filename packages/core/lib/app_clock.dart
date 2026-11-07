@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Zona waktu dan format tanggal sistem. Nilainya dari backend
 /// (/api/system-config/timezone dan /date-format), bisa diubah admin.
 abstract final class AppClock {
@@ -10,12 +12,17 @@ abstract final class AppClock {
 
   static Duration get _activeOffset => _offset ?? DateTime.now().timeZoneOffset;
 
+  /// Naik setiap config benar-benar berubah. Dipakai UI untuk rebuild live.
+  static final ValueNotifier<int> revision = ValueNotifier<int>(0);
+
   /// Dipanggil setiap config dari backend dimuat. Parameter null = tidak diubah.
   static void configure({
     double? utcOffsetHours,
     String? zoneLabel,
     String? dateFormat,
   }) {
+    final before = '$_offset|$_zoneLabel|$_dateFormat';
+
     if (utcOffsetHours != null) {
       _offset = Duration(minutes: (utcOffsetHours * 60).round());
     }
@@ -23,6 +30,8 @@ abstract final class AppClock {
     if (dateFormat != null && _isValidFormat(dateFormat)) {
       _dateFormat = dateFormat.trim();
     }
+
+    if (before != '$_offset|$_zoneLabel|$_dateFormat') revision.value++;
   }
 
   /// Format harus punya tahun, bulan, dan hari. Kalau tidak, diabaikan.
@@ -46,6 +55,9 @@ abstract final class AppClock {
   /// Menggeser ke zona sistem. Hasilnya bertanda UTC, tapi field-nya
   /// (day, hour, dst.) sudah berisi jam dinding zona sistem.
   static DateTime toSystem(DateTime value) => value.toUtc().add(_activeOffset);
+
+  /// Sekarang menurut zona waktu sistem (field = jam dinding zona itu).
+  static DateTime nowSystem() => toSystem(DateTime.now());
 
   /// Tanggal sesuai format admin.
   ///
@@ -87,6 +99,22 @@ abstract final class AppClock {
     'November',
     'December',
   ];
+
+  static const List<String> _weekdays = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+
+  /// "Nov" untuk bulan 1..12.
+  static String monthShort(int month) => _months[month - 1].substring(0, 3);
+
+  /// "Mon" untuk [DateTime.weekday] 1..7.
+  static String weekdayShort(int weekday) => _weekdays[weekday - 1];
 
   static final RegExp _token = RegExp(
     r'month|[yY]+|[mM]+|[dD]+',

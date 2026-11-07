@@ -114,36 +114,9 @@ class _FeaturedAudit extends StatelessWidget {
   final UpcomingAuditItem audit;
   final VoidCallback onTap;
 
-  static const List<String> _weekdays = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
-  static const List<String> _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String get _dateLabel {
-    final date = audit.date;
-    return '${_weekdays[date.weekday - 1]}, ${date.day} '
-        '${_months[date.month - 1]}';
-  }
+  String get _dateLabel =>
+      '${AppClock.weekdayShort(audit.date.weekday)}, '
+      '${AppClock.formatDate(audit.date, convert: false)}';
 
   @override
   Widget build(BuildContext context) {
