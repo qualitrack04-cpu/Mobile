@@ -195,6 +195,14 @@ class _AuditFormPageState extends State<AuditFormPage> {
     setState(() => _departments = list); // persis department aktif dari admin
   }
 
+  void _resetIsoAndDepartment() {
+    setState(() {
+      _selectedIso = null;
+      _selectedDepartment = null;
+      _formNotifier.value++;
+    });
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -681,14 +689,38 @@ class _AuditFormPageState extends State<AuditFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'ISO TEMPLATE',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-              color: AppColors.textSecondary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ISO TEMPLATE',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              if (_selectedIso != null || _selectedDepartment != null)
+                InkWell(
+                  onTap: _resetIsoAndDepartment,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    child: Text(
+                      'Reset',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.action,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           if (_isLoadingStandards)
