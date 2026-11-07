@@ -56,9 +56,12 @@ import 'package:spc/presentation/bloc/spc_history_bloc.dart';
 import 'package:spc/domain/usecases/get_analysis_detail.dart';
 import 'package:spc/domain/usecases/get_spc_status_summary.dart';
 
+import 'package:core_services/services/system_config_service.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  sl.registerLazySingleton(() => SystemConfigService(apiService: sl()));
   sl.registerLazySingleton(() => DepartmentService(apiService: sl()));
   // ===== FINDING =====
   sl.registerLazySingleton(() => FindingRemoteDatasource(apiService: sl()));

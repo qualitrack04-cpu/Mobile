@@ -8,11 +8,13 @@ import 'package:capa/presentation/pages/capa_form_page.dart';
 import 'package:capa/presentation/pages/capa_detail_page.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:core_services/core_services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:finding/presentation/widgets/finding_category_style.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 
 class CapaListPage extends StatelessWidget {
   const CapaListPage({super.key});
@@ -44,6 +46,12 @@ class _CapaListViewState extends State<_CapaListView> {
   void initState() {
     super.initState();
     _loadUserRole();
+    _syncColors();
+  }
+
+  Future<void> _syncColors() async {
+    await GetIt.instance<FindingRemoteDatasource>().syncCategoryColors();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUserRole() async {
@@ -348,7 +356,7 @@ class _CapaCardState extends State<_CapaCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${_getMonth(widget.capa.createdAt.month)} ${widget.capa.createdAt.day}, ${widget.capa.createdAt.year}',
+                        AppClock.formatDate(widget.capa.createdAt),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black54,
@@ -592,23 +600,5 @@ class _CapaCardState extends State<_CapaCard> {
       return Colors.grey.shade300;
     }
     return FindingCategoryStyle.color(widget.capa.findingCategory);
-  }
-
-  String _getMonth(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
   }
 }

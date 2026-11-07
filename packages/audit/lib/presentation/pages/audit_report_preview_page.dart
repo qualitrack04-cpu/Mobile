@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path_provider/path_provider.dart';
@@ -181,24 +182,8 @@ class _AuditReportPreviewPageState extends State<AuditReportPreviewPage> {
   }
 
   Widget _buildAuditDetailCard() {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final date = widget.audit.date;
-    final dateStr =
-        '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
-
+    final dateStr = AppClock.formatDate(widget.audit.date, convert: false);
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,

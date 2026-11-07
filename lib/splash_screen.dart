@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:auth/presentation/pages/login_page.dart';
 import 'package:dashboard/presentation/pages/dashboard_screen.dart';
 import 'injector.dart' as di;
+import 'package:core/core.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,8 +26,10 @@ class _SplashScreenState extends State<SplashScreen> {
     // Jalankan init dan timer minimum secara bersamaan
     // Splash screen tampil selama proses ini berjalan
     final results = await Future.wait([
-      _doInit(),                                          // Semua proses loading
-      Future.delayed(const Duration(milliseconds: 2000)), // Minimal splash 2 detik
+      _doInit(), // Semua proses loading
+      Future.delayed(
+        const Duration(milliseconds: 2000),
+      ), // Minimal splash 2 detik
     ]);
 
     final isLoggedIn = results[0] as bool;
@@ -35,8 +38,8 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              isLoggedIn ? const DashboardScreen() : const LoginPage(),
+          builder:
+              (_) => isLoggedIn ? const DashboardScreen() : const LoginPage(),
         ),
       );
     }
@@ -44,7 +47,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<bool> _doInit() async {
     // Semua proses yang dulu ada di main.dart, sekarang di sini
-    await di.init();                              // Initialize injector
+    await di.init();
+    final cached = await di.sl<SystemConfigService>().loadCached();
+    if (cached != null) {
+      AppClock.configure(
+        utcOffsetHours: cached.utcOffsetHours,
+        zoneLabel: cached.timeZoneLabel,
+        dateFormat: cached.dateFormat,
+      );
+    } // Initialize injector
 
     // Setup unauthenticated (401) handler
     final apiService = di.sl<ApiService>();
@@ -62,13 +73,13 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     };
 
-    await NotificationService().init();           // Initialize notification service
-    await Permission.notification.request();      // Request notification permissions
+    await NotificationService().init(); // Initialize notification service
+    await Permission.notification.request(); // Request notification permissions
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     // TODO: KEMBALIKAN KODE DI BAWAH INI JIKA SERVER SUDAH NYALA
-    return token != null && token.isNotEmpty;     // Return status login
+    return token != null && token.isNotEmpty; // Return status login
     // return true; // Bypass sementara agar bisa nyoba UI
   }
 

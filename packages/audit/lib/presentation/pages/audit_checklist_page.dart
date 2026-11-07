@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:core_services/services/api_service.dart';
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/presentation/bloc/finding_bloc.dart';
@@ -260,24 +261,8 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
     }
   }
 
-  String get _formattedDate {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final date = widget.audit.date;
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+  String get _formattedDate =>
+    AppClock.formatDate(widget.audit.date, convert: false);
 
   int get _completedCount =>
       _checklists.where((e) => e.isPassed != null).length;

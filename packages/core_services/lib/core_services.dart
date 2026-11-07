@@ -8,3 +8,4 @@ export 'services/report_pdf_service.dart';
 export 'password_policy.dart';
 export 'user_role.dart';
 export 'services/department_service.dart';
+export 'services/system_config_service.dart';

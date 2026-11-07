@@ -1,4 +1,5 @@
 import 'package:spc/domain/entities/spc_analysis.dart';
+import 'package:core/core.dart';
 
 /// Satu item dari GET /api/Spc/history (SpcHistoryDto).
 ///
@@ -27,7 +28,7 @@ class SpcHistoryModel extends SpcAnalysisSummary {
       parameterName: json['productName']?.toString() ?? '-',
       // Backend mengirim UTC. Diubah ke waktu lokal supaya pengelompokan
       // bulan dan tampilan jam sesuai zona waktu pengguna.
-      analyzedAt: DateTime.parse(json['analyzedAt'] as String).toLocal(),
+      analyzedAt: AppClock.parseUtc(json['analyzedAt'] as String).toLocal(),
       status: SpcStatusApi.fromApi(json['status'] as String?),
       cp: (json['cp'] as num?)?.toDouble(),
       cpk: (json['cpk'] as num?)?.toDouble(),

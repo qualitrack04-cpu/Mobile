@@ -5,7 +5,7 @@ import 'package:core_services/services/api_service.dart';
 import 'package:capa/presentation/bloc/capa_bloc.dart';
 import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
-import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CapaFormPage extends StatefulWidget {
@@ -590,10 +590,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  _selectedDeadline != null
-                      ? '${_selectedDeadline!.day} ${_getMonth(_selectedDeadline!.month)} ${_selectedDeadline!.year}'
-                      : 'Select a deadline date...',
+Text(
+  _selectedDeadline != null
+      ? AppClock.formatDate(_selectedDeadline!, convert: false)
+      : 'Select a deadline date...',
                   style: TextStyle(
                     fontSize: 15,
                     color:
@@ -718,23 +718,5 @@ class _CapaFormPageState extends State<CapaFormPage> {
         deadline: _selectedDeadline!,
       ),
     );
-  }
-
-  String _getMonth(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month - 1];
   }
 }

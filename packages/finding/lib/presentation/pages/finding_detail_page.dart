@@ -7,24 +7,22 @@ import 'package:finding/presentation/bloc/finding_event.dart';
 import 'package:finding/presentation/bloc/finding_state.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core_services/services/api_service.dart';
 
 class FindingDetailPage extends StatelessWidget {
   final String findingId;
 
-  const FindingDetailPage({
-    super.key,
-    required this.findingId,
-  });
+  const FindingDetailPage({super.key, required this.findingId});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return BlocProvider.value(
-      value: GetIt.instance<FindingBloc>()
-        ..add(LoadFindingDetail(id: findingId)),
+      value:
+          GetIt.instance<FindingBloc>()..add(LoadFindingDetail(id: findingId)),
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
@@ -90,8 +88,9 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
   }
 
   Future<void> _loadEvidences() async {
-    final result = await GetIt.instance<FindingRemoteDatasource>()
-        .getEvidences(widget.finding.id);
+    final result = await GetIt.instance<FindingRemoteDatasource>().getEvidences(
+      widget.finding.id,
+    );
     if (mounted) {
       setState(() {
         _evidences = result;
@@ -183,7 +182,9 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                       Text(
                         '${_evidences.length} photo',
                         style: const TextStyle(
-                            fontSize: 11, color: Colors.black38),
+                          fontSize: 11,
+                          color: Colors.black38,
+                        ),
                       ),
                     ],
                   ),
@@ -210,14 +211,18 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
                   _buildInfoRow(
                     icon: Icons.business_outlined,
                     label: 'Dept',
-                    value: finding.department == 'Produksi' ? 'Production' : (finding.department == 'QC' ? 'Quality Control' : finding.department),
+                    value:
+                        finding.department == 'Produksi'
+                            ? 'Production'
+                            : (finding.department == 'QC'
+                                ? 'Quality Control'
+                                : finding.department),
                   ),
                   const SizedBox(height: 10),
                   _buildInfoRow(
                     icon: Icons.calendar_today_outlined,
                     label: 'Date',
-                    value:
-                        '${finding.foundAt.toLocal().day} ${_getMonth(finding.foundAt.toLocal().month)} ${finding.foundAt.toLocal().year}',
+                    value: AppClock.formatDate(finding.foundAt),
                   ),
                 ],
               ),
@@ -234,7 +239,9 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
         height: 80,
         child: Center(
           child: CircularProgressIndicator(
-              color: Color(0xFF0D2B55), strokeWidth: 2),
+            color: Color(0xFF0D2B55),
+            strokeWidth: 2,
+          ),
         ),
       );
     }
@@ -312,14 +319,6 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
       ],
     );
   }
-
-  String _getMonth(int month) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return months[month - 1];
-  }
 }
 
 /// Thumbnail individual dengan tombol hapus
@@ -353,10 +352,11 @@ class _EvidenceThumbnail extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => _EvidenceGalleryPage(
-                    evidences: allEvidences,
-                    initialIndex: index,
-                  ),
+                  builder:
+                      (_) => _EvidenceGalleryPage(
+                        evidences: allEvidences,
+                        initialIndex: index,
+                      ),
                 ),
               );
             },
@@ -371,19 +371,25 @@ class _EvidenceThumbnail extends StatelessWidget {
                     color: Colors.grey[200],
                     child: const Center(
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Color(0xFF0D2B55)),
+                        strokeWidth: 2,
+                        color: Color(0xFF0D2B55),
+                      ),
                     ),
                   );
                 },
-                errorBuilder: (_, _, _) => Container(
-                  color: Colors.grey[200],
-                  child: Icon(Icons.broken_image_outlined,
-                      color: Colors.grey[400], size: 28),
-                ),
+                errorBuilder:
+                    (_, _, _) => Container(
+                      color: Colors.grey[200],
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.grey[400],
+                        size: 28,
+                      ),
+                    ),
               ),
             ),
           ),
-          
+
           // ✅ Counter overlay "+N" di foto ke-3 jika ada lebih
           if (showCounter && remaining > 0)
             Positioned.fill(
@@ -392,10 +398,11 @@ class _EvidenceThumbnail extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => _EvidenceGalleryPage(
-                        evidences: allEvidences,
-                        initialIndex: index,
-                      ),
+                      builder:
+                          (_) => _EvidenceGalleryPage(
+                            evidences: allEvidences,
+                            initialIndex: index,
+                          ),
                     ),
                   );
                 },
@@ -483,10 +490,14 @@ class _EvidenceGalleryPageState extends State<_EvidenceGalleryPage> {
                     child: CircularProgressIndicator(color: Colors.white),
                   );
                 },
-                errorBuilder: (_, _, _) => const Center(
-                  child: Icon(Icons.broken_image_outlined,
-                      color: Colors.white54, size: 64),
-                ),
+                errorBuilder:
+                    (_, _, _) => const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white54,
+                        size: 64,
+                      ),
+                    ),
               ),
             ),
           );

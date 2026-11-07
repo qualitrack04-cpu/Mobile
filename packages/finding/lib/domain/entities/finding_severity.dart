@@ -6,9 +6,11 @@ class FindingCategory extends Equatable {
   final String id;
   final String name;
 
-  const FindingCategory({required this.id, required this.name});
+  /// Hex dari backend (field `hexaCode`), mis. "#3B82F6". Null jika tidak ada.
+  final String? colorHex;
 
-  /// "MajorNC" -> "Major NC", "OFI" tetap "OFI"
+  const FindingCategory({required this.id, required this.name, this.colorHex});
+
   String get label => name.replaceAllMapped(
         RegExp(r'(?<=[a-z])(?=[A-Z])'),
         (_) => ' ',

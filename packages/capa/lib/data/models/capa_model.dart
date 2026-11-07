@@ -1,4 +1,5 @@
 import 'package:capa/domain/entities/capa.dart';
+import 'package:core/core.dart';
 
 class CapaModel extends Capa {
   const CapaModel({
@@ -23,7 +24,7 @@ class CapaModel extends Capa {
       0: 'Open',
       1: 'In Progress',
       2: 'Pending Verification',
-      3: 'Closed'
+      3: 'Closed',
     };
     const statusStrMap = {
       'Open': 'Open',
@@ -33,9 +34,10 @@ class CapaModel extends Capa {
     };
 
     final statusRaw = json['status'];
-    final statusStr = statusRaw is int
-        ? (statusIntMap[statusRaw] ?? 'Open')
-        : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
+    final statusStr =
+        statusRaw is int
+            ? (statusIntMap[statusRaw] ?? 'Open')
+            : statusStrMap[statusRaw as String? ?? ''] ?? 'Open';
 
     String findingTitle = json['findingTitle'] as String? ?? '';
     String findingCategory = json['findingCategory'] as String? ?? '';
@@ -53,7 +55,7 @@ class CapaModel extends Capa {
           0: 'MajorNC',
           1: 'MinorNC',
           2: 'Observation',
-          3: 'OFI'
+          3: 'OFI',
         };
         findingCategory = categoryMap[categoryRaw] ?? '';
       } else if (categoryRaw is String) {
@@ -93,7 +95,7 @@ class CapaModel extends Capa {
       findingTitle: findingTitle,
       deadline: DateTime.parse(json['deadline'] as String),
       isClosed: statusStr == 'Closed',
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: AppClock.parseUtc(json['createdAt'] as String),
       status: statusStr,
       closedAt: closedAt, // ← tambah ini
     );

@@ -1,4 +1,5 @@
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,29 +18,9 @@ class AnalysisResultPage extends StatelessWidget {
 
   final SpcAnalysisResult result;
 
-  static const List<String> _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String get _completedLabel {
-    final d = result.analyzedAt;
-    final hour12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
-    final period = d.hour < 12 ? 'AM' : 'PM';
-    final minute = d.minute.toString().padLeft(2, '0');
-    return 'Analysis completed on ${_monthNames[d.month - 1]} ${d.day}, '
-        '${d.year} \u00b7 ${hour12.toString().padLeft(2, '0')}:$minute $period';
-  }
+  String get _completedLabel =>
+      'Analysis completed on '
+      '${AppClock.formatDateTime(result.analyzedAt, withZone: true)}';
 
   @override
   Widget build(BuildContext context) {

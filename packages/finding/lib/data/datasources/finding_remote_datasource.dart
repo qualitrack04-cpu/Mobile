@@ -3,6 +3,7 @@ import 'package:core_services/services/api_service.dart';
 import 'package:finding/data/models/finding_model.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
 import 'package:flutter/foundation.dart';
+import 'package:finding/presentation/widgets/finding_category_style.dart';
 
 class FindingRemoteDatasource {
   final ApiService apiService;
@@ -11,7 +12,7 @@ class FindingRemoteDatasource {
 
   /// Daftar kategori dari backend. Tanpa cache permanen,
   /// karena admin bisa menambah kategori kapan saja.
-    /// GET /api/system-config/finding-categories
+  /// GET /api/system-config/finding-categories
   ///
   /// Tanpa cache, karena admin bisa menambah, mengubah, atau menonaktifkan
   /// kategori kapan saja. Hanya kategori aktif yang dikembalikan.
@@ -20,28 +21,51 @@ class FindingRemoteDatasource {
       '/api/system-config/finding-categories',
     );
     final body = res.data;
-    final raw = body is List
-        ? body
-        : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
+    final raw =
+        body is List
+            ? body
+            : (body is Map ? (body['data'] as List? ?? []) : <dynamic>[]);
 
-    final result = <FindingCategory>[];
+    final active = <FindingCategory>[];
+    final all = <FindingCategory>[]; // termasuk nonaktif, untuk warna
+
     for (final e in raw) {
       if (e is! Map) continue;
-      if (e['isActive'] == false) continue;
 
       final id = e['id']?.toString() ?? '';
-      final name = (e['name'] ?? e['categoryName'] ?? e['title'])
-              ?.toString()
-              .trim() ??
+      final name =
+          (e['name'] ?? e['categoryName'] ?? e['title'])?.toString().trim() ??
           '';
       if (id.isEmpty || name.isEmpty) continue;
-      if (result.any((c) => c.id == id)) continue;
 
-      result.add(FindingCategory(id: id, name: name));
+      final hex =
+          (e['hexaCode'] ?? e['hexCode'] ?? e['color'])?.toString().trim();
+
+      final category = FindingCategory(
+        id: id,
+        name: name,
+        colorHex: (hex == null || hex.isEmpty) ? null : hex,
+      );
+
+      all.add(category);
+      if (e['isActive'] == false) continue;
+      if (active.any((c) => c.id == id)) continue;
+      active.add(category);
     }
-    return result;
+
+    // Finding lama bisa memakai kategori yang sudah dinonaktifkan,
+    // jadi warnanya tetap didaftarkan.
+    FindingCategoryStyle.register(all);
+    return active;
   }
-    /// GET /api/uploads/finding/{findingId}
+
+  /// Memuat warna kategori saja. Gagal diam-diam: warna lama tetap dipakai.
+  Future<void> syncCategoryColors() async {
+    try {
+      await getCategories();
+    } catch (_) {}
+  }
+
   Future<List<Map<String, String>>> getEvidences(String findingId) async {
     try {
       final response = await apiService.client.get(

@@ -1,4 +1,5 @@
 import 'package:spc/domain/entities/spc_analysis.dart';
+import 'package:core/core.dart';
 
 /// Response dari POST /api/Spc/analyze dan GET /api/Spc/{id} (SpcResultDto).
 class SpcResultModel extends SpcAnalysisResult {
@@ -42,12 +43,8 @@ class SpcResultModel extends SpcAnalysisResult {
       status: SpcStatusApi.fromApi(json['status'] as String?),
       isStable: json['isStable'] as bool? ?? true,
       dataCount: (json['dataCount'] as num?)?.toInt() ?? 0,
-      analyzedAt: DateTime.parse(json['analyzedAt'] as String).toLocal(),
-      // Kosong kalau dibaca lewat GET /{id} — backend tidak menyimpan
-      // data mentah di database.
-      data: (json['data'] as List<dynamic>? ?? [])
-          .map(_toDouble)
-          .toList(),
+      analyzedAt: AppClock.parseUtc(json['analyzedAt'] as String).toLocal(),
+      data: (json['data'] as List<dynamic>? ?? []).map(_toDouble).toList(),
       // Backend menyimpan target dan unit tapi belum mengembalikannya,
       // jadi untuk sekarang selalu null.
       target: json['target'] == null ? null : _toDouble(json['target']),
@@ -56,6 +53,5 @@ class SpcResultModel extends SpcAnalysisResult {
     );
   }
 
-  static double _toDouble(dynamic value) =>
-      (value as num?)?.toDouble() ?? 0;
+  static double _toDouble(dynamic value) => (value as num?)?.toDouble() ?? 0;
 }

@@ -8,10 +8,13 @@ class DashboardViewModel extends ChangeNotifier {
   DashboardViewModel({
     required DashboardService service,
     required DepartmentService departmentService,
+    required SystemConfigService systemConfigService,
   }) : _service = service,
-       _departmentService = departmentService;
+       _departmentService = departmentService,
+       _systemConfigService = systemConfigService;
 
   final DepartmentService _departmentService;
+  final SystemConfigService _systemConfigService;
 
   /// Pilihan periode pada kartu Quality Trend.
   static const List<String> trendPeriods = ['3 Month', '6 Month', '1 Year'];
@@ -20,7 +23,7 @@ class DashboardViewModel extends ChangeNotifier {
 
   bool _isFirstLoad = true;
   bool _isFetching = false;
-  bool _isRefreshingDepartments = false;
+  bool _isRefreshingConfig = false;
   bool _isDisposed = false;
 
   AuditSummary _summary = AuditSummary(
@@ -92,6 +95,16 @@ class DashboardViewModel extends ChangeNotifier {
     );
   }
 
+  /// Menyimpan timezone dan format tanggal dari backend ke [AppClock].
+  void _applySystemConfig(SystemConfig? config) {
+    if (config == null) return;
+    AppClock.configure(
+      utcOffsetHours: config.utcOffsetHours,
+      zoneLabel: config.timeZoneLabel,
+      dateFormat: config.dateFormat,
+    );
+  }
+
   /// Memuat ulang seluruh data dashboard. Dipanggil saat halaman dibuka
   /// dan saat pull-to-refresh.
   Future<void> load() async {
@@ -110,9 +123,11 @@ class DashboardViewModel extends ChangeNotifier {
             _service.getCompletedReports(),
             _service.getQualityTrend(months: _trendMonths),
             _departmentService.getDepartmentInfos(forceRefresh: true),
+            _systemConfigService.fetch(),
           ).wait;
 
       _applyDepartments(results.$6);
+      _applySystemConfig(results.$7);
       _summary = results.$1;
       _score = results.$2;
       _schedule = results.$3;
@@ -125,24 +140,26 @@ class DashboardViewModel extends ChangeNotifier {
     }
   }
 
-  /// Memuat ulang daftar dan warna departemen saja, tanpa skeleton.
-  /// Dipanggil saat app kembali dari background atau tab Dashboard
-  /// dibuka lagi.
-  Future<void> refreshDepartments() async {
-    // Jangan bentrok dengan load() penuh atau refresh yang sedang jalan.
-    if (_isFetching || _isRefreshingDepartments) return;
-    _isRefreshingDepartments = true;
+  /// Memuat ulang departemen (nama, warna) dan config sistem (timezone,
+  /// format tanggal) saja, tanpa skeleton. Dipanggil saat app kembali dari
+  /// background atau tab Dashboard dibuka lagi.
+  Future<void> refreshConfig() async {
+    if (_isFetching || _isRefreshingConfig) return;
+    _isRefreshingConfig = true;
 
     try {
-      final departments = await _departmentService.getDepartmentInfos(
-        forceRefresh: true,
-      );
-      _applyDepartments(departments);
+      final results =
+          await (
+            _departmentService.getDepartmentInfos(forceRefresh: true),
+            _systemConfigService.fetch(),
+          ).wait;
+      _applyDepartments(results.$1);
+      _applySystemConfig(results.$2);
       notifyListeners();
     } catch (_) {
-      // Gagal diam-diam: warna lama tetap dipakai.
+      // Gagal diam-diam: nilai lama tetap dipakai.
     } finally {
-      _isRefreshingDepartments = false;
+      _isRefreshingConfig = false;
     }
   }
 

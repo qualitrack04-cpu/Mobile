@@ -1,5 +1,6 @@
 import 'package:finding/domain/entities/finding.dart';
 import 'package:finding/domain/entities/finding_severity.dart';
+import 'package:core/core.dart';
 
 class FindingModel extends Finding {
   const FindingModel({
@@ -53,7 +54,7 @@ class FindingModel extends Finding {
       ),
       description: json['description'] as String,
       clauseRef: json['clauseRef'] as String,
-      foundAt: DateTime.parse(json['foundAt'] as String),
+      foundAt: AppClock.parseUtc(json['foundAt'] as String),
       status: FindingStatus.fromString(json['status'] as String),
       department: json['department'] as String,
       reporter: json['reporterName'] as String? ?? '',

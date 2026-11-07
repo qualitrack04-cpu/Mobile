@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 
 import '../../domain/entities/spc_analysis.dart';
 import 'spc_card.dart';
@@ -16,29 +17,9 @@ class SpcAnalysisTile extends StatelessWidget {
   final SpcAnalysisSummary analysis;
   final VoidCallback onTap;
 
-  static const List<String> _monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   /// Format "12 October 2026 - 23.59" tanpa perlu paket intl.
-  String get _dateLabel {
-    final date = analysis.analyzedAt;
-    final month = _monthNames[date.month - 1];
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '${date.day} $month ${date.year} \u2022 $hour.$minute';
-  }
+  /// Tanggal dan jam sesuai timezone dan format dari admin.
+  String get _dateLabel => AppClock.formatDateTime(analysis.analyzedAt);
 
   @override
   Widget build(BuildContext context) {

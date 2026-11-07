@@ -52,6 +52,7 @@ class _DashboardPageState extends State<DashboardPage>
     _viewModel = DashboardViewModel(
       service: GetIt.I<DashboardService>(),
       departmentService: GetIt.I<DepartmentService>(),
+      systemConfigService: GetIt.I<SystemConfigService>(),
     );
     _viewModel.loadUser();
     _viewModel.load();
@@ -68,7 +69,7 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _viewModel.refreshDepartments();
+      _viewModel.refreshConfig();
     }
   }
 
@@ -77,7 +78,7 @@ class _DashboardPageState extends State<DashboardPage>
   void didUpdateWidget(covariant DashboardPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _viewModel.refreshDepartments();
+      _viewModel.refreshConfig();
     }
   }
 

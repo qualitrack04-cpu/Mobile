@@ -860,7 +860,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                 Text(
                   _selectedDate == null
                       ? 'Select date'
-                      : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                      : AppClock.formatDate(_selectedDate!, convert: false),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color:

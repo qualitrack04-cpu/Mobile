@@ -1,12 +1,25 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
+import 'package:finding/domain/entities/finding_severity.dart';
 
-/// Warna dan urutan kategori. Kategori baru dari admin otomatis
-/// mendapat warna cadangan yang stabil.
 abstract final class FindingCategoryStyle {
   static String _key(String n) =>
       n.replaceAll(RegExp(r'[\s_-]'), '').toLowerCase();
 
-  /// Makin kecil makin parah, dipakai untuk mengurutkan list.
+  /// Warna dari backend, kuncinya nama kategori yang sudah dinormalisasi.
+  static Map<String, Color> _backendColors = const {};
+
+  /// Dipanggil setiap kali daftar kategori dimuat. Diganti total, jadi warna
+  /// yang dihapus di backend kembali ke warna cadangan.
+  static void register(Iterable<FindingCategory> categories) {
+    final parsed = <String, Color>{};
+    for (final c in categories) {
+      final color = DepartmentStyle.parseHex(c.colorHex);
+      if (color != null) parsed[_key(c.name)] = color;
+    }
+    if (parsed.isNotEmpty) _backendColors = parsed;
+  }
+
   static int rank(String name) {
     switch (_key(name)) {
       case 'majornc':
@@ -26,6 +39,10 @@ abstract final class FindingCategoryStyle {
   ];
 
   static Color color(String name) {
+    // Warna dari backend menang atas warna bawaan.
+    final fromBackend = _backendColors[_key(name)];
+    if (fromBackend != null) return fromBackend;
+
     switch (_key(name)) {
       case 'majornc':
         return Colors.red;
@@ -43,6 +60,8 @@ abstract final class FindingCategoryStyle {
   static Color badgeBackground(String name) =>
       color(name).withValues(alpha: 0.15);
 
-  static Color cardBackground(String name) =>
-      _key(name) == 'majornc' ? const Color(0xFFFFF0F0) : Colors.white;
+  /// Latar kartu Major NC ikut warna kategorinya (tipis), bukan merah tetap.
+  static Color cardBackground(String name) => _key(name) == 'majornc'
+      ? Color.alphaBlend(color(name).withValues(alpha: 0.08), Colors.white)
+      : Colors.white;
 }

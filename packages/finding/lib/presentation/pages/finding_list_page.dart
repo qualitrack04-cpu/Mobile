@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:finding/presentation/widgets/finding_category_style.dart';
+import 'package:finding/data/datasources/finding_remote_datasource.dart';
 
 class FindingListPage extends StatelessWidget {
   const FindingListPage({super.key});
@@ -46,6 +47,12 @@ class _FindingListViewState extends State<_FindingListView> {
   void initState() {
     super.initState();
     _loadUserRole();
+    _syncColors();
+  }
+
+  Future<void> _syncColors() async {
+    await GetIt.instance<FindingRemoteDatasource>().syncCategoryColors();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUserRole() async {
@@ -160,6 +167,7 @@ class _FindingListViewState extends State<_FindingListView> {
               RefreshIndicator(
                 onRefresh: () async {
                   context.read<FindingBloc>().add(const LoadFindings());
+                  _syncColors();
                   await Future.delayed(const Duration(milliseconds: 800));
                 },
                 child: Skeletonizer(

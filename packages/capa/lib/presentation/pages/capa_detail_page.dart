@@ -6,6 +6,7 @@ import 'package:capa/presentation/bloc/capa_event.dart';
 import 'package:capa/presentation/bloc/capa_state.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/app_colors.dart';
+import 'package:core/core.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CapaDetailPage extends StatelessWidget {
@@ -18,7 +19,9 @@ class CapaDetailPage extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return BlocProvider.value(
-      value: GetIt.instance<CapaBloc>()..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
+      value:
+          GetIt.instance<CapaBloc>()
+            ..add(LoadCapaDetail(id: capaId)), // ✅ GetIt.instance
       child: Scaffold(
         backgroundColor: const Color(0xFFEEF2F7),
         appBar: AppBar(
@@ -41,9 +44,7 @@ class CapaDetailPage extends StatelessWidget {
           builder: (context, state) {
             if (state is CapaLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF0D2B55),
-                ),
+                child: CircularProgressIndicator(color: Color(0xFF0D2B55)),
               );
             }
 
@@ -67,7 +68,7 @@ class CapaDetailPage extends StatelessWidget {
     );
   }
 
-   Widget _buildDetail(BuildContext context, Capa capa) {
+  Widget _buildDetail(BuildContext context, Capa capa) {
     final picName =
         capa.picName.isNotEmpty ? capa.picName : capa.picId.toUpperCase();
 
@@ -99,10 +100,7 @@ class CapaDetailPage extends StatelessWidget {
 
             // PIC
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -133,16 +131,14 @@ class CapaDetailPage extends StatelessWidget {
 
             _buildSection(
               label: 'FINDINGS',
-              value: capa.findingTitle.isNotEmpty
-                  ? capa.findingTitle
-                  : capa.rootCause,
+              value:
+                  capa.findingTitle.isNotEmpty
+                      ? capa.findingTitle
+                      : capa.rootCause,
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
-            _buildSection(
-              label: 'ACTION',
-              value: capa.correctiveAction,
-            ),
+            _buildSection(label: 'ACTION', value: capa.correctiveAction),
             const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
 
             // Due date
@@ -168,7 +164,7 @@ class CapaDetailPage extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${capa.deadline.day} ${_getMonth(capa.deadline.month)} ${capa.deadline.year}',
+                      AppClock.formatDate(capa.deadline, convert: false),
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         fontSize: 14,
@@ -218,11 +214,8 @@ class CapaDetailPage extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildSection({
-    required String label,
-    required String value,
-  }) {
+
+  Widget _buildSection({required String label, required String value}) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -250,13 +243,6 @@ class CapaDetailPage extends StatelessWidget {
       ),
     );
   }
-  String _breakable(String text) => text.split('').join('\u200B');
 
-  String _getMonth(int month) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return months[month - 1];
-  }
+  String _breakable(String text) => text.split('').join('\u200B');
 }
