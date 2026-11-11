@@ -7,9 +7,10 @@ class CreateFinding {
   CreateFinding({required this.repository});
 
   Future<Finding> call({
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
@@ -17,6 +18,7 @@ class CreateFinding {
     String? checklistItemId,
   }) async {
     return await repository.createFinding(
+      title: title,
       categoryId: categoryId,
       description: description,
       clauseRef: clauseRef,

@@ -41,12 +41,12 @@ class _FindingEditPageState extends State<FindingEditPage> {
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
-  // ✅ Evidence lama dari server — simpan sebagai state supaya bisa hapus reaktif
+  // Evidence lama dari server
   List<Map<String, String>> _existingEvidences = [];
   bool _evidencesLoading = true;
-  int _originalEvidenceCount = 0; // ← tracking jumlah awal untuk _isDirty
+  int _originalEvidenceCount = 0;
 
-  // ✅ Tracking fileId yang sedang dihapus (supaya bisa tampilkan loading per item)
+  // fileId yang sedang dihapus
   final Set<String> _deletingIds = {};
 
   List<String> _departments = [];
@@ -62,7 +62,8 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _descriptionFocus = FocusNode();
     _reporterFocus = FocusNode();
 
-    _titleController = TextEditingController(text: widget.finding.clauseRef)
+    // BARU: title dari finding.title (sebelumnya clauseRef)
+    _titleController = TextEditingController(text: widget.finding.title)
       ..addListener(() => setState(() {}));
     _descriptionController = TextEditingController(
       text: widget.finding.description,
@@ -76,7 +77,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     _selectedDepartment = widget.finding.department;
     _loadDepartments();
 
-    // ✅ Load evidence ke state (bukan Future) supaya bisa di-update saat hapus
     _loadExistingEvidences();
   }
 
@@ -87,7 +87,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
       if (mounted) {
         setState(() {
           _existingEvidences = evidences;
-          _originalEvidenceCount = evidences.length; // ← simpan jumlah awal
+          _originalEvidenceCount = evidences.length;
           _evidencesLoading = false;
         });
       }
@@ -125,7 +125,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     });
   }
 
-  // ✅ Hapus evidence dari server lalu update UI
   Future<void> _deleteExistingEvidence(String fileId) async {
     setState(() => _deletingIds.add(fileId));
     try {
@@ -334,7 +333,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
                         focusNode: _titleFocus,
                         hint: 'Enter a finding title...',
                         minLength: 5,
-                        maxLength: 100,
+                        maxLength: 150,
                       ),
                       _buildDivider(),
                       _buildReporterField(),
@@ -404,7 +403,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
-  /// Department — read-only jika lockFields=true (dari audit checklist)
+  /// Department: read-only jika lockFields=true (dari audit checklist)
   Widget _buildDepartmentField() {
     if (widget.lockFields) {
       return Padding(
@@ -721,7 +720,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
           ),
           const SizedBox(height: 12),
 
-          // ✅ Evidence lama dari server
+          // Evidence lama dari server
           if (_evidencesLoading)
             const Padding(
               padding: EdgeInsets.only(bottom: 12),
@@ -741,7 +740,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
 
                       return Stack(
                         children: [
-                          // Thumbnail
                           GestureDetector(
                             onTap:
                                 isDeleting
@@ -759,7 +757,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
                                 borderRadius: BorderRadius.circular(8),
                                 child:
                                     isDeleting
-                                        // ← Tampilkan loading saat sedang dihapus
                                         ? const Center(
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
@@ -793,8 +790,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
                               ),
                             ),
                           ),
-
-                          // ✅ Tombol hapus (X merah) — hanya tampil kalau tidak sedang dihapus
                           if (!isDeleting)
                             Positioned(
                               top: 4,
@@ -846,7 +841,6 @@ class _FindingEditPageState extends State<FindingEditPage> {
     );
   }
 
-  // ✅ Konfirmasi sebelum hapus supaya tidak tidak sengaja terhapus
   void _confirmDeleteEvidence(String fileId) {
     showDialog<void>(
       context: context,
@@ -991,7 +985,7 @@ class _FindingEditPageState extends State<FindingEditPage> {
   }
 
   bool get _isDirty {
-    return _titleController.text != widget.finding.clauseRef ||
+    return _titleController.text != widget.finding.title ||
         _descriptionController.text != widget.finding.description ||
         _reporterController.text != widget.finding.reporter ||
         _selectedCategory != widget.finding.category ||
@@ -1077,9 +1071,9 @@ class _FindingEditPageState extends State<FindingEditPage> {
     context.read<FindingBloc>().add(
       UpdateFindingEvent(
         id: widget.finding.id,
+        title: _titleController.text.trim(), // judul -> title
         categoryId: _selectedCategory.id,
-        description: _descriptionController.text,
-        clauseRef: _titleController.text,
+        description: _descriptionController.text.trim(),
         department: _selectedDepartment!,
         reporter: _reporterController.text,
         reporterId: widget.finding.reporterId,

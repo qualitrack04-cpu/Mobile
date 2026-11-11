@@ -6,9 +6,10 @@ class FindingModel extends Finding {
   const FindingModel({
     required super.id,
     super.sessionId,
+    required super.title,
     required super.category,
     required super.description,
-    required super.clauseRef,
+    super.clauseRef,
     required super.foundAt,
     required super.status,
     required super.department,
@@ -48,12 +49,13 @@ class FindingModel extends Finding {
     return FindingModel(
       id: json['id'] as String,
       sessionId: json['sessionId'] as String?,
+      title: json['title'] as String? ?? '', // BARU
       category: FindingCategory(
         id: (json['categoryId'] ?? '').toString(),
         name: (json['categoryName'] ?? json['category'] ?? '').toString(),
       ),
-      description: json['description'] as String,
-      clauseRef: json['clauseRef'] as String,
+      description: json['description'] as String? ?? '',
+      clauseRef: json['clauseRef'] as String? ?? '', // sekarang opsional
       foundAt: AppClock.parseUtc(json['foundAt'] as String),
       status: FindingStatus.fromString(json['status'] as String),
       department: json['department'] as String,
@@ -66,9 +68,10 @@ class FindingModel extends Finding {
 
   Map<String, dynamic> toJson() {
     return {
+      'title': title, // BARU
       'categoryId': category.id,
       'description': description,
-      'clauseRef': clauseRef,
+      if (clauseRef.isNotEmpty) 'clauseRef': clauseRef, // hanya kalau diisi
       'department': department,
       'reporterName': reporter,
       'reporterId': reporterId,

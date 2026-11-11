@@ -118,15 +118,15 @@ class _FindingDetailBodyState extends State<_FindingDetailBody> {
             // ── Judul
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-              child: Text(
-                finding.clauseRef,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0D2B55),
-                  height: 1.3,
-                ),
-              ),
+child: Text(
+  finding.title.isNotEmpty ? finding.title : finding.description,
+  style: const TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: Color(0xFF0D2B55),
+    height: 1.3,
+  ),
+),
             ),
 
             const SizedBox(height: 16),

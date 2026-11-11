@@ -4,9 +4,10 @@ import 'finding_severity.dart';
 class Finding extends Equatable {
   final String id;
   final String? sessionId;
+  final String title; // BARU: judul finding
   final FindingCategory category;
   final String description;
-  final String clauseRef;
+  final String clauseRef; // opsional, default kosong
   final DateTime foundAt;
   final FindingStatus status;
   final String department;
@@ -18,9 +19,10 @@ class Finding extends Equatable {
   const Finding({
     required this.id,
     this.sessionId,
+    required this.title, // BARU
     required this.category,
     required this.description,
-    required this.clauseRef,
+    this.clauseRef = '', // sebelumnya required
     required this.foundAt,
     required this.status,
     required this.department,
@@ -34,6 +36,7 @@ class Finding extends Equatable {
   List<Object?> get props => [
         id,
         sessionId,
+        title, // BARU
         category,
         description,
         clauseRef,

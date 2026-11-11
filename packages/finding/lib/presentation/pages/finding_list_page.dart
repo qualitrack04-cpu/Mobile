@@ -140,6 +140,7 @@ class _FindingListViewState extends State<_FindingListView> {
             skeletonCount,
             (_) => Finding(
               id: '',
+              title: 'Loading Title', // BARU
               category: const FindingCategory(id: '', name: 'OFI'),
               description: 'Loading Description Here',
               clauseRef: '-',
@@ -318,7 +319,9 @@ class _FindingCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      finding.clauseRef,
+                      finding.title.isNotEmpty
+                          ? finding.title
+                          : finding.description, // fallback data lama
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

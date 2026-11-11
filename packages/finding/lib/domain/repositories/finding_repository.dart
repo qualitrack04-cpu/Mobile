@@ -7,9 +7,10 @@ abstract class FindingRepository {
   Future<Finding> getFindingDetail(String id);
 
   Future<Finding> createFinding({
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
@@ -19,9 +20,10 @@ abstract class FindingRepository {
 
   Future<Finding> updateFinding({
     required String id,
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,

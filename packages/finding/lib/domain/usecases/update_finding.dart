@@ -8,15 +8,17 @@ class UpdateFinding {
 
   Future<Finding> call({
     required String id,
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
   }) async {
     return await repository.updateFinding(
       id: id,
+      title: title,
       categoryId: categoryId,
       description: description,
       clauseRef: clauseRef,

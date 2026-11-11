@@ -26,9 +26,9 @@ class CapaModel extends Capa {
     String findingCategory = json['findingCategory'] as String? ?? '';
 
     if (json['finding'] != null && findingTitle.isEmpty) {
-      final clause = json['finding']['clauseRef'] as String? ?? '';
+      final title = json['finding']['title'] as String? ?? '';
       final desc = json['finding']['description'] as String? ?? '';
-      findingTitle = clause.isNotEmpty ? '$clause - $desc' : desc;
+      findingTitle = title.isNotEmpty ? title : desc;
     }
 
     if (json['finding'] != null && findingCategory.isEmpty) {

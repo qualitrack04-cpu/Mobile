@@ -10,8 +10,6 @@ class FindingRemoteDatasource {
 
   FindingRemoteDatasource({required this.apiService});
 
-  /// Daftar kategori dari backend. Tanpa cache permanen,
-  /// karena admin bisa menambah kategori kapan saja.
   /// GET /api/system-config/finding-categories
   ///
   /// Tanpa cache, karena admin bisa menambah, mengubah, atau menonaktifkan
@@ -177,6 +175,7 @@ class FindingRemoteDatasource {
         findings[i] = FindingModel(
           id: finding.id,
           sessionId: finding.sessionId,
+          title: finding.title, // BARU
           category: finding.category,
           description: finding.description,
           clauseRef: finding.clauseRef,
@@ -204,9 +203,10 @@ class FindingRemoteDatasource {
   }
 
   Future<FindingModel> createFinding({
+    required String title, // BARU
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef, // opsional
     required String department,
     required String reporter,
     String? reporterId,
@@ -216,13 +216,14 @@ class FindingRemoteDatasource {
     final response = await apiService.client.post(
       '/api/findings',
       data: {
-        'title': description,
+        'title': title, // sebelumnya: description
         'department': department,
         'sessionId': sessionId,
         'checklistItemId': checklistItemId,
         'categoryId': categoryId,
         'description': description,
-        'clauseRef': clauseRef,
+        if (clauseRef != null && clauseRef.trim().isNotEmpty)
+          'clauseRef': clauseRef.trim(),
         'reporterName': reporter,
         if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null')
           'reporterId': reporterId,
@@ -233,9 +234,10 @@ class FindingRemoteDatasource {
 
   Future<FindingModel> updateFinding({
     required String id,
+    required String title, // BARU
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef, // opsional
     required String department,
     required String reporter,
     String? reporterId,
@@ -243,11 +245,12 @@ class FindingRemoteDatasource {
     final response = await apiService.client.put(
       '/api/findings/$id',
       data: {
-        'title': description,
+        'title': title, // sebelumnya: description
         'department': department,
         'categoryId': categoryId,
         'description': description,
-        'clauseRef': clauseRef,
+        // Tetap dikirim (bisa kosong) supaya clause yang dihapus ikut terhapus.
+        'clauseRef': clauseRef?.trim() ?? '',
         'reporterName': reporter,
         if (reporterId != null && reporterId.isNotEmpty && reporterId != 'null')
           'reporterId': reporterId,

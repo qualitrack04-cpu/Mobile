@@ -81,9 +81,9 @@ class _CapaFormPageState extends State<CapaFormPage> {
 
       fetchedFindings =
           findingsRaw.map((f) {
-            final clause = f['clauseRef'] as String? ?? '';
+            final title = f['title'] as String? ?? '';
             final desc = f['description'] as String? ?? '';
-            final label = clause.isNotEmpty ? '$clause - $desc' : desc;
+            final label = title.isNotEmpty ? title : desc;
             return {'id': f['id'] as String, 'title': label};
           }).toList();
     } catch (e) {
@@ -590,10 +590,10 @@ class _CapaFormPageState extends State<CapaFormPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-Text(
-  _selectedDeadline != null
-      ? AppClock.formatDate(_selectedDeadline!, convert: false)
-      : 'Select a deadline date...',
+                Text(
+                  _selectedDeadline != null
+                      ? AppClock.formatDate(_selectedDeadline!, convert: false)
+                      : 'Select a deadline date...',
                   style: TextStyle(
                     fontSize: 15,
                     color:
@@ -626,7 +626,9 @@ Text(
                 : () => _onSubmit(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D2B55),
-          disabledBackgroundColor: const Color(0xFF0D2B55).withValues(alpha: 0.4),
+          disabledBackgroundColor: const Color(
+            0xFF0D2B55,
+          ).withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

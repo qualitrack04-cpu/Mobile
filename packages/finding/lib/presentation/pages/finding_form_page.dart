@@ -18,16 +18,16 @@ class FindingFormPage extends StatefulWidget {
   final String? initialDepartment;
   final String? auditorName;
   final String? clauseRef;
-  final String? sessionId; // ✅ TAMBAH
-  final String? checklistItemId; // ✅ TAMBAH
+  final String? sessionId;
+  final String? checklistItemId;
 
   const FindingFormPage({
     super.key,
     this.initialDepartment,
     this.auditorName,
     this.clauseRef,
-    this.sessionId, // ✅ TAMBAH
-    this.checklistItemId, // ✅ TAMBAH
+    this.sessionId,
+    this.checklistItemId,
   });
 
   @override
@@ -48,6 +48,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
   final List<XFile> _evidenceImages = [];
   final ImagePicker _picker = ImagePicker();
 
+  // clause tidak ikut validasi karena opsional
   bool get _isFormValid =>
       _titleController.text.trim().length >= 5 &&
       _reporterController.text.trim().isNotEmpty &&
@@ -127,7 +128,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
   }
 
-  // ✅ Tampilkan pilihan: Kamera atau Galeri
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
       context: context,
@@ -191,7 +191,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Ambil satu gambar dari kamera
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -216,7 +215,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
   }
 
-  // ✅ Ambil banyak gambar sekaligus dari galeri
   Future<void> _pickMultipleImages() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage(
@@ -240,7 +238,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     }
   }
 
-  // ✅ Hapus gambar dari list
   void _removeImage(int index) {
     setState(() {
       _evidenceImages.removeAt(index);
@@ -279,8 +276,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
                 backgroundColor: Colors.green,
               ),
             );
-            // Pop dengan Finding object agar pemanggil (checklist / finding list)
-            // bisa menyimpan / me-refresh data yang baru dibuat.
             Navigator.pop(context, state.finding);
           }
           if (state is FindingError) {
@@ -659,11 +654,9 @@ class _FindingFormPageState extends State<FindingFormPage> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              // ✅ Tampilkan gambar asli dari device
               ..._evidenceImages.asMap().entries.map((entry) {
                 return _buildImageThumbnail(entry.value, entry.key, itemSize);
               }),
-              // Tombol tambah gambar
               _buildAddImageButton(itemSize),
             ],
           ),
@@ -713,7 +706,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Thumbnail gambar nyata dengan tombol hapus
   Widget _buildImageThumbnail(XFile image, int index, double size) {
     return Stack(
       children: [
@@ -731,7 +723,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
             ),
           ),
         ),
-        // Tombol hapus (X) di pojok kanan atas
         Positioned(
           top: 4,
           right: 4,
@@ -753,7 +744,6 @@ class _FindingFormPageState extends State<FindingFormPage> {
     );
   }
 
-  // ✅ Tombol tambah gambar → buka dialog pilih sumber
   Widget _buildAddImageButton(double size) {
     return GestureDetector(
       onTap: _showImageSourceDialog,
@@ -833,7 +823,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
   void _onSubmit(BuildContext context) async {
     ScaffoldMessenger.of(context).clearSnackBars();
-    if (_titleController.text.isEmpty) {
+    if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Title cannot be empty!'),
@@ -851,7 +841,7 @@ class _FindingFormPageState extends State<FindingFormPage> {
       );
       return;
     }
-    if (_descriptionController.text.isEmpty) {
+    if (_descriptionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Description cannot be empty!'),
@@ -875,16 +865,17 @@ class _FindingFormPageState extends State<FindingFormPage> {
 
     if (!context.mounted) return;
 
+
     context.read<FindingBloc>().add(
       CreateFindingEvent(
+        title: _titleController.text.trim(), // judul -> title
         categoryId: _selectedCategory!.id,
-        description: _descriptionController.text,
-        clauseRef: _titleController.text,
+        description: _descriptionController.text.trim(),
         department: _selectedDepartment!,
         reporter: _reporterController.text,
         reporterId: reporterId,
-        sessionId: widget.sessionId, // ✅ TAMBAH
-        checklistItemId: widget.checklistItemId, // ✅ TAMBAH
+        sessionId: widget.sessionId,
+        checklistItemId: widget.checklistItemId,
         evidencePaths: _evidenceImages.map((e) => e.path).toList(),
       ),
     );

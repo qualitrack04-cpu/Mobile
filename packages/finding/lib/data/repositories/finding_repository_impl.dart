@@ -9,7 +9,7 @@ class FindingRepositoryImpl implements FindingRepository {
 
   FindingRepositoryImpl({required this.datasource});
 
-    @override
+  @override
   Future<List<Finding>> getFindings({FindingStatus? status}) async {
     try {
       return await datasource.getFindings(status: status);
@@ -38,11 +38,11 @@ class FindingRepositoryImpl implements FindingRepository {
   }
 
   @override
-    @override
   Future<Finding> createFinding({
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
@@ -51,6 +51,7 @@ class FindingRepositoryImpl implements FindingRepository {
   }) async {
     try {
       return await datasource.createFinding(
+        title: title,
         categoryId: categoryId,
         description: description,
         clauseRef: clauseRef,
@@ -70,12 +71,13 @@ class FindingRepositoryImpl implements FindingRepository {
     }
   }
 
-    @override
+  @override
   Future<Finding> updateFinding({
     required String id,
+    required String title,
     required String categoryId,
     required String description,
-    required String clauseRef,
+    String? clauseRef,
     required String department,
     required String reporter,
     String? reporterId,
@@ -83,6 +85,7 @@ class FindingRepositoryImpl implements FindingRepository {
     try {
       return await datasource.updateFinding(
         id: id,
+        title: title,
         categoryId: categoryId,
         description: description,
         clauseRef: clauseRef,

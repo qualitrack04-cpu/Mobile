@@ -219,6 +219,7 @@ class _AuditChecklistViewState extends State<_AuditChecklistView> {
             checklist.hasFinding = true;
             checklist.finding = Finding(
               id: f['id'] as String,
+              title: f['title'] as String? ?? '', 
               department: f['department'] as String? ?? '',
               category: FindingCategory(
                 id: (f['categoryId'] ?? '').toString(),
